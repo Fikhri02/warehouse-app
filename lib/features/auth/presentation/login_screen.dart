@@ -39,6 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.isLoading;
     final errorMessage = authState.hasError
@@ -68,12 +69,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text('WareTrack',
-                    style: AppTextStyles.display
-                        .copyWith(color: Colors.white)),
+                    style: AppTextStyles.display.copyWith(color: Colors.white)),
                 const SizedBox(height: 4),
                 Text('Warehouse Management',
-                    style: AppTextStyles.caption
-                        .copyWith(color: Colors.white60)),
+                    style:
+                        AppTextStyles.caption.copyWith(color: Colors.white60)),
               ],
             ),
           ),
@@ -101,8 +101,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Enter your password' : null,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? 'Enter your password'
+                          : null,
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
@@ -131,8 +132,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text('or',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.subtitle)),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary(brightness),
+                            )),
                       ),
                       const Expanded(child: Divider()),
                     ]),
@@ -172,7 +174,9 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text.toUpperCase(),
-        style: AppTextStyles.micro
-            .copyWith(color: AppColors.subtitle, letterSpacing: 0.5),
+        style: AppTextStyles.micro.copyWith(
+          color: AppColors.textSecondary(Theme.of(context).brightness),
+          letterSpacing: 0.5,
+        ),
       );
 }

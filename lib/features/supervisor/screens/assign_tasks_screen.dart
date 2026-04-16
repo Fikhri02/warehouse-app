@@ -12,6 +12,7 @@ class AssignTasksScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(assignTasksProvider);
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Assign Tasks')),
@@ -29,8 +30,9 @@ class AssignTasksScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Text(
                     'No unassigned tasks',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: Colors.grey),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary(brightness),
+                    ),
                   ),
                 ],
               ),
@@ -52,8 +54,7 @@ class AssignTasksScreen extends ConsumerWidget {
     );
   }
 
-  void _showAssignDialog(
-      BuildContext context, WidgetRef ref, StaffTask task) {
+  void _showAssignDialog(BuildContext context, WidgetRef ref, StaffTask task) {
     final workers = ['worker-1 (John Doe)', 'worker-2 (Alex Kim)'];
     String? selected;
 

@@ -14,6 +14,7 @@ class WorkerDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authNotifierProvider).valueOrNull;
     final firstName = session?.name.split(' ').first ?? 'there';
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
@@ -39,8 +40,10 @@ class WorkerDashboardScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Text('Quick Actions',
-              style: AppTextStyles.micro
-                  .copyWith(color: AppColors.subtitle, letterSpacing: 0.5)),
+              style: AppTextStyles.micro.copyWith(
+                color: AppColors.textSecondary(brightness),
+                letterSpacing: 0.5,
+              )),
           const SizedBox(height: 10),
           GridView.count(
             crossAxisCount: 2,
@@ -55,20 +58,22 @@ class WorkerDashboardScreen extends ConsumerWidget {
                 subtitle: 'Start counting',
                 icon: Icons.inventory_2_outlined,
                 isPrimary: true,
-                onTap: () => context.go(AppRoutes.stockCount),
+                onTap: () => context.push(AppRoutes.stockCount),
               ),
               QuickActionCard(
                 label: 'Stock Receive',
                 subtitle: 'Receive goods',
                 icon: Icons.move_to_inbox_outlined,
-                onTap: () => context.go(AppRoutes.receiving),
+                onTap: () => context.push(AppRoutes.receiving),
               ),
             ],
           ),
           const SizedBox(height: 20),
           Text('Recent Activity',
-              style: AppTextStyles.micro
-                  .copyWith(color: AppColors.subtitle, letterSpacing: 0.5)),
+              style: AppTextStyles.micro.copyWith(
+                color: AppColors.textSecondary(brightness),
+                letterSpacing: 0.5,
+              )),
           const SizedBox(height: 10),
           const Card(
             child: Column(
@@ -123,8 +128,10 @@ class _ActivityTile extends StatelessWidget {
                         .copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(subtitle,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.subtitle)),
+                    style: AppTextStyles.caption.copyWith(
+                      color:
+                          AppColors.textSecondary(Theme.of(context).brightness),
+                    )),
               ],
             ),
           ),

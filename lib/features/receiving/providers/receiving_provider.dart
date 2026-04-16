@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/purchase_order.dart';
 import '../../../data/repositories/receiving_repository.dart';
@@ -25,6 +27,7 @@ final purchaseOrdersNotifierProvider =
         PurchaseOrdersNotifier.new);
 
 class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
+
   @override
   PurchaseOrder? build() => null;
 
@@ -64,8 +67,9 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
     );
   }
 
-  Future<void> submitReceive() async {
+  Future<void> submitReceive({Uint8List? signature}) async {
     if (state == null) return;
+    // signature will be forwarded to the repository when the backend endpoint is ready
     await ref.read(receivingRepositoryProvider).submitReceive(state!);
     await ref.read(purchaseOrdersNotifierProvider.notifier).refresh();
     state = null;

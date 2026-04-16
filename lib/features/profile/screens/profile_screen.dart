@@ -37,17 +37,20 @@ class ProfileScreen extends ConsumerWidget {
                   backgroundColor: Colors.white24,
                   child: Text(
                     initials,
-                    style: AppTextStyles.headlineMedium.copyWith(color: Colors.white),
+                    style: AppTextStyles.headlineMedium
+                        .copyWith(color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   session.name,
-                  style: AppTextStyles.headlineSmall.copyWith(color: Colors.white),
+                  style:
+                      AppTextStyles.headlineSmall.copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(12),
@@ -55,7 +58,8 @@ class ProfileScreen extends ConsumerWidget {
                   child: Text(
                     session.role.name[0].toUpperCase() +
                         session.role.name.substring(1),
-                    style: AppTextStyles.bodySmall.copyWith(color: Colors.white),
+                    style:
+                        AppTextStyles.bodySmall.copyWith(color: Colors.white),
                   ),
                 ),
               ],
@@ -109,12 +113,11 @@ class ProfileScreen extends ConsumerWidget {
                 foregroundColor: AppColors.error,
                 minimumSize: const Size(double.infinity, 52),
               ),
-              onPressed: () =>
-                  ref.read(authNotifierProvider.notifier).logout(),
+              onPressed: () => ref.read(authNotifierProvider.notifier).logout(),
               child: Text(
                 'Sign Out',
-                style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.error),
+                style:
+                    AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
               ),
             ),
           ),
@@ -129,14 +132,18 @@ class _InfoTile extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const _InfoTile({required this.label, required this.value, required this.icon});
+  const _InfoTile(
+      {required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return ListTile(
       leading: Icon(icon, color: AppColors.primary),
       title: Text(label,
-          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary(brightness),
+          )),
       subtitle: Text(value, style: AppTextStyles.bodyMedium),
     );
   }

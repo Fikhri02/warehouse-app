@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/models/user_session.dart';
@@ -8,24 +9,56 @@ import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'offline_banner.dart';
 
-class AppScaffold extends ConsumerWidget {
+class AppScaffold extends ConsumerStatefulWidget {
   final Widget child;
   const AppScaffold({super.key, required this.child});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppScaffold> createState() => _AppScaffoldState();
+}
+
+class _AppScaffoldState extends ConsumerState<AppScaffold> {
+  DateTime? _lastBackPressAt;
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(authNotifierProvider).valueOrNull;
     final location = GoRouterState.of(context).matchedLocation;
 
-    return Scaffold(
-      body: Column(
-        children: [
-          const OfflineBanner(),
-          Expanded(child: child),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+
+        final now = DateTime.now();
+        final shouldExit = _lastBackPressAt != null &&
+            now.difference(_lastBackPressAt!) <= const Duration(seconds: 2);
+
+        if (shouldExit) {
+          SystemNavigator.pop();
+          return;
+        }
+
+        _lastBackPressAt = now;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+      },
+      child: Scaffold(
+        body: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(child: widget.child),
+          ],
+        ),
+        drawer: session == null ? null : _AppDrawer(session: session),
+        bottomNavigationBar: _BottomBar(currentLocation: location),
       ),
-      drawer: session == null ? null : _AppDrawer(session: session),
-      bottomNavigationBar: _BottomBar(currentLocation: location),
     );
   }
 }
@@ -36,20 +69,31 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     const items = [
-      _BarItem(icon: Icons.home_outlined, label: 'Home', route: AppRoutes.dashboard),
-      _BarItem(icon: Icons.notifications_outlined, label: 'Alerts', route: AppRoutes.alerts),
-      _BarItem(icon: Icons.person_outline, label: 'Profile', route: AppRoutes.profile),
+      _BarItem(
+          icon: Icons.home_outlined, label: 'Home', route: AppRoutes.dashboard),
+      _BarItem(
+          icon: Icons.notifications_outlined,
+          label: 'Alerts',
+          route: AppRoutes.alerts),
+      _BarItem(
+          icon: Icons.person_outline,
+          label: 'Profile',
+          route: AppRoutes.profile),
     ];
     final idx = items.indexWhere((i) => currentLocation.startsWith(i.route));
 
     return BottomNavigationBar(
       currentIndex: idx < 0 ? 0 : idx,
       onTap: (i) => context.go(items[i].route),
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.subtitle,
+      selectedItemColor: brightness == Brightness.dark
+          ? AppColors.darkAccent
+          : AppColors.primary,
+      unselectedItemColor: AppColors.textSecondary(brightness),
       items: items
-          .map((i) => BottomNavigationBarItem(icon: Icon(i.icon), label: i.label))
+          .map((i) =>
+              BottomNavigationBarItem(icon: Icon(i.icon), label: i.label))
           .toList(),
     );
   }
@@ -59,7 +103,8 @@ class _BarItem {
   final IconData icon;
   final String label;
   final String route;
-  const _BarItem({required this.icon, required this.label, required this.route});
+  const _BarItem(
+      {required this.icon, required this.label, required this.route});
 }
 
 class _AppDrawer extends ConsumerWidget {
@@ -69,6 +114,7 @@ class _AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSupervisor = session.role == UserRole.supervisor;
+    final brightness = Theme.of(context).brightness;
 
     return Drawer(
       child: Column(
@@ -93,7 +139,8 @@ class _AppDrawer extends ConsumerWidget {
                     style: AppTextStyles.title.copyWith(color: Colors.white)),
                 const SizedBox(height: 2),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(20),
@@ -110,24 +157,34 @@ class _AppDrawer extends ConsumerWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                const _DrawerItem(Icons.home_outlined, 'Home', AppRoutes.dashboard),
-                const _DrawerItem(Icons.inventory_2_outlined, 'Stock Count', AppRoutes.stockCount),
-                const _DrawerItem(Icons.move_to_inbox_outlined, 'Stock Receive', AppRoutes.receiving),
-                const _DrawerItem(Icons.notifications_outlined, 'Alerts', AppRoutes.alerts),
-                const _DrawerItem(Icons.checklist_outlined, 'My Tasks', AppRoutes.tasks),
+                const _DrawerItem(
+                    Icons.home_outlined, 'Home', AppRoutes.dashboard),
+                const _DrawerItem(Icons.inventory_2_outlined, 'Stock Count',
+                    AppRoutes.stockCount),
+                const _DrawerItem(Icons.move_to_inbox_outlined, 'Stock Receive',
+                    AppRoutes.receiving),
+                const _DrawerItem(
+                    Icons.notifications_outlined, 'Alerts', AppRoutes.alerts),
+                const _DrawerItem(
+                    Icons.checklist_outlined, 'My Tasks', AppRoutes.tasks),
                 if (isSupervisor) ...[
                   const Divider(),
-                  const _DrawerItem(Icons.assignment_outlined, 'Assign Tasks', AppRoutes.assignTasks),
-                  const _DrawerItem(Icons.bar_chart_outlined, 'Reports', AppRoutes.reports),
+                  const _DrawerItem(Icons.assignment_outlined, 'Assign Tasks',
+                      AppRoutes.assignTasks),
+                  const _DrawerItem(
+                      Icons.bar_chart_outlined, 'Reports', AppRoutes.reports),
                 ],
               ],
             ),
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.subtitle),
+            leading:
+                Icon(Icons.logout, color: AppColors.textSecondary(brightness)),
             title: Text('Logout',
-                style: AppTextStyles.body.copyWith(color: AppColors.subtitle)),
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary(brightness),
+                )),
             onTap: () async {
               Navigator.pop(context);
               await ref.read(authNotifierProvider.notifier).logout();
@@ -149,18 +206,30 @@ class _DrawerItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = GoRouterState.of(context).matchedLocation;
     final active = current.startsWith(route);
+    final brightness = Theme.of(context).brightness;
+    final activeColor = brightness == Brightness.dark
+        ? AppColors.darkAccent
+        : AppColors.primary;
+    final isTabRoute = route == AppRoutes.dashboard ||
+        route == AppRoutes.alerts ||
+        route == AppRoutes.profile;
 
     return ListTile(
       leading: Icon(icon,
-          color: active ? AppColors.primary : AppColors.subtitle, size: 20),
+          color: active ? activeColor : AppColors.textSecondary(brightness),
+          size: 20),
       title: Text(label,
           style: AppTextStyles.body.copyWith(
-              color: active ? AppColors.primary : AppColors.onBackground,
+              color: active ? activeColor : AppColors.textPrimary(brightness),
               fontWeight: active ? FontWeight.w600 : FontWeight.normal)),
-      tileColor: active ? AppColors.primary.withValues(alpha: 0.08) : null,
+      tileColor: active ? activeColor.withValues(alpha: 0.12) : null,
       onTap: () {
         Navigator.pop(context);
-        context.go(route);
+        if (isTabRoute) {
+          context.go(route);
+        } else {
+          context.push(route);
+        }
       },
     );
   }

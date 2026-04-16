@@ -9,6 +9,7 @@ class AppRoutes {
   static const receiving = '/receiving';
   static const receivingItems = '/receiving/items';
   static const receivingSummary = '/receiving/summary';
+  static const receivingSignature = '/receiving/summary/signature';
   static const alerts = '/alerts';
   static const profile = '/profile';
   static const tasks = '/tasks';

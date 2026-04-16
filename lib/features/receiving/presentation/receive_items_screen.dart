@@ -20,6 +20,7 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(activeReceiveNotifierProvider);
+    final brightness = Theme.of(context).brightness;
     if (order == null) {
       return const Scaffold(
           body: Center(child: Text('No active receive session')));
@@ -33,7 +34,7 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
 
     if (pending.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go(AppRoutes.receivingSummary);
+        if (mounted) context.pushReplacement(AppRoutes.receivingSummary);
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -52,8 +53,9 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -65,15 +67,17 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Next item',
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.subtitle)),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary(brightness),
+                        )),
                     const SizedBox(height: 4),
                     Text(currentItem.itemName, style: AppTextStyles.title),
                     const SizedBox(height: 2),
                     Text(
                       '${currentItem.itemCode} · Expected: ${currentItem.expected} units',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.subtitle),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary(brightness),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     QtyAdjuster(

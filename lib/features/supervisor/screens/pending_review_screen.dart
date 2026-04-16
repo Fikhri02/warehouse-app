@@ -11,6 +11,7 @@ class PendingReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reviewsAsync = ref.watch(pendingReviewProvider);
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
@@ -18,8 +19,7 @@ class PendingReviewScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                ref.read(pendingReviewProvider.notifier).refresh(),
+            onPressed: () => ref.read(pendingReviewProvider.notifier).refresh(),
           ),
         ],
       ),
@@ -37,8 +37,9 @@ class PendingReviewScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Text(
                     'Nothing to review',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: Colors.grey),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary(brightness),
+                    ),
                   ),
                 ],
               ),
@@ -64,6 +65,7 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final secondaryText = AppColors.textSecondary(Theme.of(context).brightness);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Padding(
@@ -88,8 +90,7 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               alert.body,
-              style:
-                  AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+              style: AppTextStyles.bodySmall.copyWith(color: secondaryText),
             ),
             const SizedBox(height: 12),
             Row(
@@ -98,8 +99,7 @@ class _ReviewCard extends StatelessWidget {
                 OutlinedButton(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Flagged for follow-up')),
+                      const SnackBar(content: Text('Flagged for follow-up')),
                     );
                   },
                   style: OutlinedButton.styleFrom(
@@ -112,9 +112,7 @@ class _ReviewCard extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Approved')),
                     );
-                    ref
-                        .read(pendingReviewProvider.notifier)
-                        .refresh();
+                    ref.read(pendingReviewProvider.notifier).refresh();
                   },
                   child: const Text('Approve'),
                 ),

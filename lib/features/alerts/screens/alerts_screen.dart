@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:warehouse_app/core/models/alert.dart';
+import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/features/alerts/providers/alerts_provider.dart';
 import 'package:warehouse_app/features/alerts/widgets/alert_card.dart';
@@ -11,10 +12,10 @@ class AlertsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertsAsync = ref.watch(alertsProvider);
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alerts'),
         actions: [
           TextButton(
             onPressed: alertsAsync.valueOrNull?.unreadCount == 0
@@ -44,9 +45,15 @@ class AlertsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.notifications_none, size: 48, color: Colors.grey.shade400),
+                  Icon(Icons.notifications_none,
+                      size: 48, color: Colors.grey.shade400),
                   const SizedBox(height: 12),
-                  Text('No alerts', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
+                  Text(
+                    'No alerts',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary(brightness),
+                    ),
+                  ),
                 ],
               ),
             );

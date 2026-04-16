@@ -20,9 +20,11 @@ class QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isPrimary ? AppColors.primary : AppColors.surface;
-    final fg = isPrimary ? Colors.white : AppColors.onBackground;
-    final sub = isPrimary ? Colors.white70 : AppColors.subtitle;
+    final brightness = Theme.of(context).brightness;
+    final bg = isPrimary ? AppColors.primary : AppColors.surfaceFor(brightness);
+    final fg = isPrimary ? Colors.white : AppColors.textPrimary(brightness);
+    final sub =
+        isPrimary ? Colors.white70 : AppColors.textSecondary(brightness);
 
     return GestureDetector(
       onTap: onTap,
@@ -47,12 +49,11 @@ class QuickActionCard extends StatelessWidget {
             Icon(icon, color: fg, size: 22),
             const SizedBox(height: 8),
             Text(label,
-                style: AppTextStyles.caption.copyWith(
-                    color: fg, fontWeight: FontWeight.w700)),
+                style: AppTextStyles.caption
+                    .copyWith(color: fg, fontWeight: FontWeight.w700)),
             if (subtitle != null) ...[
               const SizedBox(height: 2),
-              Text(subtitle!,
-                  style: AppTextStyles.micro.copyWith(color: sub)),
+              Text(subtitle!, style: AppTextStyles.micro.copyWith(color: sub)),
             ],
           ],
         ),

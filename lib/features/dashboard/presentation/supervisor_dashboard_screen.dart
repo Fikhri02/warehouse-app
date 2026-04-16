@@ -14,6 +14,7 @@ class SupervisorDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authNotifierProvider).valueOrNull;
     final firstName = session?.name.split(' ').first ?? 'there';
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
@@ -38,8 +39,10 @@ class SupervisorDashboardScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Text('Quick Actions',
-              style: AppTextStyles.micro
-                  .copyWith(color: AppColors.subtitle, letterSpacing: 0.5)),
+              style: AppTextStyles.micro.copyWith(
+                color: AppColors.textSecondary(brightness),
+                letterSpacing: 0.5,
+              )),
           const SizedBox(height: 10),
           GridView.count(
             crossAxisCount: 2,
@@ -54,32 +57,34 @@ class SupervisorDashboardScreen extends ConsumerWidget {
                 subtitle: '2 active',
                 icon: Icons.inventory_2_outlined,
                 isPrimary: true,
-                onTap: () => context.go(AppRoutes.stockCount),
+                onTap: () => context.push(AppRoutes.stockCount),
               ),
               QuickActionCard(
                 label: 'Stock Receive',
                 subtitle: '1 pending',
                 icon: Icons.move_to_inbox_outlined,
-                onTap: () => context.go(AppRoutes.receiving),
+                onTap: () => context.push(AppRoutes.receiving),
               ),
               QuickActionCard(
                 label: 'Assign Tasks',
                 subtitle: '3 workers',
                 icon: Icons.assignment_outlined,
-                onTap: () => context.go(AppRoutes.assignTasks),
+                onTap: () => context.push(AppRoutes.assignTasks),
               ),
               QuickActionCard(
                 label: 'Reports',
                 subtitle: 'View summaries',
                 icon: Icons.bar_chart_outlined,
-                onTap: () => context.go(AppRoutes.reports),
+                onTap: () => context.push(AppRoutes.reports),
               ),
             ],
           ),
           const SizedBox(height: 20),
           Text('Pending Review',
-              style: AppTextStyles.micro
-                  .copyWith(color: AppColors.subtitle, letterSpacing: 0.5)),
+              style: AppTextStyles.micro.copyWith(
+                color: AppColors.textSecondary(brightness),
+                letterSpacing: 0.5,
+              )),
           const SizedBox(height: 10),
           Card(
             child: Column(
@@ -87,13 +92,13 @@ class SupervisorDashboardScreen extends ConsumerWidget {
                 _ReviewTile(
                   title: 'Count #15 — John Doe',
                   subtitle: 'Aisle C · 2 variances',
-                  onReview: () => context.go(AppRoutes.pendingReview),
+                  onReview: () => context.push(AppRoutes.pendingReview),
                 ),
                 const Divider(height: 1),
                 _ReviewTile(
                   title: 'PO-2041 — Discrepancy',
                   subtitle: 'Steel Bolt M8 · −20 units',
-                  onReview: () => context.go(AppRoutes.pendingReview),
+                  onReview: () => context.push(AppRoutes.pendingReview),
                 ),
               ],
             ),
@@ -130,8 +135,10 @@ class _ReviewTile extends StatelessWidget {
                         .copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(subtitle,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.subtitle)),
+                    style: AppTextStyles.caption.copyWith(
+                      color:
+                          AppColors.textSecondary(Theme.of(context).brightness),
+                    )),
               ],
             ),
           ),

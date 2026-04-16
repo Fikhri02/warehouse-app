@@ -41,7 +41,8 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
       if (!mounted) return;
       if (name == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item not found — try again or enter manually')),
+          const SnackBar(
+              content: Text('Item not found — try again or enter manually')),
         );
         setState(() => _scanning = true);
         return;
@@ -53,7 +54,8 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error looking up item — please try again')),
+        const SnackBar(
+            content: Text('Error looking up item — please try again')),
       );
       setState(() => _scanning = true);
     }
@@ -90,6 +92,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
     final session = ref.watch(stockCountNotifierProvider);
     final itemCount = session?.items.length ?? 0;
     final location = session?.location ?? '';
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
@@ -99,97 +102,106 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Text('$itemCount counted',
-                  style: AppTextStyles.caption
-                      .copyWith(color: Colors.white70)),
+                  style: AppTextStyles.caption.copyWith(color: Colors.white70)),
             ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 240,
-            child: _scanning
-                ? MobileScanner(
-                    controller: _scanner,
-                    onDetect: _onDetect,
-                  )
-                : Container(
-                    color: Colors.black,
-                    child: const Center(
-                      child: Icon(Icons.qr_code_scanner,
-                          color: Colors.white38, size: 48),
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _scanned == null
-                  ? Center(
-                      child: Text(
-                        'Point camera at barcode',
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.subtitle),
-                      ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 240,
+              child: _scanning
+                  ? MobileScanner(
+                      controller: _scanner,
+                      onDetect: _onDetect,
                     )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_scanned!.code,
-                                    style: AppTextStyles.caption
-                                        .copyWith(color: AppColors.subtitle)),
-                                const SizedBox(height: 4),
-                                Text(_scanned!.name,
-                                    style: AppTextStyles.title),
-                                const SizedBox(height: 16),
-                                QtyAdjuster(
-                                  value: _qty,
-                                  onChanged: (v) => setState(() => _qty = v),
-                                ),
-                              ],
-                            ),
+                  : Container(
+                      color: Colors.black,
+                      child: const Center(
+                        child: Icon(Icons.qr_code_scanner,
+                            color: Colors.white38, size: 48),
+                      ),
+                    ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: _scanned == null
+                    ? Center(
+                        child: Text(
+                          'Point camera at barcode',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary(brightness),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _skipItem,
-                                child: const Text('Skip'),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _scanned!.code,
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textSecondary(
+                                        brightness,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(_scanned!.name,
+                                      style: AppTextStyles.title),
+                                  const SizedBox(height: 16),
+                                  QtyAdjuster(
+                                    value: _qty,
+                                    onChanged: (v) => setState(() => _qty = v),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton(
-                                onPressed: _confirmItem,
-                                child: const Text('Confirm Item'),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _skipItem,
+                                  child: const Text('Skip'),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton(
+                                  onPressed: _confirmItem,
+                                  child: const Text('Confirm Item'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: OutlinedButton(
-              onPressed: itemCount > 0
-                  ? () => context.go(AppRoutes.stockCountReview)
-                  : null,
-              child: const Text('Finish Session'),
+            SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: OutlinedButton(
+                onPressed: itemCount > 0
+                    ? () => context.push(AppRoutes.stockCountReview)
+                    : null,
+                child: const Text('Finish Session'),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

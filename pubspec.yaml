@@ -19,6 +19,7 @@ dependencies:
   mobile_scanner: ^5.2.3
   flutter_local_notifications: ^18.0.1
   connectivity_plus: ^6.1.0
+  signature: ^5.5.0
 
 dev_dependencies:
   flutter_test:

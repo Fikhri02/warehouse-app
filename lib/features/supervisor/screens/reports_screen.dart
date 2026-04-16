@@ -11,6 +11,7 @@ class ReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reportsAsync = ref.watch(reportsProvider);
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
@@ -72,8 +73,9 @@ class ReportsScreen extends ConsumerWidget {
                   child: Center(
                     child: Text(
                       'No completed tasks',
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: Colors.grey),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary(brightness),
+                      ),
                     ),
                   ),
                 )
@@ -131,6 +133,7 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final secondaryText = AppColors.textSecondary(Theme.of(context).brightness);
     return Column(
       children: [
         Icon(icon, color: AppColors.primary, size: 24),
@@ -138,7 +141,7 @@ class _StatCell extends StatelessWidget {
         Text(value, style: AppTextStyles.headlineSmall),
         Text(
           label,
-          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+          style: AppTextStyles.bodySmall.copyWith(color: secondaryText),
         ),
       ],
     );

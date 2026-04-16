@@ -29,6 +29,7 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = _statusColor(task.status);
+    final secondaryText = AppColors.textSecondary(Theme.of(context).brightness);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
@@ -57,8 +58,8 @@ class TaskCard extends StatelessWidget {
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
@@ -76,19 +77,20 @@ class TaskCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.place_outlined,
-                      size: 16, color: Colors.grey),
+                  Icon(Icons.place_outlined, size: 16, color: secondaryText),
                   const SizedBox(width: 4),
                   Text(task.location,
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: Colors.grey)),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: secondaryText,
+                      )),
                   const Spacer(),
-                  const Icon(Icons.schedule, size: 16, color: Colors.grey),
+                  Icon(Icons.schedule, size: 16, color: secondaryText),
                   const SizedBox(width: 4),
                   Text(
                     _formatDue(task.dueAt),
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: Colors.grey),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: secondaryText,
+                    ),
                   ),
                 ],
               ),

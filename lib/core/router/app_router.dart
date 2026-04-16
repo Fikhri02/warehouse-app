@@ -13,6 +13,7 @@ import '../../features/stock_count/presentation/review_count_screen.dart';
 import '../../features/receiving/presentation/po_list_screen.dart';
 import '../../features/receiving/presentation/receive_items_screen.dart';
 import '../../features/receiving/presentation/receive_summary_screen.dart';
+import '../../features/receiving/presentation/signature_pad_screen.dart';
 import '../../features/alerts/screens/alerts_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/tasks/screens/tasks_screen.dart';
@@ -99,48 +100,53 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.profile,
             builder: (_, __) => const ProfileScreen(),
           ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.stockCount,
+        builder: (_, __) => const StartCountScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.stockCountScan,
+        builder: (_, __) => const ScanCountScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.stockCountReview,
+        builder: (_, __) => const ReviewCountScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.receiving,
+        builder: (_, __) => const PoListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.receivingItems,
+        builder: (_, __) => const ReceiveItemsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.receivingSummary,
+        builder: (_, __) => const ReceiveSummaryScreen(),
+        routes: [
           GoRoute(
-            path: AppRoutes.stockCount,
-            builder: (_, __) => const StartCountScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.stockCountScan,
-            builder: (_, __) => const ScanCountScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.stockCountReview,
-            builder: (_, __) => const ReviewCountScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.receiving,
-            builder: (_, __) => const PoListScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.receivingItems,
-            builder: (_, __) => const ReceiveItemsScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.receivingSummary,
-            builder: (_, __) => const ReceiveSummaryScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.tasks,
-            builder: (_, __) => const TasksScreen(),
-          ),
-          // Supervisor-only routes
-          GoRoute(
-            path: AppRoutes.assignTasks,
-            builder: (_, __) => const AssignTasksScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.reports,
-            builder: (_, __) => const ReportsScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.pendingReview,
-            builder: (_, __) => const PendingReviewScreen(),
+            path: 'signature',
+            builder: (_, __) => const SignaturePadScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.tasks,
+        builder: (_, __) => const TasksScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.assignTasks,
+        builder: (_, __) => const AssignTasksScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.reports,
+        builder: (_, __) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pendingReview,
+        builder: (_, __) => const PendingReviewScreen(),
       ),
     ],
   );

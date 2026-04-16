@@ -28,4 +28,28 @@ class AppColors {
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFFF8F00);
   static const Color unread = Color(0xFFE53935);
+
+  static Color textPrimary(Brightness brightness) =>
+      brightness == Brightness.dark ? darkOnSurface : onBackground;
+
+  static Color textSecondary(Brightness brightness) =>
+      brightness == Brightness.dark ? darkSubtitle : subtitle;
+
+  static Color surfaceFor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkSurface : surface;
+
+  static Color warningSurface(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0xFF3A2A0A)
+          : const Color(0xFFFFF8E1);
+
+  static Color warningBorder(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0xFF8B6A18)
+          : const Color(0xFFFFE082);
+
+  static Color warningForeground(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0xFFFFE082)
+          : const Color(0xFF795548);
 }

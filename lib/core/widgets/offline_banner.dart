@@ -11,29 +11,35 @@ class OfflineBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOnline = ref.watch(isOnlineProvider);
 
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      child: isOnline
-          ? const SizedBox.shrink()
-          : Container(
-              width: double.infinity,
-              color: AppColors.warning,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              child: Row(
-                children: [
-                  const Icon(Icons.bolt, color: Colors.white, size: 14),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Offline mode — changes will sync when connected',
-                      style: AppTextStyles.caption.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.w600),
+    return SafeArea(
+      bottom: false,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        child: isOnline
+            ? const SizedBox.shrink()
+            : Container(
+                width: double.infinity,
+                color: AppColors.warning,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                child: Row(
+                  children: [
+                    const Icon(Icons.bolt, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Offline mode — changes will sync when connected',
+                        style: AppTextStyles.caption.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

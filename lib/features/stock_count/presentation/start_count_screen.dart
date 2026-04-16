@@ -34,69 +34,79 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
               ? null
               : _labelController.text.trim(),
         );
-    if (mounted) context.go(AppRoutes.stockCountScan);
+    if (mounted) context.push(AppRoutes.stockCountScan);
   }
 
   @override
   Widget build(BuildContext context) {
     final isOnline = ref.watch(isOnlineProvider);
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Count Session')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _FieldLabel('Location / Zone'),
-              const SizedBox(height: 6),
-              TextFormField(
-                controller: _locationController,
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Enter a location' : null,
-              ),
-              const SizedBox(height: 16),
-              const _FieldLabel('Reference (optional)'),
-              const SizedBox(height: 6),
-              TextFormField(
-                controller: _labelController,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Monthly cycle count',
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _FieldLabel('Location / Zone'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _locationController,
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Enter a location' : null,
                 ),
-              ),
-              if (!isOnline) ...[
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8E1),
-                    border: Border.all(color: const Color(0xFFFFE082)),
-                    borderRadius: BorderRadius.circular(8),
+                const _FieldLabel('Reference (optional)'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _labelController,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Monthly cycle count',
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline,
-                          size: 16, color: Color(0xFF795548)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'No connection — session will be saved locally and synced when online.',
-                          style: AppTextStyles.caption
-                              .copyWith(color: const Color(0xFF795548)),
-                        ),
+                ),
+                if (!isOnline) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningSurface(brightness),
+                      border: Border.all(
+                        color: AppColors.warningBorder(brightness),
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: AppColors.warningForeground(brightness),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'No connection — session will be saved locally and synced when online.',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.warningForeground(brightness),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _start,
+                  child: const Text('Start Session'),
                 ),
               ],
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _start,
-                child: const Text('Start Session'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -111,7 +121,9 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text.toUpperCase(),
-        style: AppTextStyles.micro
-            .copyWith(color: AppColors.subtitle, letterSpacing: 0.5),
+        style: AppTextStyles.micro.copyWith(
+          color: AppColors.textSecondary(Theme.of(context).brightness),
+          letterSpacing: 0.5,
+        ),
       );
 }

@@ -48,22 +48,29 @@ class _AdjustButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceFor(brightness),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: AppColors.border,
+            color: brightness == Brightness.dark
+                ? AppColors.darkBorder
+                : AppColors.border,
           ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: onTap == null ? AppColors.border : AppColors.onBackground,
+          color: onTap == null
+              ? (brightness == Brightness.dark
+                  ? AppColors.darkBorder
+                  : AppColors.border)
+              : AppColors.textPrimary(brightness),
         ),
       ),
     );

@@ -19,14 +19,16 @@ class AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final secondaryText = AppColors.textSecondary(brightness);
     final unreadBg = isDark ? const Color(0xFF1C2B29) : Colors.white;
     final readBg = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
     final titleStyle = alert.isRead
-        ? AppTextStyles.bodyMedium.copyWith(color: Colors.grey)
+        ? AppTextStyles.bodyMedium.copyWith(color: secondaryText)
         : AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600);
     final bodyStyle = AppTextStyles.bodySmall.copyWith(
-      color: alert.isRead ? Colors.grey : null,
+      color: alert.isRead ? secondaryText : null,
     );
 
     return Card(
@@ -40,7 +42,7 @@ class AlertCard extends StatelessWidget {
           children: [
             Icon(
               _iconFor(alert.type),
-              color: alert.isRead ? Colors.grey : AppColors.primary,
+              color: alert.isRead ? secondaryText : AppColors.primary,
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -54,7 +56,10 @@ class AlertCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     _formatTime(alert.createdAt),
-                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey, fontSize: 11),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: secondaryText,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),

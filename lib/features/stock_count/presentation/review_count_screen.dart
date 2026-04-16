@@ -12,6 +12,7 @@ class ReviewCountScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(stockCountNotifierProvider);
+    final brightness = Theme.of(context).brightness;
 
     if (session == null) {
       return const Scaffold(
@@ -33,81 +34,88 @@ class ReviewCountScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              itemCount: session.items.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(height: 1, indent: 14, endIndent: 14),
-              itemBuilder: (context, idx) {
-                final item = session.items[idx];
-                final color =
-                    item.matched ? AppColors.success : AppColors.error;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.separated(
+                itemCount: session.items.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, indent: 14, endIndent: 14),
+                itemBuilder: (context, idx) {
+                  final item = session.items[idx];
+                  final color =
+                      item.matched ? AppColors.success : AppColors.error;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.itemName,
+                                  style: AppTextStyles.body
+                                      .copyWith(fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 2),
+                              Text(item.itemCode,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textSecondary(brightness),
+                                  )),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(item.itemName,
-                                style: AppTextStyles.body
-                                    .copyWith(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 2),
-                            Text(item.itemCode,
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.subtitle)),
+                            Text(
+                              '${item.counted}',
+                              style: AppTextStyles.title.copyWith(color: color),
+                            ),
+                            Text(
+                              item.variance >= 0
+                                  ? '+${item.variance}'
+                                  : '${item.variance}',
+                              style: AppTextStyles.micro.copyWith(color: color),
+                            ),
                           ],
                         ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${item.counted}',
-                            style: AppTextStyles.title
-                                .copyWith(color: color),
-                          ),
-                          Text(
-                            item.variance >= 0
-                                ? '+${item.variance}'
-                                : '${item.variance}',
-                            style: AppTextStyles.micro.copyWith(color: color),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: () async {
-                try {
-                  await ref
-                      .read(stockCountNotifierProvider.notifier)
-                      .submitSession();
-                  if (context.mounted) context.go(AppRoutes.dashboard);
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to submit count — please try again'),
-                      ),
-                    );
+            SafeArea(
+              top: false,
+              minimum: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await ref
+                        .read(stockCountNotifierProvider.notifier)
+                        .submitSession();
+                    if (context.mounted) context.go(AppRoutes.dashboard);
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Failed to submit count — please try again'),
+                        ),
+                      );
+                    }
                   }
-                }
-              },
-              child: const Text('Submit Count'),
+                },
+                child: const Text('Submit Count'),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
