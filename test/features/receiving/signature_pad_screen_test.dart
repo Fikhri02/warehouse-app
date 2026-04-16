@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/features/receiving/presentation/signature_pad_screen.dart';
 
 // Minimal GoRouter that places SignaturePadScreen as the only route.
-GoRouter _buildRouter({void Function(Object?)? onPop}) {
+GoRouter _buildRouter() {
   return GoRouter(
     initialLocation: '/',
     routes: [
@@ -24,7 +24,8 @@ Widget _buildApp({GoRouter? router}) {
 
 void main() {
   group('SignaturePadScreen', () {
-    testWidgets('renders correctly — AppBar shows "Sign PO", Cancel and Confirm Signature buttons are visible',
+    testWidgets(
+        'renders correctly — AppBar shows "Sign PO", Cancel and Confirm Signature buttons are visible',
         (WidgetTester tester) async {
       await tester.pumpWidget(_buildApp());
       await tester.pumpAndSettle();
@@ -37,8 +38,7 @@ void main() {
       expect(find.text('Confirm Signature'), findsOneWidget);
     });
 
-    testWidgets(
-        '"Confirm Signature" button is disabled when canvas is empty',
+    testWidgets('"Confirm Signature" button is disabled when canvas is empty',
         (WidgetTester tester) async {
       await tester.pumpWidget(_buildApp());
       await tester.pumpAndSettle();
@@ -49,7 +49,8 @@ void main() {
       );
 
       expect(confirmButton.onPressed, isNull,
-          reason: 'onPressed should be null (disabled) when no signature has been drawn');
+          reason:
+              'onPressed should be null (disabled) when no signature has been drawn');
     });
 
     testWidgets(

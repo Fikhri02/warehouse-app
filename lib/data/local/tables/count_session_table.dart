@@ -19,6 +19,7 @@ class CountItems extends Table {
   TextColumn get itemName => text()();
   IntColumn get expectedQty => integer()();
   IntColumn get actualQty => integer()();
+  TextColumn get entryMethod => text().withDefault(const Constant('scanned'))();
   BoolColumn get skipped => boolean().withDefault(const Constant(false))();
 
   @override

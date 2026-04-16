@@ -1,7 +1,9 @@
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warehouse_app/core/models/count_session.dart';
+import 'package:warehouse_app/data/local/app_database.dart' as db;
 import 'package:warehouse_app/data/repositories/stock_count_repository.dart';
 import 'package:warehouse_app/features/stock_count/providers/stock_count_provider.dart';
 
@@ -10,9 +12,13 @@ class MockStockCountRepository extends Mock implements StockCountRepository {}
 void main() {
   late MockStockCountRepository mockRepo;
   late ProviderContainer container;
+  late db.AppDatabase database;
+
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     mockRepo = MockStockCountRepository();
+    database = db.AppDatabase.forTesting(NativeDatabase.memory());
     registerFallbackValue(CountSession(
       id: 'x',
       location: 'L',
@@ -20,11 +26,17 @@ void main() {
       status: CountSessionStatus.inProgress,
     ));
     container = ProviderContainer(
-      overrides: [stockCountRepositoryProvider.overrideWithValue(mockRepo)],
+      overrides: [
+        stockCountRepositoryProvider.overrideWithValue(mockRepo),
+        db.appDatabaseProvider.overrideWithValue(database),
+      ],
     );
   });
 
-  tearDown(() => container.dispose());
+  tearDown(() async {
+    container.dispose();
+    await database.close();
+  });
 
   group('StockCountNotifier.build', () {
     test('initial state is null (no active session)', () {
@@ -33,7 +45,8 @@ void main() {
   });
 
   group('StockCountNotifier.startSession', () {
-    test('creates session with given location and in-progress status', () async {
+    test('creates session with given location and in-progress status',
+        () async {
       await container
           .read(stockCountNotifierProvider.notifier)
           .startSession(location: 'Aisle B', label: null);
@@ -52,8 +65,8 @@ void main() {
           .read(stockCountNotifierProvider.notifier)
           .startSession(location: 'Aisle B', label: null);
 
-      container.read(stockCountNotifierProvider.notifier).addItem(
-            CountItem(
+      await container.read(stockCountNotifierProvider.notifier).addItem(
+            const CountItem(
               itemCode: 'WH-001',
               itemName: 'Test',
               expected: 10,
@@ -68,7 +81,8 @@ void main() {
   });
 
   group('StockCountNotifier.submitSession', () {
-    test('submits session with submitted status and resets state to null', () async {
+    test('submits session with submitted status and resets state to null',
+        () async {
       when(() => mockRepo.submitSession(any())).thenAnswer((_) async {});
 
       await container
@@ -88,6 +102,39 @@ void main() {
           )).called(1);
 
       expect(container.read(stockCountNotifierProvider), isNull);
+    });
+
+    test('reloads in-progress session from Drift', () async {
+      await container
+          .read(stockCountNotifierProvider.notifier)
+          .startSession(location: 'Aisle C', label: 'Night count');
+
+      await container.read(stockCountNotifierProvider.notifier).addItem(
+            const CountItem(
+              itemCode: 'WH-002',
+              itemName: 'Reload Test',
+              expected: 0,
+              counted: 3,
+              entryMethod: CountEntryMethod.typed,
+            ),
+          );
+
+      final reloadedContainer = ProviderContainer(
+        overrides: [
+          stockCountRepositoryProvider.overrideWithValue(mockRepo),
+          db.appDatabaseProvider.overrideWithValue(database),
+        ],
+      );
+      addTearDown(reloadedContainer.dispose);
+
+      final restored = await reloadedContainer
+          .read(stockCountNotifierProvider.notifier)
+          .loadInProgressSession();
+
+      expect(restored, isNotNull);
+      expect(restored!.location, equals('Aisle C'));
+      expect(restored.label, equals('Night count'));
+      expect(restored.items.single.entryMethod, CountEntryMethod.typed);
     });
   });
 }

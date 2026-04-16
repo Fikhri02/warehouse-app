@@ -6,7 +6,6 @@ import 'package:warehouse_app/core/theme/app_theme.dart';
 import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 import 'package:warehouse_app/data/repositories/auth_repository.dart';
 import 'package:warehouse_app/data/repositories/receiving_repository.dart';
-import 'package:warehouse_app/data/repositories/stock_count_repository.dart';
 import 'package:warehouse_app/data/repositories/tasks_repository.dart';
 import 'package:warehouse_app/data/sample/sample_alerts_repository.dart';
 import 'package:warehouse_app/data/sample/sample_auth_repository.dart';
@@ -14,6 +13,7 @@ import 'package:warehouse_app/data/sample/sample_receiving_repository.dart';
 import 'package:warehouse_app/data/sample/sample_stock_count_repository.dart';
 import 'package:warehouse_app/data/sample/sample_tasks_repository.dart';
 import 'package:warehouse_app/data/sync/sync_provider.dart';
+import 'package:warehouse_app/features/stock_count/providers/stock_count_provider.dart';
 import 'package:warehouse_app/features/profile/providers/profile_provider.dart';
 
 void main() {
@@ -38,11 +38,24 @@ void main() {
   );
 }
 
-class WarehouseApp extends ConsumerWidget {
+class WarehouseApp extends ConsumerStatefulWidget {
   const WarehouseApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WarehouseApp> createState() => _WarehouseAppState();
+}
+
+class _WarehouseAppState extends ConsumerState<WarehouseApp> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(stockCountNotifierProvider.notifier).tryResumeSession(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Activate sync watcher — reads provider to start the listener
     ref.watch(syncWatcherProvider);
 

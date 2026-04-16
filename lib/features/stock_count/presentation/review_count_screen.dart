@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/models/count_session.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -66,6 +67,15 @@ class ReviewCountScreen extends ConsumerWidget {
                                   style: AppTextStyles.caption.copyWith(
                                     color: AppColors.textSecondary(brightness),
                                   )),
+                              const SizedBox(height: 2),
+                              Text(
+                                item.entryMethod == CountEntryMethod.typed
+                                    ? 'Entered manually'
+                                    : 'Scanned',
+                                style: AppTextStyles.micro.copyWith(
+                                  color: AppColors.textSecondary(brightness),
+                                ),
+                              ),
                             ],
                           ),
                         ),

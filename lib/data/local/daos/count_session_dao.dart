@@ -19,8 +19,30 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
   Future<void> addItem(CountItemsCompanion item) =>
       into(countItems).insertOnConflictUpdate(item);
 
+  Future<void> replaceItemsForSession(
+    String sessionId,
+    List<CountItemsCompanion> items,
+  ) async {
+    await transaction(() async {
+      await (delete(countItems)..where((i) => i.sessionId.equals(sessionId)))
+          .go();
+      if (items.isNotEmpty) {
+        await batch(
+            (batch) => batch.insertAllOnConflictUpdate(countItems, items));
+      }
+    });
+  }
+
   Future<List<CountItem>> getItemsForSession(String sessionId) =>
       (select(countItems)..where((i) => i.sessionId.equals(sessionId))).get();
+
+  Future<CountSession?> getLatestInProgressSession() {
+    final query = select(countSessions)
+      ..where((s) => s.status.equals('in_progress'))
+      ..orderBy([(s) => OrderingTerm.desc(s.startedAt)])
+      ..limit(1);
+    return query.getSingleOrNull();
+  }
 
   Future<void> submitSession(String sessionId) =>
       (update(countSessions)..where((s) => s.id.equals(sessionId))).write(

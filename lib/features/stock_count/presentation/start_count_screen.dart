@@ -20,6 +20,14 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
   final _labelController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(stockCountNotifierProvider.notifier).tryResumeSession(),
+    );
+  }
+
+  @override
   void dispose() {
     _locationController.dispose();
     _labelController.dispose();
@@ -40,6 +48,7 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
   @override
   Widget build(BuildContext context) {
     final isOnline = ref.watch(isOnlineProvider);
+    final activeSession = ref.watch(stockCountNotifierProvider);
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
@@ -53,6 +62,50 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (activeSession != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningSurface(brightness),
+                      border: Border.all(
+                        color: AppColors.warningBorder(brightness),
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Resume in-progress session',
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.warningForeground(brightness),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          activeSession.label == null
+                              ? activeSession.location
+                              : '${activeSession.location} · ${activeSession.label}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.warningForeground(brightness),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () =>
+                              context.push(AppRoutes.stockCountScan),
+                          child: Text(
+                            activeSession.items.isEmpty
+                                ? 'Resume Session'
+                                : 'Resume ${activeSession.items.length} Counted Items',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 const _FieldLabel('Location / Zone'),
                 const SizedBox(height: 6),
                 TextFormField(

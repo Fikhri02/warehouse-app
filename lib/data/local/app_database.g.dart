@@ -1461,6 +1461,14 @@ class $CountItemsTable extends CountItems
   late final GeneratedColumn<int> actualQty = GeneratedColumn<int>(
       'actual_qty', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _entryMethodMeta =
+      const VerificationMeta('entryMethod');
+  @override
+  late final GeneratedColumn<String> entryMethod = GeneratedColumn<String>(
+      'entry_method', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('scanned'));
   static const VerificationMeta _skippedMeta =
       const VerificationMeta('skipped');
   @override
@@ -1472,8 +1480,16 @@ class $CountItemsTable extends CountItems
           GeneratedColumn.constraintIsAlways('CHECK ("skipped" IN (0, 1))'),
       defaultValue: const Constant(false));
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, sessionId, itemCode, itemName, expectedQty, actualQty, skipped];
+  List<GeneratedColumn> get $columns => [
+        id,
+        sessionId,
+        itemCode,
+        itemName,
+        expectedQty,
+        actualQty,
+        entryMethod,
+        skipped
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1521,6 +1537,12 @@ class $CountItemsTable extends CountItems
     } else if (isInserting) {
       context.missing(_actualQtyMeta);
     }
+    if (data.containsKey('entry_method')) {
+      context.handle(
+          _entryMethodMeta,
+          entryMethod.isAcceptableOrUnknown(
+              data['entry_method']!, _entryMethodMeta));
+    }
     if (data.containsKey('skipped')) {
       context.handle(_skippedMeta,
           skipped.isAcceptableOrUnknown(data['skipped']!, _skippedMeta));
@@ -1546,6 +1568,8 @@ class $CountItemsTable extends CountItems
           .read(DriftSqlType.int, data['${effectivePrefix}expected_qty'])!,
       actualQty: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}actual_qty'])!,
+      entryMethod: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entry_method'])!,
       skipped: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}skipped'])!,
     );
@@ -1564,6 +1588,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
   final String itemName;
   final int expectedQty;
   final int actualQty;
+  final String entryMethod;
   final bool skipped;
   const CountItem(
       {required this.id,
@@ -1572,6 +1597,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       required this.itemName,
       required this.expectedQty,
       required this.actualQty,
+      required this.entryMethod,
       required this.skipped});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1582,6 +1608,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
     map['item_name'] = Variable<String>(itemName);
     map['expected_qty'] = Variable<int>(expectedQty);
     map['actual_qty'] = Variable<int>(actualQty);
+    map['entry_method'] = Variable<String>(entryMethod);
     map['skipped'] = Variable<bool>(skipped);
     return map;
   }
@@ -1594,6 +1621,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       itemName: Value(itemName),
       expectedQty: Value(expectedQty),
       actualQty: Value(actualQty),
+      entryMethod: Value(entryMethod),
       skipped: Value(skipped),
     );
   }
@@ -1608,6 +1636,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       itemName: serializer.fromJson<String>(json['itemName']),
       expectedQty: serializer.fromJson<int>(json['expectedQty']),
       actualQty: serializer.fromJson<int>(json['actualQty']),
+      entryMethod: serializer.fromJson<String>(json['entryMethod']),
       skipped: serializer.fromJson<bool>(json['skipped']),
     );
   }
@@ -1621,6 +1650,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       'itemName': serializer.toJson<String>(itemName),
       'expectedQty': serializer.toJson<int>(expectedQty),
       'actualQty': serializer.toJson<int>(actualQty),
+      'entryMethod': serializer.toJson<String>(entryMethod),
       'skipped': serializer.toJson<bool>(skipped),
     };
   }
@@ -1632,6 +1662,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
           String? itemName,
           int? expectedQty,
           int? actualQty,
+          String? entryMethod,
           bool? skipped}) =>
       CountItem(
         id: id ?? this.id,
@@ -1640,6 +1671,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
         itemName: itemName ?? this.itemName,
         expectedQty: expectedQty ?? this.expectedQty,
         actualQty: actualQty ?? this.actualQty,
+        entryMethod: entryMethod ?? this.entryMethod,
         skipped: skipped ?? this.skipped,
       );
   CountItem copyWithCompanion(CountItemsCompanion data) {
@@ -1651,6 +1683,8 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       expectedQty:
           data.expectedQty.present ? data.expectedQty.value : this.expectedQty,
       actualQty: data.actualQty.present ? data.actualQty.value : this.actualQty,
+      entryMethod:
+          data.entryMethod.present ? data.entryMethod.value : this.entryMethod,
       skipped: data.skipped.present ? data.skipped.value : this.skipped,
     );
   }
@@ -1664,14 +1698,15 @@ class CountItem extends DataClass implements Insertable<CountItem> {
           ..write('itemName: $itemName, ')
           ..write('expectedQty: $expectedQty, ')
           ..write('actualQty: $actualQty, ')
+          ..write('entryMethod: $entryMethod, ')
           ..write('skipped: $skipped')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, sessionId, itemCode, itemName, expectedQty, actualQty, skipped);
+  int get hashCode => Object.hash(id, sessionId, itemCode, itemName,
+      expectedQty, actualQty, entryMethod, skipped);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1682,6 +1717,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
           other.itemName == this.itemName &&
           other.expectedQty == this.expectedQty &&
           other.actualQty == this.actualQty &&
+          other.entryMethod == this.entryMethod &&
           other.skipped == this.skipped);
 }
 
@@ -1692,6 +1728,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
   final Value<String> itemName;
   final Value<int> expectedQty;
   final Value<int> actualQty;
+  final Value<String> entryMethod;
   final Value<bool> skipped;
   final Value<int> rowid;
   const CountItemsCompanion({
@@ -1701,6 +1738,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     this.itemName = const Value.absent(),
     this.expectedQty = const Value.absent(),
     this.actualQty = const Value.absent(),
+    this.entryMethod = const Value.absent(),
     this.skipped = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1711,6 +1749,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     required String itemName,
     required int expectedQty,
     required int actualQty,
+    this.entryMethod = const Value.absent(),
     this.skipped = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -1726,6 +1765,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     Expression<String>? itemName,
     Expression<int>? expectedQty,
     Expression<int>? actualQty,
+    Expression<String>? entryMethod,
     Expression<bool>? skipped,
     Expression<int>? rowid,
   }) {
@@ -1736,6 +1776,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
       if (itemName != null) 'item_name': itemName,
       if (expectedQty != null) 'expected_qty': expectedQty,
       if (actualQty != null) 'actual_qty': actualQty,
+      if (entryMethod != null) 'entry_method': entryMethod,
       if (skipped != null) 'skipped': skipped,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1748,6 +1789,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
       Value<String>? itemName,
       Value<int>? expectedQty,
       Value<int>? actualQty,
+      Value<String>? entryMethod,
       Value<bool>? skipped,
       Value<int>? rowid}) {
     return CountItemsCompanion(
@@ -1757,6 +1799,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
       itemName: itemName ?? this.itemName,
       expectedQty: expectedQty ?? this.expectedQty,
       actualQty: actualQty ?? this.actualQty,
+      entryMethod: entryMethod ?? this.entryMethod,
       skipped: skipped ?? this.skipped,
       rowid: rowid ?? this.rowid,
     );
@@ -1783,6 +1826,9 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     if (actualQty.present) {
       map['actual_qty'] = Variable<int>(actualQty.value);
     }
+    if (entryMethod.present) {
+      map['entry_method'] = Variable<String>(entryMethod.value);
+    }
     if (skipped.present) {
       map['skipped'] = Variable<bool>(skipped.value);
     }
@@ -1801,6 +1847,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
           ..write('itemName: $itemName, ')
           ..write('expectedQty: $expectedQty, ')
           ..write('actualQty: $actualQty, ')
+          ..write('entryMethod: $entryMethod, ')
           ..write('skipped: $skipped, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3759,6 +3806,7 @@ typedef $$CountItemsTableCreateCompanionBuilder = CountItemsCompanion Function({
   required String itemName,
   required int expectedQty,
   required int actualQty,
+  Value<String> entryMethod,
   Value<bool> skipped,
   Value<int> rowid,
 });
@@ -3769,6 +3817,7 @@ typedef $$CountItemsTableUpdateCompanionBuilder = CountItemsCompanion Function({
   Value<String> itemName,
   Value<int> expectedQty,
   Value<int> actualQty,
+  Value<String> entryMethod,
   Value<bool> skipped,
   Value<int> rowid,
 });
@@ -3799,6 +3848,9 @@ class $$CountItemsTableFilterComposer
 
   ColumnFilters<int> get actualQty => $composableBuilder(
       column: $table.actualQty, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entryMethod => $composableBuilder(
+      column: $table.entryMethod, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get skipped => $composableBuilder(
       column: $table.skipped, builder: (column) => ColumnFilters(column));
@@ -3831,6 +3883,9 @@ class $$CountItemsTableOrderingComposer
   ColumnOrderings<int> get actualQty => $composableBuilder(
       column: $table.actualQty, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get entryMethod => $composableBuilder(
+      column: $table.entryMethod, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get skipped => $composableBuilder(
       column: $table.skipped, builder: (column) => ColumnOrderings(column));
 }
@@ -3861,6 +3916,9 @@ class $$CountItemsTableAnnotationComposer
 
   GeneratedColumn<int> get actualQty =>
       $composableBuilder(column: $table.actualQty, builder: (column) => column);
+
+  GeneratedColumn<String> get entryMethod => $composableBuilder(
+      column: $table.entryMethod, builder: (column) => column);
 
   GeneratedColumn<bool> get skipped =>
       $composableBuilder(column: $table.skipped, builder: (column) => column);
@@ -3895,6 +3953,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             Value<String> itemName = const Value.absent(),
             Value<int> expectedQty = const Value.absent(),
             Value<int> actualQty = const Value.absent(),
+            Value<String> entryMethod = const Value.absent(),
             Value<bool> skipped = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3905,6 +3964,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             itemName: itemName,
             expectedQty: expectedQty,
             actualQty: actualQty,
+            entryMethod: entryMethod,
             skipped: skipped,
             rowid: rowid,
           ),
@@ -3915,6 +3975,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             required String itemName,
             required int expectedQty,
             required int actualQty,
+            Value<String> entryMethod = const Value.absent(),
             Value<bool> skipped = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3925,6 +3986,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             itemName: itemName,
             expectedQty: expectedQty,
             actualQty: actualQty,
+            entryMethod: entryMethod,
             skipped: skipped,
             rowid: rowid,
           ),

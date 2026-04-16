@@ -1,5 +1,7 @@
 enum CountSessionStatus { inProgress, submitted }
 
+enum CountEntryMethod { scanned, typed }
+
 class CountSession {
   final String id;
   final String location;
@@ -20,7 +22,8 @@ class CountSession {
   CountSession copyWith({
     CountSessionStatus? status,
     List<CountItem>? items,
-  }) => CountSession(
+  }) =>
+      CountSession(
         id: id,
         location: location,
         label: label,
@@ -41,12 +44,14 @@ class CountItem {
   final String itemName;
   final int expected;
   final int counted;
+  final CountEntryMethod entryMethod;
 
   const CountItem({
     required this.itemCode,
     required this.itemName,
     required this.expected,
     required this.counted,
+    this.entryMethod = CountEntryMethod.scanned,
   });
 
   int get variance => counted - expected;
@@ -56,8 +61,9 @@ class CountItem {
   bool operator ==(Object other) =>
       other is CountItem &&
       other.itemCode == itemCode &&
-      other.counted == counted;
+      other.counted == counted &&
+      other.entryMethod == entryMethod;
 
   @override
-  int get hashCode => Object.hash(itemCode, counted);
+  int get hashCode => Object.hash(itemCode, counted, entryMethod);
 }

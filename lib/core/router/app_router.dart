@@ -9,6 +9,7 @@ import '../../features/dashboard/presentation/supervisor_dashboard_screen.dart';
 import '../../features/dashboard/presentation/worker_dashboard_screen.dart';
 import '../../features/stock_count/presentation/start_count_screen.dart';
 import '../../features/stock_count/presentation/scan_count_screen.dart';
+import '../../features/stock_count/presentation/count_manual_entry_screen.dart';
 import '../../features/stock_count/presentation/review_count_screen.dart';
 import '../../features/receiving/presentation/po_list_screen.dart';
 import '../../features/receiving/presentation/receive_items_screen.dart';
@@ -109,6 +110,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.stockCountScan,
         builder: (_, __) => const ScanCountScreen(),
+        routes: [
+          GoRoute(
+            path: 'manual-entry',
+            builder: (_, state) => CountManualEntryScreen(
+              initialCode: state.extra as String?,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.stockCountReview,
