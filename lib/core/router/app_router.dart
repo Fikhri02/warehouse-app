@@ -21,6 +21,7 @@ import '../../features/tasks/screens/tasks_screen.dart';
 import '../../features/supervisor/screens/assign_tasks_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
+import 'app_route_observer.dart';
 import 'app_routes.dart';
 
 /// Bridges Riverpod auth state to GoRouter's refreshListenable.
@@ -74,6 +75,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.login,
     refreshListenable: notifier,
+    observers: [appRouteObserver],
     redirect: notifier.redirect,
     routes: [
       GoRoute(
