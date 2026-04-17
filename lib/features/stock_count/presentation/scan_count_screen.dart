@@ -680,16 +680,10 @@ class _CountedItemRow extends StatelessWidget {
                         label: item.entryMethod == CountEntryMethod.scanned
                             ? 'scanned'
                             : 'typed',
-                        color: item.entryMethod == CountEntryMethod.scanned
-                            ? AppColors.primary
-                            : AppColors.warning,
                       ),
                       if (dupCount > 1) ...[
                         const SizedBox(width: 4),
-                        _SmallBadge(
-                          label: '×$dupCount',
-                          color: AppColors.warning,
-                        ),
+                        _SmallBadge(label: '×$dupCount'),
                       ],
                     ],
                   ),
@@ -747,21 +741,27 @@ class _CountedItemRow extends StatelessWidget {
 
 class _SmallBadge extends StatelessWidget {
   final String label;
-  final Color color;
 
-  const _SmallBadge({required this.label, required this.color});
+  const _SmallBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        border: Border.all(
+          color: brightness == Brightness.dark
+              ? AppColors.darkBorder
+              : AppColors.border,
+        ),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
-        style: AppTextStyles.micro.copyWith(color: color),
+        style: AppTextStyles.micro.copyWith(
+          color: AppColors.textSecondary(brightness),
+        ),
       ),
     );
   }
