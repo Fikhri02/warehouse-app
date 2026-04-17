@@ -13,6 +13,7 @@ import '../../features/stock_count/presentation/scan_count_screen.dart';
 import '../../features/stock_count/presentation/count_manual_entry_screen.dart';
 import '../../features/stock_count/presentation/review_count_screen.dart';
 import '../../features/receiving/presentation/po_list_screen.dart';
+import '../../features/receiving/presentation/po_details_screen.dart';
 import '../../features/receiving/presentation/receive_items_screen.dart';
 import '../../features/receiving/presentation/receive_summary_screen.dart';
 import '../../features/receiving/presentation/signature_pad_screen.dart';
@@ -147,6 +148,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const SignaturePadScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.receivingDetails,
+        builder: (_, state) => PoDetailsScreen(poId: state.extra as String),
       ),
       GoRoute(
         path: AppRoutes.tasks,

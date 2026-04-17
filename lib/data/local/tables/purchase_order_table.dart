@@ -5,6 +5,7 @@ class PurchaseOrders extends Table {
   TextColumn get poNumber => text()();
   TextColumn get supplier => text()();
   TextColumn get status => text()();
+  DateTimeColumn get dueDate => dateTime().nullable()();
   DateTimeColumn get expectedDate => dateTime()();
   DateTimeColumn get receivedAt => dateTime().nullable()();
 
@@ -20,6 +21,7 @@ class PoLineItems extends Table {
   IntColumn get expectedQty => integer()();
   IntColumn get receivedQty => integer().withDefault(const Constant(0))();
   BoolColumn get flagged => boolean().withDefault(const Constant(false))();
+  TextColumn get flagReason => text().nullable()();
   TextColumn get status => text()();
 
   @override

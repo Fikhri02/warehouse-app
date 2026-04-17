@@ -59,52 +59,57 @@ class _SignaturePadScreenState extends State<SignaturePadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign PO'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Clear',
-            onPressed: _clearCanvas,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: Signature(
-                controller: _controller,
-                backgroundColor: Colors.white,
-                width: double.infinity,
-              ),
-            ),
-            const Divider(height: 1),
-            SafeArea(
-              top: false,
-              minimum: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton(
-                      onPressed: _isEmpty ? null : _confirmSignature,
-                      child: const Text('Confirm Signature'),
-                    ),
-                  ),
-                ],
-              ),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text('Sign PO'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Clear',
+              onPressed: _clearCanvas,
             ),
           ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: Signature(
+                  controller: _controller,
+                  backgroundColor: Colors.white,
+                  width: double.infinity,
+                ),
+              ),
+              const Divider(height: 1),
+              SafeArea(
+                top: false,
+                minimum:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => context.pop<Uint8List?>(null),
+                        child: const Text('Skip'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed: _isEmpty ? null : _confirmSignature,
+                        child: const Text('Confirm Signature'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

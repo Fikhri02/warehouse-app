@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +63,10 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'ALTER TABLE count_sessions ADD COLUMN zone_aisle TEXT',
             );
+          }
+          if (from < 4) {
+            await migrator.addColumn(purchaseOrders, purchaseOrders.dueDate);
+            await migrator.addColumn(poLineItems, poLineItems.flagReason);
           }
         },
       );

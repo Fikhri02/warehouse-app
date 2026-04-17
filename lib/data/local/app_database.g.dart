@@ -2054,6 +2054,12 @@ class $PurchaseOrdersTable extends PurchaseOrders
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
       'status', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _dueDateMeta =
+      const VerificationMeta('dueDate');
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+      'due_date', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _expectedDateMeta =
       const VerificationMeta('expectedDate');
   @override
@@ -2068,7 +2074,7 @@ class $PurchaseOrdersTable extends PurchaseOrders
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, poNumber, supplier, status, expectedDate, receivedAt];
+      [id, poNumber, supplier, status, dueDate, expectedDate, receivedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2102,6 +2108,10 @@ class $PurchaseOrdersTable extends PurchaseOrders
     } else if (isInserting) {
       context.missing(_statusMeta);
     }
+    if (data.containsKey('due_date')) {
+      context.handle(_dueDateMeta,
+          dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta));
+    }
     if (data.containsKey('expected_date')) {
       context.handle(
           _expectedDateMeta,
@@ -2133,6 +2143,8 @@ class $PurchaseOrdersTable extends PurchaseOrders
           .read(DriftSqlType.string, data['${effectivePrefix}supplier'])!,
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      dueDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
       expectedDate: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}expected_date'])!,
       receivedAt: attachedDatabase.typeMapping
@@ -2151,6 +2163,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
   final String poNumber;
   final String supplier;
   final String status;
+  final DateTime? dueDate;
   final DateTime expectedDate;
   final DateTime? receivedAt;
   const PurchaseOrder(
@@ -2158,6 +2171,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
       required this.poNumber,
       required this.supplier,
       required this.status,
+      this.dueDate,
       required this.expectedDate,
       this.receivedAt});
   @override
@@ -2167,6 +2181,9 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
     map['po_number'] = Variable<String>(poNumber);
     map['supplier'] = Variable<String>(supplier);
     map['status'] = Variable<String>(status);
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
     map['expected_date'] = Variable<DateTime>(expectedDate);
     if (!nullToAbsent || receivedAt != null) {
       map['received_at'] = Variable<DateTime>(receivedAt);
@@ -2180,6 +2197,9 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
       poNumber: Value(poNumber),
       supplier: Value(supplier),
       status: Value(status),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
       expectedDate: Value(expectedDate),
       receivedAt: receivedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2195,6 +2215,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
       poNumber: serializer.fromJson<String>(json['poNumber']),
       supplier: serializer.fromJson<String>(json['supplier']),
       status: serializer.fromJson<String>(json['status']),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       expectedDate: serializer.fromJson<DateTime>(json['expectedDate']),
       receivedAt: serializer.fromJson<DateTime?>(json['receivedAt']),
     );
@@ -2207,6 +2228,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
       'poNumber': serializer.toJson<String>(poNumber),
       'supplier': serializer.toJson<String>(supplier),
       'status': serializer.toJson<String>(status),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
       'expectedDate': serializer.toJson<DateTime>(expectedDate),
       'receivedAt': serializer.toJson<DateTime?>(receivedAt),
     };
@@ -2217,6 +2239,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
           String? poNumber,
           String? supplier,
           String? status,
+          Value<DateTime?> dueDate = const Value.absent(),
           DateTime? expectedDate,
           Value<DateTime?> receivedAt = const Value.absent()}) =>
       PurchaseOrder(
@@ -2224,6 +2247,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
         poNumber: poNumber ?? this.poNumber,
         supplier: supplier ?? this.supplier,
         status: status ?? this.status,
+        dueDate: dueDate.present ? dueDate.value : this.dueDate,
         expectedDate: expectedDate ?? this.expectedDate,
         receivedAt: receivedAt.present ? receivedAt.value : this.receivedAt,
       );
@@ -2233,6 +2257,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
       poNumber: data.poNumber.present ? data.poNumber.value : this.poNumber,
       supplier: data.supplier.present ? data.supplier.value : this.supplier,
       status: data.status.present ? data.status.value : this.status,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       expectedDate: data.expectedDate.present
           ? data.expectedDate.value
           : this.expectedDate,
@@ -2248,6 +2273,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
           ..write('poNumber: $poNumber, ')
           ..write('supplier: $supplier, ')
           ..write('status: $status, ')
+          ..write('dueDate: $dueDate, ')
           ..write('expectedDate: $expectedDate, ')
           ..write('receivedAt: $receivedAt')
           ..write(')'))
@@ -2255,8 +2281,8 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, poNumber, supplier, status, expectedDate, receivedAt);
+  int get hashCode => Object.hash(
+      id, poNumber, supplier, status, dueDate, expectedDate, receivedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2265,6 +2291,7 @@ class PurchaseOrder extends DataClass implements Insertable<PurchaseOrder> {
           other.poNumber == this.poNumber &&
           other.supplier == this.supplier &&
           other.status == this.status &&
+          other.dueDate == this.dueDate &&
           other.expectedDate == this.expectedDate &&
           other.receivedAt == this.receivedAt);
 }
@@ -2274,6 +2301,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
   final Value<String> poNumber;
   final Value<String> supplier;
   final Value<String> status;
+  final Value<DateTime?> dueDate;
   final Value<DateTime> expectedDate;
   final Value<DateTime?> receivedAt;
   final Value<int> rowid;
@@ -2282,6 +2310,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
     this.poNumber = const Value.absent(),
     this.supplier = const Value.absent(),
     this.status = const Value.absent(),
+    this.dueDate = const Value.absent(),
     this.expectedDate = const Value.absent(),
     this.receivedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2291,6 +2320,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
     required String poNumber,
     required String supplier,
     required String status,
+    this.dueDate = const Value.absent(),
     required DateTime expectedDate,
     this.receivedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2304,6 +2334,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
     Expression<String>? poNumber,
     Expression<String>? supplier,
     Expression<String>? status,
+    Expression<DateTime>? dueDate,
     Expression<DateTime>? expectedDate,
     Expression<DateTime>? receivedAt,
     Expression<int>? rowid,
@@ -2313,6 +2344,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
       if (poNumber != null) 'po_number': poNumber,
       if (supplier != null) 'supplier': supplier,
       if (status != null) 'status': status,
+      if (dueDate != null) 'due_date': dueDate,
       if (expectedDate != null) 'expected_date': expectedDate,
       if (receivedAt != null) 'received_at': receivedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2324,6 +2356,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
       Value<String>? poNumber,
       Value<String>? supplier,
       Value<String>? status,
+      Value<DateTime?>? dueDate,
       Value<DateTime>? expectedDate,
       Value<DateTime?>? receivedAt,
       Value<int>? rowid}) {
@@ -2332,6 +2365,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
       poNumber: poNumber ?? this.poNumber,
       supplier: supplier ?? this.supplier,
       status: status ?? this.status,
+      dueDate: dueDate ?? this.dueDate,
       expectedDate: expectedDate ?? this.expectedDate,
       receivedAt: receivedAt ?? this.receivedAt,
       rowid: rowid ?? this.rowid,
@@ -2353,6 +2387,9 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
     if (expectedDate.present) {
       map['expected_date'] = Variable<DateTime>(expectedDate.value);
     }
@@ -2372,6 +2409,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrder> {
           ..write('poNumber: $poNumber, ')
           ..write('supplier: $supplier, ')
           ..write('status: $status, ')
+          ..write('dueDate: $dueDate, ')
           ..write('expectedDate: $expectedDate, ')
           ..write('receivedAt: $receivedAt, ')
           ..write('rowid: $rowid')
@@ -2432,14 +2470,29 @@ class $PoLineItemsTable extends PoLineItems
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("flagged" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _flagReasonMeta =
+      const VerificationMeta('flagReason');
+  @override
+  late final GeneratedColumn<String> flagReason = GeneratedColumn<String>(
+      'flag_reason', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
       'status', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, poId, itemCode, itemName, expectedQty, receivedQty, flagged, status];
+  List<GeneratedColumn> get $columns => [
+        id,
+        poId,
+        itemCode,
+        itemName,
+        expectedQty,
+        receivedQty,
+        flagged,
+        flagReason,
+        status
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2491,6 +2544,12 @@ class $PoLineItemsTable extends PoLineItems
       context.handle(_flaggedMeta,
           flagged.isAcceptableOrUnknown(data['flagged']!, _flaggedMeta));
     }
+    if (data.containsKey('flag_reason')) {
+      context.handle(
+          _flagReasonMeta,
+          flagReason.isAcceptableOrUnknown(
+              data['flag_reason']!, _flagReasonMeta));
+    }
     if (data.containsKey('status')) {
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
@@ -2520,6 +2579,8 @@ class $PoLineItemsTable extends PoLineItems
           .read(DriftSqlType.int, data['${effectivePrefix}received_qty'])!,
       flagged: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}flagged'])!,
+      flagReason: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}flag_reason']),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
     );
@@ -2539,6 +2600,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
   final int expectedQty;
   final int receivedQty;
   final bool flagged;
+  final String? flagReason;
   final String status;
   const PoLineItem(
       {required this.id,
@@ -2548,6 +2610,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
       required this.expectedQty,
       required this.receivedQty,
       required this.flagged,
+      this.flagReason,
       required this.status});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2559,6 +2622,9 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
     map['expected_qty'] = Variable<int>(expectedQty);
     map['received_qty'] = Variable<int>(receivedQty);
     map['flagged'] = Variable<bool>(flagged);
+    if (!nullToAbsent || flagReason != null) {
+      map['flag_reason'] = Variable<String>(flagReason);
+    }
     map['status'] = Variable<String>(status);
     return map;
   }
@@ -2572,6 +2638,9 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
       expectedQty: Value(expectedQty),
       receivedQty: Value(receivedQty),
       flagged: Value(flagged),
+      flagReason: flagReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(flagReason),
       status: Value(status),
     );
   }
@@ -2587,6 +2656,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
       expectedQty: serializer.fromJson<int>(json['expectedQty']),
       receivedQty: serializer.fromJson<int>(json['receivedQty']),
       flagged: serializer.fromJson<bool>(json['flagged']),
+      flagReason: serializer.fromJson<String?>(json['flagReason']),
       status: serializer.fromJson<String>(json['status']),
     );
   }
@@ -2601,6 +2671,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
       'expectedQty': serializer.toJson<int>(expectedQty),
       'receivedQty': serializer.toJson<int>(receivedQty),
       'flagged': serializer.toJson<bool>(flagged),
+      'flagReason': serializer.toJson<String?>(flagReason),
       'status': serializer.toJson<String>(status),
     };
   }
@@ -2613,6 +2684,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
           int? expectedQty,
           int? receivedQty,
           bool? flagged,
+          Value<String?> flagReason = const Value.absent(),
           String? status}) =>
       PoLineItem(
         id: id ?? this.id,
@@ -2622,6 +2694,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
         expectedQty: expectedQty ?? this.expectedQty,
         receivedQty: receivedQty ?? this.receivedQty,
         flagged: flagged ?? this.flagged,
+        flagReason: flagReason.present ? flagReason.value : this.flagReason,
         status: status ?? this.status,
       );
   PoLineItem copyWithCompanion(PoLineItemsCompanion data) {
@@ -2635,6 +2708,8 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
       receivedQty:
           data.receivedQty.present ? data.receivedQty.value : this.receivedQty,
       flagged: data.flagged.present ? data.flagged.value : this.flagged,
+      flagReason:
+          data.flagReason.present ? data.flagReason.value : this.flagReason,
       status: data.status.present ? data.status.value : this.status,
     );
   }
@@ -2649,14 +2724,15 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
           ..write('expectedQty: $expectedQty, ')
           ..write('receivedQty: $receivedQty, ')
           ..write('flagged: $flagged, ')
+          ..write('flagReason: $flagReason, ')
           ..write('status: $status')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, poId, itemCode, itemName, expectedQty, receivedQty, flagged, status);
+  int get hashCode => Object.hash(id, poId, itemCode, itemName, expectedQty,
+      receivedQty, flagged, flagReason, status);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2668,6 +2744,7 @@ class PoLineItem extends DataClass implements Insertable<PoLineItem> {
           other.expectedQty == this.expectedQty &&
           other.receivedQty == this.receivedQty &&
           other.flagged == this.flagged &&
+          other.flagReason == this.flagReason &&
           other.status == this.status);
 }
 
@@ -2679,6 +2756,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
   final Value<int> expectedQty;
   final Value<int> receivedQty;
   final Value<bool> flagged;
+  final Value<String?> flagReason;
   final Value<String> status;
   final Value<int> rowid;
   const PoLineItemsCompanion({
@@ -2689,6 +2767,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
     this.expectedQty = const Value.absent(),
     this.receivedQty = const Value.absent(),
     this.flagged = const Value.absent(),
+    this.flagReason = const Value.absent(),
     this.status = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2700,6 +2779,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
     required int expectedQty,
     this.receivedQty = const Value.absent(),
     this.flagged = const Value.absent(),
+    this.flagReason = const Value.absent(),
     required String status,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -2716,6 +2796,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
     Expression<int>? expectedQty,
     Expression<int>? receivedQty,
     Expression<bool>? flagged,
+    Expression<String>? flagReason,
     Expression<String>? status,
     Expression<int>? rowid,
   }) {
@@ -2727,6 +2808,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
       if (expectedQty != null) 'expected_qty': expectedQty,
       if (receivedQty != null) 'received_qty': receivedQty,
       if (flagged != null) 'flagged': flagged,
+      if (flagReason != null) 'flag_reason': flagReason,
       if (status != null) 'status': status,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2740,6 +2822,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
       Value<int>? expectedQty,
       Value<int>? receivedQty,
       Value<bool>? flagged,
+      Value<String?>? flagReason,
       Value<String>? status,
       Value<int>? rowid}) {
     return PoLineItemsCompanion(
@@ -2750,6 +2833,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
       expectedQty: expectedQty ?? this.expectedQty,
       receivedQty: receivedQty ?? this.receivedQty,
       flagged: flagged ?? this.flagged,
+      flagReason: flagReason ?? this.flagReason,
       status: status ?? this.status,
       rowid: rowid ?? this.rowid,
     );
@@ -2779,6 +2863,9 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
     if (flagged.present) {
       map['flagged'] = Variable<bool>(flagged.value);
     }
+    if (flagReason.present) {
+      map['flag_reason'] = Variable<String>(flagReason.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -2798,6 +2885,7 @@ class PoLineItemsCompanion extends UpdateCompanion<PoLineItem> {
           ..write('expectedQty: $expectedQty, ')
           ..write('receivedQty: $receivedQty, ')
           ..write('flagged: $flagged, ')
+          ..write('flagReason: $flagReason, ')
           ..write('status: $status, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4248,6 +4336,7 @@ typedef $$PurchaseOrdersTableCreateCompanionBuilder = PurchaseOrdersCompanion
   required String poNumber,
   required String supplier,
   required String status,
+  Value<DateTime?> dueDate,
   required DateTime expectedDate,
   Value<DateTime?> receivedAt,
   Value<int> rowid,
@@ -4258,6 +4347,7 @@ typedef $$PurchaseOrdersTableUpdateCompanionBuilder = PurchaseOrdersCompanion
   Value<String> poNumber,
   Value<String> supplier,
   Value<String> status,
+  Value<DateTime?> dueDate,
   Value<DateTime> expectedDate,
   Value<DateTime?> receivedAt,
   Value<int> rowid,
@@ -4283,6 +4373,9 @@ class $$PurchaseOrdersTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+      column: $table.dueDate, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get expectedDate => $composableBuilder(
       column: $table.expectedDate, builder: (column) => ColumnFilters(column));
@@ -4312,6 +4405,9 @@ class $$PurchaseOrdersTableOrderingComposer
   ColumnOrderings<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+      column: $table.dueDate, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get expectedDate => $composableBuilder(
       column: $table.expectedDate,
       builder: (column) => ColumnOrderings(column));
@@ -4340,6 +4436,9 @@ class $$PurchaseOrdersTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
   GeneratedColumn<DateTime> get expectedDate => $composableBuilder(
       column: $table.expectedDate, builder: (column) => column);
@@ -4379,6 +4478,7 @@ class $$PurchaseOrdersTableTableManager extends RootTableManager<
             Value<String> poNumber = const Value.absent(),
             Value<String> supplier = const Value.absent(),
             Value<String> status = const Value.absent(),
+            Value<DateTime?> dueDate = const Value.absent(),
             Value<DateTime> expectedDate = const Value.absent(),
             Value<DateTime?> receivedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -4388,6 +4488,7 @@ class $$PurchaseOrdersTableTableManager extends RootTableManager<
             poNumber: poNumber,
             supplier: supplier,
             status: status,
+            dueDate: dueDate,
             expectedDate: expectedDate,
             receivedAt: receivedAt,
             rowid: rowid,
@@ -4397,6 +4498,7 @@ class $$PurchaseOrdersTableTableManager extends RootTableManager<
             required String poNumber,
             required String supplier,
             required String status,
+            Value<DateTime?> dueDate = const Value.absent(),
             required DateTime expectedDate,
             Value<DateTime?> receivedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -4406,6 +4508,7 @@ class $$PurchaseOrdersTableTableManager extends RootTableManager<
             poNumber: poNumber,
             supplier: supplier,
             status: status,
+            dueDate: dueDate,
             expectedDate: expectedDate,
             receivedAt: receivedAt,
             rowid: rowid,
@@ -4441,6 +4544,7 @@ typedef $$PoLineItemsTableCreateCompanionBuilder = PoLineItemsCompanion
   required int expectedQty,
   Value<int> receivedQty,
   Value<bool> flagged,
+  Value<String?> flagReason,
   required String status,
   Value<int> rowid,
 });
@@ -4453,6 +4557,7 @@ typedef $$PoLineItemsTableUpdateCompanionBuilder = PoLineItemsCompanion
   Value<int> expectedQty,
   Value<int> receivedQty,
   Value<bool> flagged,
+  Value<String?> flagReason,
   Value<String> status,
   Value<int> rowid,
 });
@@ -4486,6 +4591,9 @@ class $$PoLineItemsTableFilterComposer
 
   ColumnFilters<bool> get flagged => $composableBuilder(
       column: $table.flagged, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get flagReason => $composableBuilder(
+      column: $table.flagReason, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
@@ -4521,6 +4629,9 @@ class $$PoLineItemsTableOrderingComposer
   ColumnOrderings<bool> get flagged => $composableBuilder(
       column: $table.flagged, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get flagReason => $composableBuilder(
+      column: $table.flagReason, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnOrderings(column));
 }
@@ -4554,6 +4665,9 @@ class $$PoLineItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get flagged =>
       $composableBuilder(column: $table.flagged, builder: (column) => column);
+
+  GeneratedColumn<String> get flagReason => $composableBuilder(
+      column: $table.flagReason, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -4589,6 +4703,7 @@ class $$PoLineItemsTableTableManager extends RootTableManager<
             Value<int> expectedQty = const Value.absent(),
             Value<int> receivedQty = const Value.absent(),
             Value<bool> flagged = const Value.absent(),
+            Value<String?> flagReason = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4600,6 +4715,7 @@ class $$PoLineItemsTableTableManager extends RootTableManager<
             expectedQty: expectedQty,
             receivedQty: receivedQty,
             flagged: flagged,
+            flagReason: flagReason,
             status: status,
             rowid: rowid,
           ),
@@ -4611,6 +4727,7 @@ class $$PoLineItemsTableTableManager extends RootTableManager<
             required int expectedQty,
             Value<int> receivedQty = const Value.absent(),
             Value<bool> flagged = const Value.absent(),
+            Value<String?> flagReason = const Value.absent(),
             required String status,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4622,6 +4739,7 @@ class $$PoLineItemsTableTableManager extends RootTableManager<
             expectedQty: expectedQty,
             receivedQty: receivedQty,
             flagged: flagged,
+            flagReason: flagReason,
             status: status,
             rowid: rowid,
           ),

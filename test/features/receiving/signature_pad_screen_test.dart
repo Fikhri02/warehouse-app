@@ -25,7 +25,7 @@ Widget _buildApp({GoRouter? router}) {
 void main() {
   group('SignaturePadScreen', () {
     testWidgets(
-        'renders correctly — AppBar shows "Sign PO", Cancel and Confirm Signature buttons are visible',
+        'renders correctly — AppBar shows "Sign PO", Skip and Confirm Signature buttons are visible',
         (WidgetTester tester) async {
       await tester.pumpWidget(_buildApp());
       await tester.pumpAndSettle();
@@ -34,7 +34,7 @@ void main() {
       expect(find.text('Sign PO'), findsOneWidget);
 
       // Bottom-bar buttons
-      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
       expect(find.text('Confirm Signature'), findsOneWidget);
     });
 
@@ -72,10 +72,10 @@ void main() {
       expect(tooltip.message, 'Clear');
     });
 
-    testWidgets('"Cancel" button pops the route with no result',
+    testWidgets('"Skip" button pops the route with no result',
         (WidgetTester tester) async {
       // Build a two-route GoRouter: /home -> /signature.
-      // After tapping Cancel, GoRouter pops back to /home.
+      // After tapping Skip, GoRouter pops back to /home.
       final router = GoRouter(
         initialLocation: '/home',
         routes: [
@@ -105,13 +105,13 @@ void main() {
       expect(find.text('Sign PO'), findsOneWidget,
           reason: 'Should be on SignaturePadScreen now');
 
-      // Tap Cancel — GoRouter should pop back to /home.
-      await tester.tap(find.text('Cancel'));
+      // Tap Skip — GoRouter should pop back to /home.
+      await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
 
       // After pop, we should be back on the home screen.
       expect(find.text('Open Signature'), findsOneWidget,
-          reason: 'Tapping Cancel should pop back to /home');
+          reason: 'Tapping Skip should pop back to /home');
       expect(find.text('Sign PO'), findsNothing);
     });
   });
