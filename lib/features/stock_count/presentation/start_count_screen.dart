@@ -8,6 +8,7 @@ import '../../../data/sample/sample_locations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/models/count_session.dart';
+import '../providers/create_count_session_notifier.dart';
 import '../providers/stock_count_provider.dart';
 
 class StartCountScreen extends ConsumerStatefulWidget {
@@ -31,7 +32,7 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
     final session = await ref
         .read(db.appDatabaseProvider)
         .countSessionDao
-        .getLatestInProgressSession();
+        .getLatestActiveSession();
     if (!mounted) return;
     setState(() {
       _latestSession = session == null
@@ -41,7 +42,9 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
               location: session.location,
               label: session.label,
               startedAt: session.startedAt,
-              status: CountSessionStatus.inProgress,
+              status: session.status == 'draft'
+                  ? CountSessionStatus.draft
+                  : CountSessionStatus.inProgress,
               locationId: session.locationId,
               assignedWorkerId: session.assignedWorkerId,
               deadline: session.deadline,
@@ -54,10 +57,63 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
   Future<void> _resumeSession() async {
     final session = _latestSession;
     if (session == null) return;
+    if (session.status == CountSessionStatus.draft) {
+      if (mounted) {
+        context.push(AppRoutes.stockCountCreate, extra: true);
+      }
+      return;
+    }
+
     await ref
         .read(stockCountNotifierProvider.notifier)
         .loadSessionById(session.id);
     if (mounted) context.push(AppRoutes.stockCountScan);
+  }
+
+  Future<void> _startNewSession() async {
+    final session = _latestSession;
+    if (session == null) {
+      context.push(AppRoutes.stockCountCreate);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          session.status == CountSessionStatus.draft
+              ? 'Discard saved draft?'
+              : 'Discard active session?',
+        ),
+        content: Text(
+          session.status == CountSessionStatus.draft
+              ? 'Starting a new count session will discard the saved draft. Continue?'
+              : 'Starting a new count session will discard the current in-progress session and its counted items. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Start New'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref
+        .read(db.appDatabaseProvider)
+        .countSessionDao
+        .discardSession(session.id);
+    if (!mounted) return;
+    ref.invalidate(stockCountNotifierProvider);
+    ref.invalidate(createCountSessionNotifierProvider);
+    setState(() => _latestSession = null);
+    context.push(AppRoutes.stockCountCreate);
   }
 
   @override
@@ -66,6 +122,7 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
     final brightness = Theme.of(context).brightness;
     final latestSession = _latestSession;
     final latestLocationName = _locationName(latestSession);
+    final isDraft = latestSession?.status == CountSessionStatus.draft;
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Count Session')),
@@ -101,7 +158,9 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Resume in-progress session',
+                      isDraft
+                          ? 'Resume saved draft'
+                          : 'Resume in-progress session',
                       style: AppTextStyles.body.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.warningForeground(brightness),
@@ -131,20 +190,28 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    Text(
+                      isDraft
+                          ? 'You can resume the saved draft or start a new session after discarding it.'
+                          : 'You can resume the active session or start a new one after discarding the current session.',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.warningForeground(brightness),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton(
                             onPressed: _resumeSession,
-                            child: const Text('Resume'),
+                            child: Text(isDraft ? 'Resume Draft' : 'Resume'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () =>
-                                context.push(AppRoutes.stockCountCreate),
-                            child: const Text('Create New'),
+                            onPressed: _startNewSession,
+                            child: const Text('New Session'),
                           ),
                         ),
                       ],
@@ -196,7 +263,9 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Set the location, optional worker, and deadline before counting begins.',
+                      latestSession == null
+                          ? 'Set the location, optional worker, and deadline before counting begins.'
+                          : 'Starting a new session will discard the current active session after confirmation.',
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.textSecondary(brightness),
                       ),
@@ -205,8 +274,7 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () =>
-                            context.push(AppRoutes.stockCountCreate),
+                        onPressed: _startNewSession,
                         child: const Text('Create Session'),
                       ),
                     ),

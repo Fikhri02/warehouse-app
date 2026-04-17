@@ -44,6 +44,16 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
     return query.getSingleOrNull();
   }
 
+  Future<CountSession?> getLatestActiveSession() {
+    final query = select(countSessions)
+      ..where(
+        (s) => s.status.equals('draft') | s.status.equals('in_progress'),
+      )
+      ..orderBy([(s) => OrderingTerm.desc(s.startedAt)])
+      ..limit(1);
+    return query.getSingleOrNull();
+  }
+
   Future<CountSession?> getSessionById(String sessionId) =>
       (select(countSessions)..where((s) => s.id.equals(sessionId)))
           .getSingleOrNull();

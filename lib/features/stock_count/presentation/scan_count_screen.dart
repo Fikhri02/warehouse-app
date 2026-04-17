@@ -8,11 +8,15 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../core/models/count_session.dart';
+import '../../../core/models/location.dart';
+import '../../../core/models/worker.dart';
 import '../../../core/router/app_route_observer.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/qty_adjuster.dart';
+import '../../../data/sample/sample_locations.dart';
+import '../../../data/sample/sample_workers.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/stock_count_provider.dart';
 
@@ -28,6 +32,7 @@ class ScanCountScreen extends ConsumerStatefulWidget {
 class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     with RouteAware {
   final Set<String> _skipDuplicateWarnings = <String>{};
+  DateTime? _lastBackPressAt;
   ({String code, String name})? _scanned;
   int _qty = 0;
   bool _scanning = true;
@@ -339,10 +344,110 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
       ),
     );
     if (confirmed == true && mounted) {
-      await ref
-          .read(stockCountNotifierProvider.notifier)
-          .removeItem(item.id);
+      await ref.read(stockCountNotifierProvider.notifier).removeItem(item.id);
     }
+  }
+
+  void _handleBackPress() {
+    final now = DateTime.now();
+    final shouldLeave = _lastBackPressAt != null &&
+        now.difference(_lastBackPressAt!) <= const Duration(seconds: 2);
+
+    if (shouldLeave) {
+      context.go(AppRoutes.dashboard);
+      return;
+    }
+
+    _lastBackPressAt = now;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to go to Home'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+  }
+
+  Future<void> _showSessionPreview(CountSession session) async {
+    final brightness = Theme.of(context).brightness;
+    final location = _findLocation(session.locationId);
+    final worker = _findWorker(session.assignedWorkerId);
+    final localizations = MaterialLocalizations.of(context);
+    final startedDate = localizations.formatMediumDate(session.startedAt);
+    final startedTime = localizations.formatTimeOfDay(
+      TimeOfDay.fromDateTime(session.startedAt),
+      alwaysUse24HourFormat: true,
+    );
+    final deadline = session.deadline == null
+        ? 'No deadline'
+        : localizations.formatMediumDate(session.deadline!);
+    final totalUnits = session.items.fold(0, (sum, item) => sum + item.counted);
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Session Information'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _PreviewRow(
+              label: 'Location',
+              value: location?.name ?? session.location,
+              brightness: brightness,
+            ),
+            _PreviewRow(
+              label: 'Zone / Aisle',
+              value: session.zoneAisle ?? '—',
+              brightness: brightness,
+            ),
+            _PreviewRow(
+              label: 'Assigned worker',
+              value: worker?.name ?? 'Unassigned',
+              brightness: brightness,
+            ),
+            _PreviewRow(
+              label: 'Deadline',
+              value: deadline,
+              brightness: brightness,
+            ),
+            _PreviewRow(
+              label: 'Started',
+              value: '$startedDate, $startedTime',
+              brightness: brightness,
+            ),
+            _PreviewRow(
+              label: 'Count progress',
+              value: '${session.items.length} items · $totalUnits units',
+              brightness: brightness,
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Location? _findLocation(String? locationId) {
+    if (locationId == null) return null;
+    for (final location in sampleLocations) {
+      if (location.id == locationId) return location;
+    }
+    return null;
+  }
+
+  Worker? _findWorker(String? workerId) {
+    if (workerId == null) return null;
+    for (final worker in sampleWorkers) {
+      if (worker.id == workerId) return worker;
+    }
+    return null;
   }
 
   @override
@@ -386,64 +491,77 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     final totalUnits = items.fold(0, (sum, i) => sum + i.counted);
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          session.location.isEmpty ? 'Scan Items' : session.location,
-        ),
-        actions: [
-          if (items.isNotEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Text(
-                  '${items.length} items · $totalUnits units',
-                  style:
-                      AppTextStyles.caption.copyWith(color: Colors.white70),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(onPressed: _handleBackPress),
+          title: Text(
+            session.location.isEmpty ? 'Scan Items' : session.location,
+          ),
+          actions: [
+            IconButton(
+              onPressed: () => _showSessionPreview(session),
+              icon: const Icon(Icons.info_outline),
+              tooltip: 'Session information',
+            ),
+            if (items.isNotEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Text(
+                    '${items.length} items · $totalUnits units',
+                    style:
+                        AppTextStyles.caption.copyWith(color: Colors.white70),
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 240,
-              child: _buildCameraPanel(brightness),
-            ),
-            Expanded(
-              child: _scanned != null
-                  ? _buildConfirmPanel(brightness)
-                  : items.isEmpty
-                      ? _buildHint(brightness)
-                      : _buildItemsList(items, brightness),
-            ),
-            SafeArea(
-              top: false,
-              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_scanned == null)
-                    OutlinedButton.icon(
-                      onPressed: _openManualEntry,
-                      icon: const Icon(Icons.keyboard_alt_outlined),
-                      label: const Text('Manual Entry'),
-                    ),
-                  const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: items.isNotEmpty
-                        ? () => context.push(AppRoutes.stockCountReview)
-                        : null,
-                    child: const Text('Finish Session'),
-                  ),
-                ],
-              ),
-            ),
           ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              SizedBox(
+                height: 240,
+                child: _buildCameraPanel(brightness),
+              ),
+              Expanded(
+                child: _scanned != null
+                    ? _buildConfirmPanel(brightness)
+                    : items.isEmpty
+                        ? _buildHint(brightness)
+                        : _buildItemsList(items, brightness),
+              ),
+              SafeArea(
+                top: false,
+                minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_scanned == null)
+                      OutlinedButton.icon(
+                        onPressed: _openManualEntry,
+                        icon: const Icon(Icons.keyboard_alt_outlined),
+                        label: const Text('Manual Entry'),
+                      ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: items.isNotEmpty
+                          ? () => context.push(AppRoutes.stockCountReview)
+                          : null,
+                      child: const Text('Finish Session'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -578,8 +696,8 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
                     const SizedBox(height: 6),
                     Text(
                       error.errorCode.name,
-                      style: AppTextStyles.caption
-                          .copyWith(color: Colors.white70),
+                      style:
+                          AppTextStyles.caption.copyWith(color: Colors.white70),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
@@ -763,6 +881,48 @@ class _SmallBadge extends StatelessWidget {
         style: AppTextStyles.micro.copyWith(
           color: AppColors.textSecondary(brightness),
         ),
+      ),
+    );
+  }
+}
+
+class _PreviewRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Brightness brightness;
+
+  const _PreviewRow({
+    required this.label,
+    required this.value,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary(brightness),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.body.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

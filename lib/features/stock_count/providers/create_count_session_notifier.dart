@@ -84,6 +84,17 @@ class CreateCountSessionNotifier extends Notifier<CreateCountSessionState> {
     _scheduleSave();
   }
 
+  void loadDraftSession(db.CountSession draft) {
+    state = CreateCountSessionState(
+      locationId: draft.locationId,
+      zoneAisle: draft.zoneAisle,
+      assignedWorkerId: draft.assignedWorkerId,
+      deadline: draft.deadline,
+      draftId: draft.id,
+      saveStatus: CreateSessionSaveStatus.idle,
+    );
+  }
+
   /// Validates and finalises the session as [in_progress].
   /// Returns the session ID.
   /// Throws [StateError] if [locationId] is null.
