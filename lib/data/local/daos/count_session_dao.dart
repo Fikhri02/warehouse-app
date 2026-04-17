@@ -44,6 +44,14 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
     return query.getSingleOrNull();
   }
 
+  Future<void> deleteItem(String itemId) =>
+      (delete(countItems)..where((i) => i.id.equals(itemId))).go();
+
+  Future<void> updateItemQty(String itemId, int qty) =>
+      (update(countItems)..where((i) => i.id.equals(itemId))).write(
+        CountItemsCompanion(actualQty: Value(qty)),
+      );
+
   Future<void> submitSession(String sessionId) =>
       (update(countSessions)..where((s) => s.id.equals(sessionId))).write(
         CountSessionsCompanion(

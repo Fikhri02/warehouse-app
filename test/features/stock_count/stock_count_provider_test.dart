@@ -66,7 +66,7 @@ void main() {
           .startSession(location: 'Aisle B', label: null);
 
       await container.read(stockCountNotifierProvider.notifier).addItem(
-            const CountItem(
+            CountItem(
               itemCode: 'WH-001',
               itemName: 'Test',
               expected: 10,
@@ -110,7 +110,7 @@ void main() {
           .startSession(location: 'Aisle C', label: 'Night count');
 
       await container.read(stockCountNotifierProvider.notifier).addItem(
-            const CountItem(
+            CountItem(
               itemCode: 'WH-002',
               itemName: 'Reload Test',
               expected: 0,

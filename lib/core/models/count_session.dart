@@ -40,30 +40,37 @@ class CountSession {
 }
 
 class CountItem {
+  final String id;
   final String itemCode;
   final String itemName;
   final int expected;
   final int counted;
   final CountEntryMethod entryMethod;
 
-  const CountItem({
+  CountItem({
+    String? id,
     required this.itemCode,
     required this.itemName,
     required this.expected,
     required this.counted,
     this.entryMethod = CountEntryMethod.scanned,
-  });
+  }) : id = id ?? '${itemCode}_${DateTime.now().microsecondsSinceEpoch}';
+
+  CountItem copyWith({int? counted}) => CountItem(
+        id: id,
+        itemCode: itemCode,
+        itemName: itemName,
+        expected: expected,
+        counted: counted ?? this.counted,
+        entryMethod: entryMethod,
+      );
 
   int get variance => counted - expected;
   bool get matched => variance == 0;
 
   @override
-  bool operator ==(Object other) =>
-      other is CountItem &&
-      other.itemCode == itemCode &&
-      other.counted == counted &&
-      other.entryMethod == entryMethod;
+  bool operator ==(Object other) => other is CountItem && other.id == id;
 
   @override
-  int get hashCode => Object.hash(itemCode, counted, entryMethod);
+  int get hashCode => id.hashCode;
 }

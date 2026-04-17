@@ -101,6 +101,13 @@ class ProfileScreen extends ConsumerWidget {
             secondary: const Icon(Icons.notifications_outlined),
             activeThumbColor: AppColors.primary,
           ),
+          SwitchListTile(
+            value: settings.hapticFeedbackEnabled,
+            onChanged: (_) => notifier.toggleHapticFeedback(),
+            title: Text('Haptic feedback', style: AppTextStyles.bodyMedium),
+            secondary: const Icon(Icons.vibration_outlined),
+            activeThumbColor: AppColors.primary,
+          ),
 
           const Spacer(),
 

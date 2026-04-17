@@ -4,22 +4,27 @@ class ProfileSettings {
   final bool biometricEnabled;
   final bool darkModeEnabled;
   final bool notificationsEnabled;
+  final bool hapticFeedbackEnabled;
 
   const ProfileSettings({
     this.biometricEnabled = false,
     this.darkModeEnabled = false,
     this.notificationsEnabled = true,
+    this.hapticFeedbackEnabled = true,
   });
 
   ProfileSettings copyWith({
     bool? biometricEnabled,
     bool? darkModeEnabled,
     bool? notificationsEnabled,
+    bool? hapticFeedbackEnabled,
   }) {
     return ProfileSettings(
       biometricEnabled: biometricEnabled ?? this.biometricEnabled,
       darkModeEnabled: darkModeEnabled ?? this.darkModeEnabled,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      hapticFeedbackEnabled:
+          hapticFeedbackEnabled ?? this.hapticFeedbackEnabled,
     );
   }
 }
@@ -36,6 +41,10 @@ class ProfileSettingsNotifier extends Notifier<ProfileSettings> {
 
   void toggleNotifications() =>
       state = state.copyWith(notificationsEnabled: !state.notificationsEnabled);
+
+  void toggleHapticFeedback() =>
+      state = state.copyWith(
+          hapticFeedbackEnabled: !state.hapticFeedbackEnabled);
 }
 
 final profileSettingsProvider =

@@ -5,7 +5,7 @@ import 'package:warehouse_app/core/models/purchase_order.dart';
 void main() {
   group('CountItem', () {
     test('variance is counted minus expected', () {
-      const item = CountItem(
+      final item = CountItem(
         itemCode: 'WH-001',
         itemName: 'Test Item',
         expected: 50,
@@ -15,7 +15,7 @@ void main() {
     });
 
     test('matched is true when variance is zero', () {
-      const item = CountItem(
+      final item = CountItem(
         itemCode: 'WH-001',
         itemName: 'Test Item',
         expected: 50,
@@ -25,7 +25,7 @@ void main() {
     });
 
     test('matched is false when variance is non-zero', () {
-      const item = CountItem(
+      final item = CountItem(
         itemCode: 'WH-001',
         itemName: 'Test Item',
         expected: 50,

@@ -40,12 +40,10 @@ class StockCountNotifier extends Notifier<CountSession?> {
   Future<void> addItem(CountItem item) async {
     final current = state;
     if (current == null) return;
-    final itemId =
-        '${current.id}_${item.itemCode}_${DateTime.now().microsecondsSinceEpoch}';
     final dao = ref.read(db.appDatabaseProvider).countSessionDao;
     await dao.addItem(
       db.CountItemsCompanion.insert(
-        id: itemId,
+        id: item.id,
         sessionId: current.id,
         itemCode: item.itemCode,
         itemName: item.itemName,
@@ -55,6 +53,29 @@ class StockCountNotifier extends Notifier<CountSession?> {
       ),
     );
     state = current.copyWith(items: [...current.items, item]);
+  }
+
+  Future<void> removeItem(String itemId) async {
+    final current = state;
+    if (current == null) return;
+    await ref.read(db.appDatabaseProvider).countSessionDao.deleteItem(itemId);
+    state = current.copyWith(
+      items: current.items.where((i) => i.id != itemId).toList(),
+    );
+  }
+
+  Future<void> updateItemQty(String itemId, int newQty) async {
+    final current = state;
+    if (current == null) return;
+    await ref
+        .read(db.appDatabaseProvider)
+        .countSessionDao
+        .updateItemQty(itemId, newQty);
+    state = current.copyWith(
+      items: current.items
+          .map((i) => i.id == itemId ? i.copyWith(counted: newQty) : i)
+          .toList(),
+    );
   }
 
   Future<void> submitSession() async {
@@ -97,6 +118,7 @@ class StockCountNotifier extends Notifier<CountSession?> {
   }
 
   CountItem _itemFromDb(db.CountItem data) => CountItem(
+        id: data.id,
         itemCode: data.itemCode,
         itemName: data.itemName,
         expected: data.expectedQty,
