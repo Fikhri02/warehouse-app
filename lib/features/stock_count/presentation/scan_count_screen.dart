@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/models/count_session.dart';
+import '../../../core/router/app_route_observer.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -22,33 +23,53 @@ class ScanCountScreen extends ConsumerStatefulWidget {
 }
 
 class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
-    with WidgetsBindingObserver {
-  final MobileScannerController _scanner = MobileScannerController();
+    with RouteAware {
   final Set<String> _skipDuplicateWarnings = <String>{};
   ({String code, String name})? _scanned;
   int _qty = 0;
   bool _scanning = true;
+  bool _isRouteVisible = true;
+  int _scannerMountVersion = 0;
   _CameraPermissionUiState _permissionState = _CameraPermissionUiState.checking;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     Future.microtask(_refreshPermissionState);
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      Future.microtask(_refreshPermissionState);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      appRouteObserver.unsubscribe(this);
+      appRouteObserver.subscribe(this, route);
     }
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _scanner.dispose();
+    appRouteObserver.unsubscribe(this);
     super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    if (!mounted) return;
+    setState(() {
+      _isRouteVisible = false;
+    });
+  }
+
+  @override
+  void didPopNext() {
+    if (!mounted) return;
+    setState(() {
+      _isRouteVisible = true;
+      _scannerMountVersion++;
+    });
+    Future.microtask(_refreshPermissionState);
   }
 
   Future<void> _refreshPermissionState() async {
@@ -66,13 +87,6 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     };
 
     setState(() => _permissionState = nextState);
-    if (nextState == _CameraPermissionUiState.granted &&
-        _scanning &&
-        _scanned == null) {
-      unawaited(_scanner.start());
-    } else {
-      unawaited(_scanner.stop());
-    }
   }
 
   Future<void> _requestPermission() async {
@@ -87,9 +101,6 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
       _qty = 0;
       _scanning = true;
     });
-    if (_permissionState == _CameraPermissionUiState.granted) {
-      await _scanner.start();
-    }
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
@@ -100,7 +111,6 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     if (code == null) return;
 
     setState(() => _scanning = false);
-    await _scanner.stop();
     try {
       final name = await ref
           .read(stockCountRepositoryProvider)
@@ -110,6 +120,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
         final addManually = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            actionsAlignment: MainAxisAlignment.end,
             title: const Text('Item not recognized'),
             content: Text(
               '$code was not found. Add it manually instead?',
@@ -119,7 +130,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
                 onPressed: () => Navigator.of(context).pop(false),
                 child: const Text('Cancel'),
               ),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('Add Manually'),
               ),
@@ -236,7 +247,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
               ).pop((add: false, neverAskAgain: false)),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () => Navigator.of(
                 context,
               ).pop((add: true, neverAskAgain: neverAskAgain)),
@@ -414,21 +425,82 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
       case _CameraPermissionUiState.checking:
         return const Center(child: CircularProgressIndicator());
       case _CameraPermissionUiState.granted:
-        return _scanning
-            ? MobileScanner(
-                controller: _scanner,
-                onDetect: _onDetect,
-              )
-            : Container(
+        if (!_isRouteVisible) {
+          return Container(color: Colors.black);
+        }
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            MobileScanner(
+              key: ValueKey('scanner-$_scannerMountVersion'),
+              onDetect: _onDetect,
+              errorBuilder: (context, error, child) => Container(
                 color: Colors.black,
-                child: const Center(
-                  child: Icon(
-                    Icons.qr_code_scanner,
-                    color: Colors.white38,
-                    size: 48,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Camera preview unavailable',
+                      style: AppTextStyles.body.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      error.errorCode.name,
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _scannerMountVersion++;
+                        });
+                        _refreshPermissionState();
+                      },
+                      child: const Text('Retry Camera'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (!_scanning)
+              Container(
+                color: Colors.black.withValues(alpha: 0.28),
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Scan paused while reviewing item',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              );
+              ),
+          ],
+        );
       case _CameraPermissionUiState.denied:
         return _PermissionPanel(
           title: 'Camera permission needed',

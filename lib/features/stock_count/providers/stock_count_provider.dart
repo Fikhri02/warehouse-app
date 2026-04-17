@@ -11,10 +11,7 @@ class StockCountNotifier extends Notifier<CountSession?> {
   bool _resumeChecked = false;
 
   @override
-  CountSession? build() {
-    ref.watch(db.appDatabaseProvider);
-    return null;
-  }
+  CountSession? build() => null;
 
   Future<void> startSession({
     required String location,
@@ -27,16 +24,37 @@ class StockCountNotifier extends Notifier<CountSession?> {
       startedAt: DateTime.now(),
       status: CountSessionStatus.inProgress,
     );
-    await _persistSession(session);
+    final dao = ref.read(db.appDatabaseProvider).countSessionDao;
+    await dao.createSession(
+      db.CountSessionsCompanion.insert(
+        id: session.id,
+        location: session.location,
+        status: _statusToDb(session.status),
+        startedAt: session.startedAt,
+        label: Value(session.label),
+      ),
+    );
     state = session;
   }
 
   Future<void> addItem(CountItem item) async {
     final current = state;
     if (current == null) return;
-    final updated = current.copyWith(items: [...current.items, item]);
-    await _persistSession(updated);
-    state = updated;
+    final itemId =
+        '${current.id}_${item.itemCode}_${DateTime.now().microsecondsSinceEpoch}';
+    final dao = ref.read(db.appDatabaseProvider).countSessionDao;
+    await dao.addItem(
+      db.CountItemsCompanion.insert(
+        id: itemId,
+        sessionId: current.id,
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        expectedQty: item.expected,
+        actualQty: item.counted,
+        entryMethod: Value(item.entryMethod.name),
+      ),
+    );
+    state = current.copyWith(items: [...current.items, item]);
   }
 
   Future<void> submitSession() async {
@@ -77,34 +95,6 @@ class StockCountNotifier extends Notifier<CountSession?> {
     _resumeChecked = true;
     return loadInProgressSession();
   }
-
-  Future<void> _persistSession(CountSession session) async {
-    final dao = ref.read(db.appDatabaseProvider).countSessionDao;
-    await dao.createSession(
-      db.CountSessionsCompanion.insert(
-        id: session.id,
-        location: session.location,
-        status: _statusToDb(session.status),
-        startedAt: session.startedAt,
-        label: Value(session.label),
-      ),
-    );
-    await dao.replaceItemsForSession(
-      session.id,
-      session.items.map((item) => _itemToCompanion(session.id, item)).toList(),
-    );
-  }
-
-  db.CountItemsCompanion _itemToCompanion(String sessionId, CountItem item) =>
-      db.CountItemsCompanion.insert(
-        id: '${sessionId}_${item.itemCode}_${item.counted}_${item.entryMethod.name}',
-        sessionId: sessionId,
-        itemCode: item.itemCode,
-        itemName: item.itemName,
-        expectedQty: item.expected,
-        actualQty: item.counted,
-        entryMethod: Value(item.entryMethod.name),
-      );
 
   CountItem _itemFromDb(db.CountItem data) => CountItem(
         itemCode: data.itemCode,
