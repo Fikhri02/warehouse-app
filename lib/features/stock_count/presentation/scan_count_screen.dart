@@ -205,18 +205,19 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
       HapticFeedback.mediumImpact();
     }
 
-    final addedItem = item;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
+    // Capture notifier and messenger before any potential dispose —
+    // SnackBar callbacks fire after the widget may be gone.
+    final notifier = ref.read(stockCountNotifierProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('${addedItem.itemName} added'),
+          content: Text('${item.itemName} added'),
           duration: const Duration(seconds: 2),
           action: SnackBarAction(
             label: 'Undo',
-            onPressed: () => ref
-                .read(stockCountNotifierProvider.notifier)
-                .removeItem(addedItem.id),
+            onPressed: () => notifier.removeItem(item.id),
           ),
         ),
       );
