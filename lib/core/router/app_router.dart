@@ -112,9 +112,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.stockCountCreate,
-        builder: (_, state) => CreateCountSessionScreen(
-          skipExistingSessionPrompt: state.extra as bool? ?? false,
-        ),
+        builder: (_, __) => const CreateCountSessionScreen(),
       ),
       GoRoute(
         path: AppRoutes.stockCountScan,

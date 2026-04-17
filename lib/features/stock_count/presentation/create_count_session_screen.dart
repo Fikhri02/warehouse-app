@@ -8,7 +8,6 @@ import '../../../core/models/worker.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../data/local/app_database.dart' as db;
 import '../../../data/sample/sample_locations.dart';
 import '../../../data/sample/sample_workers.dart';
 import '../providers/create_count_session_notifier.dart';
@@ -16,15 +15,8 @@ import '../providers/stock_count_provider.dart';
 
 enum _LocationPermissionUiState { initial, denied, permanentlyDenied }
 
-enum _HintTopic { form, location, zone, worker, deadline }
-
 class CreateCountSessionScreen extends ConsumerStatefulWidget {
-  final bool skipExistingSessionPrompt;
-
-  const CreateCountSessionScreen({
-    super.key,
-    this.skipExistingSessionPrompt = false,
-  });
+  const CreateCountSessionScreen({super.key});
 
   @override
   ConsumerState<CreateCountSessionScreen> createState() =>
@@ -35,15 +27,8 @@ class _CreateCountSessionScreenState
     extends ConsumerState<CreateCountSessionScreen> {
   bool _submitted = false;
   bool _submitting = false;
-  bool _checkedExistingSession = false;
+  bool _showHints = false;
   String _workerQuery = '';
-  final Map<_HintTopic, bool> _inlineHintFlags = {
-    _HintTopic.form: false,
-    _HintTopic.location: false,
-    _HintTopic.zone: false,
-    _HintTopic.worker: false,
-    _HintTopic.deadline: false,
-  };
   _LocationPermissionUiState _locationPermissionState =
       _LocationPermissionUiState.initial;
 
@@ -52,10 +37,7 @@ class _CreateCountSessionScreenState
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
-      await _loadLocationPermissionState();
-      await _handleExistingSession();
-    });
+    Future.microtask(_loadLocationPermissionState);
   }
 
   @override
@@ -126,6 +108,7 @@ class _CreateCountSessionScreenState
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // Header: required field legend + hint toggle
                   Row(
                     children: [
                       RichText(
@@ -146,14 +129,23 @@ class _CreateCountSessionScreenState
                         ),
                       ),
                       const Spacer(),
-                      TextButton.icon(
-                        onPressed: () => _showHintDialog(_HintTopic.form),
-                        icon: const Icon(Icons.help_outline, size: 16),
-                        label: const Text('Form hint'),
+                      FilterChip(
+                        label: Text(_showHints ? 'Hide hints' : 'Show hints'),
+                        selected: _showHints,
+                        onSelected: (v) => setState(() => _showHints = v),
+                        avatar: Icon(
+                          _showHints
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 14,
+                        ),
+                        showCheckmark: false,
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ],
                   ),
-                  if (_inlineHintFlags[_HintTopic.form] == true)
+                  if (_showHints)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
@@ -164,11 +156,9 @@ class _CreateCountSessionScreenState
                       ),
                     ),
                   const SizedBox(height: 16),
-                  _FieldHeader(
-                    text: 'Location',
-                    required: true,
-                    onHint: () => _showHintDialog(_HintTopic.location),
-                  ),
+
+                  // Location field
+                  const _FieldHeader(text: 'Location', required: true),
                   const SizedBox(height: 6),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,8 +190,10 @@ class _CreateCountSessionScreenState
                         const SizedBox(width: 12),
                         OutlinedButton.icon(
                           onPressed: _useNearestLocation,
-                          icon:
-                              const Icon(Icons.my_location_outlined, size: 18),
+                          icon: const Icon(
+                            Icons.my_location_outlined,
+                            size: 18,
+                          ),
                           label: const Text('Use Nearest'),
                         ),
                       ],
@@ -211,8 +203,7 @@ class _CreateCountSessionScreenState
                     const _InlineError(
                       'Select a location before creating the session.',
                     ),
-                  if (_inlineHintFlags[_HintTopic.location] == true &&
-                      !hasLocationError)
+                  if (_showHints && !hasLocationError)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
@@ -226,6 +217,8 @@ class _CreateCountSessionScreenState
                         ),
                       ),
                     ),
+
+                  // Permanently denied location warning
                   if (_locationPermissionState ==
                       _LocationPermissionUiState.permanentlyDenied) ...[
                     const SizedBox(height: 8),
@@ -248,20 +241,22 @@ class _CreateCountSessionScreenState
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Location access is blocked. Open settings to use nearest location.',
+                              'Location permission is permanently denied. Enable it in app settings to use nearest location.',
                               style: AppTextStyles.caption.copyWith(
                                 color: AppColors.warningForeground(brightness),
                               ),
                             ),
                           ),
-                          const TextButton(
-                            onPressed: openAppSettings,
-                            child: Text('Open Settings'),
+                          TextButton(
+                            onPressed: () => openAppSettings(),
+                            child: const Text('Go to Settings'),
                           ),
                         ],
                       ),
                     ),
                   ],
+
+                  // Denied (requestable) location warning
                   if (_locationPermissionState ==
                       _LocationPermissionUiState.denied) ...[
                     const SizedBox(height: 8),
@@ -298,13 +293,12 @@ class _CreateCountSessionScreenState
                       ),
                     ),
                   ],
+
+                  // Zone / Aisle field
                   if (selectedLocation?.hasZones == true &&
                       selectedLocation!.zones.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    _FieldHeader(
-                      text: 'Zone / Aisle',
-                      onHint: () => _showHintDialog(_HintTopic.zone),
-                    ),
+                    const _FieldHeader(text: 'Zone / Aisle'),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       key: ValueKey(state.zoneAisle),
@@ -322,7 +316,7 @@ class _CreateCountSessionScreenState
                           .toList(),
                       onChanged: notifier.setZoneAisle,
                     ),
-                    if (_inlineHintFlags[_HintTopic.zone] == true)
+                    if (_showHints)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
@@ -333,11 +327,10 @@ class _CreateCountSessionScreenState
                         ),
                       ),
                   ],
+
+                  // Worker field
                   const SizedBox(height: 16),
-                  _FieldHeader(
-                    text: 'Assign Worker',
-                    onHint: () => _showHintDialog(_HintTopic.worker),
-                  ),
+                  const _FieldHeader(text: 'Assign Worker'),
                   const SizedBox(height: 6),
                   if (_showWorkerSearch) ...[
                     TextField(
@@ -388,7 +381,7 @@ class _CreateCountSessionScreenState
                     ],
                     onChanged: notifier.setWorker,
                   ),
-                  if (_inlineHintFlags[_HintTopic.worker] == true)
+                  if (_showHints)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
@@ -408,11 +401,10 @@ class _CreateCountSessionScreenState
                         ),
                       ),
                     ),
+
+                  // Deadline field
                   const SizedBox(height: 16),
-                  _FieldHeader(
-                    text: 'Deadline',
-                    onHint: () => _showHintDialog(_HintTopic.deadline),
-                  ),
+                  const _FieldHeader(text: 'Deadline'),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
@@ -465,11 +457,8 @@ class _CreateCountSessionScreenState
                     ),
                   ),
                   if (hasDeadlineError)
-                    const _InlineError(
-                      'Deadline must be in the future.',
-                    ),
-                  if (_inlineHintFlags[_HintTopic.deadline] == true &&
-                      !hasDeadlineError)
+                    const _InlineError('Deadline must be in the future.'),
+                  if (_showHints && !hasDeadlineError)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
@@ -481,6 +470,8 @@ class _CreateCountSessionScreenState
                         ),
                       ),
                     ),
+
+                  // Session summary card
                   const SizedBox(height: 16),
                   Card(
                     child: Padding(
@@ -543,80 +534,6 @@ class _CreateCountSessionScreenState
     );
   }
 
-  Future<void> _handleExistingSession() async {
-    if (_checkedExistingSession) return;
-    _checkedExistingSession = true;
-
-    final activeSession = await ref
-        .read(db.appDatabaseProvider)
-        .countSessionDao
-        .getLatestActiveSession();
-    if (!mounted || activeSession == null) return;
-
-    if (widget.skipExistingSessionPrompt) {
-      await _resumeExistingSession(activeSession);
-      return;
-    }
-
-    final isDraft = activeSession.status == 'draft';
-    final shouldResume = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          isDraft ? 'Resume existing draft?' : 'Active session already exists',
-        ),
-        content: Text(
-          isDraft
-              ? 'Only one active count session is allowed at a time. Resume the saved draft or start a new session after discarding it?'
-              : 'Only one active count session is allowed at a time. Resume the current session or start a new one after discarding it?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Back'),
-          ),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(null),
-            child: const Text('Start New'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Resume'),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted) return;
-    if (shouldResume == true) {
-      await _resumeExistingSession(activeSession);
-    } else if (shouldResume == null) {
-      await ref
-          .read(db.appDatabaseProvider)
-          .countSessionDao
-          .discardSession(activeSession.id);
-      ref.invalidate(stockCountNotifierProvider);
-      ref.invalidate(createCountSessionNotifierProvider);
-    } else {
-      context.pop();
-    }
-  }
-
-  Future<void> _resumeExistingSession(db.CountSession activeSession) async {
-    if (activeSession.status == 'draft') {
-      ref
-          .read(createCountSessionNotifierProvider.notifier)
-          .loadDraftSession(activeSession);
-      return;
-    }
-
-    await ref
-        .read(stockCountNotifierProvider.notifier)
-        .loadSessionById(activeSession.id);
-    if (!mounted) return;
-    context.go(AppRoutes.stockCountScan);
-  }
-
   Future<void> _loadLocationPermissionState() async {
     final status = await Permission.locationWhenInUse.status;
     if (!mounted) return;
@@ -668,9 +585,7 @@ class _CreateCountSessionScreenState
   }
 
   Future<void> _submit() async {
-    setState(() {
-      _submitted = true;
-    });
+    setState(() => _submitted = true);
 
     final state = ref.read(createCountSessionNotifierProvider);
     if (state.locationId == null) return;
@@ -695,54 +610,8 @@ class _CreateCountSessionScreenState
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
+      if (mounted) setState(() => _submitting = false);
     }
-  }
-
-  Future<void> _showHintDialog(_HintTopic topic) async {
-    bool showInlineHint = _inlineHintFlags[topic] ?? false;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(_hintTitle(topic)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_hintBody(topic)),
-              const SizedBox(height: 16),
-              CheckboxListTile(
-                value: showInlineHint,
-                onChanged: (value) =>
-                    setDialogState(() => showInlineHint = value ?? false),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
-                title: const Text('Show inline hint in this form'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-            FilledButton(
-              onPressed: () {
-                setState(() {
-                  _inlineHintFlags[topic] = showInlineHint;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Apply'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Location? _selectedLocation(String? locationId) {
@@ -804,36 +673,6 @@ class _CreateCountSessionScreenState
       return _LocationPermissionUiState.permanentlyDenied;
     }
     return _LocationPermissionUiState.denied;
-  }
-
-  String _hintTitle(_HintTopic topic) {
-    switch (topic) {
-      case _HintTopic.form:
-        return 'Create session hint';
-      case _HintTopic.location:
-        return 'Location hint';
-      case _HintTopic.zone:
-        return 'Zone / Aisle hint';
-      case _HintTopic.worker:
-        return 'Assign worker hint';
-      case _HintTopic.deadline:
-        return 'Deadline hint';
-    }
-  }
-
-  String _hintBody(_HintTopic topic) {
-    switch (topic) {
-      case _HintTopic.form:
-        return 'Choose the location first, then optionally narrow by zone, assign a worker, and add a deadline before starting the count.';
-      case _HintTopic.location:
-        return 'This is the only required field. It decides which warehouse or area the session belongs to.';
-      case _HintTopic.zone:
-        return 'Use this only when the selected location has mapped sections. Skip it when the count covers the whole location.';
-      case _HintTopic.worker:
-        return 'Assign a worker when the owner is already known. Leave it blank if the supervisor will assign later.';
-      case _HintTopic.deadline:
-        return 'Set a deadline only when the count must finish by a specific date. Otherwise leave it empty.';
-    }
   }
 
   _SaveIndicatorData _saveIndicatorData(CreateCountSessionState state) {
@@ -924,12 +763,10 @@ class _CreateCountSessionScreenState
 class _FieldHeader extends StatelessWidget {
   final String text;
   final bool required;
-  final VoidCallback? onHint;
 
   const _FieldHeader({
     required this.text,
     this.required = false,
-    this.onHint,
   });
 
   @override
@@ -951,21 +788,6 @@ class _FieldHeader extends StatelessWidget {
             style: AppTextStyles.micro.copyWith(
               color: AppColors.info,
               fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-        if (onHint != null) ...[
-          const SizedBox(width: 6),
-          InkWell(
-            onTap: onHint,
-            borderRadius: BorderRadius.circular(999),
-            child: Padding(
-              padding: const EdgeInsets.all(2),
-              child: Icon(
-                Icons.help_outline,
-                size: 14,
-                color: AppColors.textSecondary(brightness),
-              ),
             ),
           ),
         ],

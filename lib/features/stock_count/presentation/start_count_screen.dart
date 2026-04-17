@@ -59,7 +59,7 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
     if (session == null) return;
     if (session.status == CountSessionStatus.draft) {
       if (mounted) {
-        context.push(AppRoutes.stockCountCreate, extra: true);
+        context.push(AppRoutes.stockCountCreate);
       }
       return;
     }
@@ -199,22 +199,12 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: _resumeSession,
-                            child: Text(isDraft ? 'Resume Draft' : 'Resume'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _startNewSession,
-                            child: const Text('New Session'),
-                          ),
-                        ),
-                      ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _resumeSession,
+                        child: Text(isDraft ? 'Resume Draft' : 'Resume'),
+                      ),
                     ),
                   ],
                 ),
