@@ -12,7 +12,7 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
   Future<List<CountSession>> getAllSessions() => select(countSessions).get();
 
   Future<String> createSession(CountSessionsCompanion session) async {
-    await into(countSessions).insertOnConflictUpdate(session);
+    await saveOrUpdateDraft(session);
     return session.id.value;
   }
 
@@ -59,4 +59,25 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
           submittedAt: Value(DateTime.now()),
         ),
       );
+
+  Future<void> saveOrUpdateDraft(CountSessionsCompanion session) =>
+      into(countSessions).insertOnConflictUpdate(session);
+
+  Future<List<CountSession>> getInProgressByLocation(String locationId) =>
+      (select(countSessions)
+            ..where(
+              (s) =>
+                  s.status.equals('in_progress') &
+                  s.locationId.equals(locationId),
+            ))
+          .get();
+
+  Future<void> discardSession(String sessionId) async {
+    await transaction(() async {
+      await (delete(countItems)
+            ..where((i) => i.sessionId.equals(sessionId)))
+          .go();
+      await (delete(countSessions)..where((s) => s.id.equals(sessionId))).go();
+    });
+  }
 }

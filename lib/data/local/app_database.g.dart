@@ -1110,9 +1110,43 @@ class $CountSessionsTable extends CountSessions
   late final GeneratedColumn<DateTime> submittedAt = GeneratedColumn<DateTime>(
       'submitted_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _locationIdMeta =
+      const VerificationMeta('locationId');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, location, label, status, startedAt, submittedAt];
+  late final GeneratedColumn<String> locationId = GeneratedColumn<String>(
+      'location_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _assignedWorkerIdMeta =
+      const VerificationMeta('assignedWorkerId');
+  @override
+  late final GeneratedColumn<String> assignedWorkerId = GeneratedColumn<String>(
+      'assigned_worker_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _deadlineMeta =
+      const VerificationMeta('deadline');
+  @override
+  late final GeneratedColumn<DateTime> deadline = GeneratedColumn<DateTime>(
+      'deadline', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _zoneAisleMeta =
+      const VerificationMeta('zoneAisle');
+  @override
+  late final GeneratedColumn<String> zoneAisle = GeneratedColumn<String>(
+      'zone_aisle', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        location,
+        label,
+        status,
+        startedAt,
+        submittedAt,
+        locationId,
+        assignedWorkerId,
+        deadline,
+        zoneAisle
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1156,6 +1190,26 @@ class $CountSessionsTable extends CountSessions
           submittedAt.isAcceptableOrUnknown(
               data['submitted_at']!, _submittedAtMeta));
     }
+    if (data.containsKey('location_id')) {
+      context.handle(
+          _locationIdMeta,
+          locationId.isAcceptableOrUnknown(
+              data['location_id']!, _locationIdMeta));
+    }
+    if (data.containsKey('assigned_worker_id')) {
+      context.handle(
+          _assignedWorkerIdMeta,
+          assignedWorkerId.isAcceptableOrUnknown(
+              data['assigned_worker_id']!, _assignedWorkerIdMeta));
+    }
+    if (data.containsKey('deadline')) {
+      context.handle(_deadlineMeta,
+          deadline.isAcceptableOrUnknown(data['deadline']!, _deadlineMeta));
+    }
+    if (data.containsKey('zone_aisle')) {
+      context.handle(_zoneAisleMeta,
+          zoneAisle.isAcceptableOrUnknown(data['zone_aisle']!, _zoneAisleMeta));
+    }
     return context;
   }
 
@@ -1177,6 +1231,14 @@ class $CountSessionsTable extends CountSessions
           .read(DriftSqlType.dateTime, data['${effectivePrefix}started_at'])!,
       submittedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}submitted_at']),
+      locationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location_id']),
+      assignedWorkerId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}assigned_worker_id']),
+      deadline: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deadline']),
+      zoneAisle: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}zone_aisle']),
     );
   }
 
@@ -1193,13 +1255,21 @@ class CountSession extends DataClass implements Insertable<CountSession> {
   final String status;
   final DateTime startedAt;
   final DateTime? submittedAt;
+  final String? locationId;
+  final String? assignedWorkerId;
+  final DateTime? deadline;
+  final String? zoneAisle;
   const CountSession(
       {required this.id,
       required this.location,
       this.label,
       required this.status,
       required this.startedAt,
-      this.submittedAt});
+      this.submittedAt,
+      this.locationId,
+      this.assignedWorkerId,
+      this.deadline,
+      this.zoneAisle});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1212,6 +1282,18 @@ class CountSession extends DataClass implements Insertable<CountSession> {
     map['started_at'] = Variable<DateTime>(startedAt);
     if (!nullToAbsent || submittedAt != null) {
       map['submitted_at'] = Variable<DateTime>(submittedAt);
+    }
+    if (!nullToAbsent || locationId != null) {
+      map['location_id'] = Variable<String>(locationId);
+    }
+    if (!nullToAbsent || assignedWorkerId != null) {
+      map['assigned_worker_id'] = Variable<String>(assignedWorkerId);
+    }
+    if (!nullToAbsent || deadline != null) {
+      map['deadline'] = Variable<DateTime>(deadline);
+    }
+    if (!nullToAbsent || zoneAisle != null) {
+      map['zone_aisle'] = Variable<String>(zoneAisle);
     }
     return map;
   }
@@ -1227,6 +1309,18 @@ class CountSession extends DataClass implements Insertable<CountSession> {
       submittedAt: submittedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(submittedAt),
+      locationId: locationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(locationId),
+      assignedWorkerId: assignedWorkerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assignedWorkerId),
+      deadline: deadline == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deadline),
+      zoneAisle: zoneAisle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(zoneAisle),
     );
   }
 
@@ -1240,6 +1334,10 @@ class CountSession extends DataClass implements Insertable<CountSession> {
       status: serializer.fromJson<String>(json['status']),
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
       submittedAt: serializer.fromJson<DateTime?>(json['submittedAt']),
+      locationId: serializer.fromJson<String?>(json['locationId']),
+      assignedWorkerId: serializer.fromJson<String?>(json['assignedWorkerId']),
+      deadline: serializer.fromJson<DateTime?>(json['deadline']),
+      zoneAisle: serializer.fromJson<String?>(json['zoneAisle']),
     );
   }
   @override
@@ -1252,6 +1350,10 @@ class CountSession extends DataClass implements Insertable<CountSession> {
       'status': serializer.toJson<String>(status),
       'startedAt': serializer.toJson<DateTime>(startedAt),
       'submittedAt': serializer.toJson<DateTime?>(submittedAt),
+      'locationId': serializer.toJson<String?>(locationId),
+      'assignedWorkerId': serializer.toJson<String?>(assignedWorkerId),
+      'deadline': serializer.toJson<DateTime?>(deadline),
+      'zoneAisle': serializer.toJson<String?>(zoneAisle),
     };
   }
 
@@ -1261,7 +1363,11 @@ class CountSession extends DataClass implements Insertable<CountSession> {
           Value<String?> label = const Value.absent(),
           String? status,
           DateTime? startedAt,
-          Value<DateTime?> submittedAt = const Value.absent()}) =>
+          Value<DateTime?> submittedAt = const Value.absent(),
+          Value<String?> locationId = const Value.absent(),
+          Value<String?> assignedWorkerId = const Value.absent(),
+          Value<DateTime?> deadline = const Value.absent(),
+          Value<String?> zoneAisle = const Value.absent()}) =>
       CountSession(
         id: id ?? this.id,
         location: location ?? this.location,
@@ -1269,6 +1375,12 @@ class CountSession extends DataClass implements Insertable<CountSession> {
         status: status ?? this.status,
         startedAt: startedAt ?? this.startedAt,
         submittedAt: submittedAt.present ? submittedAt.value : this.submittedAt,
+        locationId: locationId.present ? locationId.value : this.locationId,
+        assignedWorkerId: assignedWorkerId.present
+            ? assignedWorkerId.value
+            : this.assignedWorkerId,
+        deadline: deadline.present ? deadline.value : this.deadline,
+        zoneAisle: zoneAisle.present ? zoneAisle.value : this.zoneAisle,
       );
   CountSession copyWithCompanion(CountSessionsCompanion data) {
     return CountSession(
@@ -1279,6 +1391,13 @@ class CountSession extends DataClass implements Insertable<CountSession> {
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
       submittedAt:
           data.submittedAt.present ? data.submittedAt.value : this.submittedAt,
+      locationId:
+          data.locationId.present ? data.locationId.value : this.locationId,
+      assignedWorkerId: data.assignedWorkerId.present
+          ? data.assignedWorkerId.value
+          : this.assignedWorkerId,
+      deadline: data.deadline.present ? data.deadline.value : this.deadline,
+      zoneAisle: data.zoneAisle.present ? data.zoneAisle.value : this.zoneAisle,
     );
   }
 
@@ -1290,14 +1409,18 @@ class CountSession extends DataClass implements Insertable<CountSession> {
           ..write('label: $label, ')
           ..write('status: $status, ')
           ..write('startedAt: $startedAt, ')
-          ..write('submittedAt: $submittedAt')
+          ..write('submittedAt: $submittedAt, ')
+          ..write('locationId: $locationId, ')
+          ..write('assignedWorkerId: $assignedWorkerId, ')
+          ..write('deadline: $deadline, ')
+          ..write('zoneAisle: $zoneAisle')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, location, label, status, startedAt, submittedAt);
+  int get hashCode => Object.hash(id, location, label, status, startedAt,
+      submittedAt, locationId, assignedWorkerId, deadline, zoneAisle);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1307,7 +1430,11 @@ class CountSession extends DataClass implements Insertable<CountSession> {
           other.label == this.label &&
           other.status == this.status &&
           other.startedAt == this.startedAt &&
-          other.submittedAt == this.submittedAt);
+          other.submittedAt == this.submittedAt &&
+          other.locationId == this.locationId &&
+          other.assignedWorkerId == this.assignedWorkerId &&
+          other.deadline == this.deadline &&
+          other.zoneAisle == this.zoneAisle);
 }
 
 class CountSessionsCompanion extends UpdateCompanion<CountSession> {
@@ -1317,6 +1444,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
   final Value<String> status;
   final Value<DateTime> startedAt;
   final Value<DateTime?> submittedAt;
+  final Value<String?> locationId;
+  final Value<String?> assignedWorkerId;
+  final Value<DateTime?> deadline;
+  final Value<String?> zoneAisle;
   final Value<int> rowid;
   const CountSessionsCompanion({
     this.id = const Value.absent(),
@@ -1325,6 +1456,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
     this.status = const Value.absent(),
     this.startedAt = const Value.absent(),
     this.submittedAt = const Value.absent(),
+    this.locationId = const Value.absent(),
+    this.assignedWorkerId = const Value.absent(),
+    this.deadline = const Value.absent(),
+    this.zoneAisle = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CountSessionsCompanion.insert({
@@ -1334,6 +1469,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
     required String status,
     required DateTime startedAt,
     this.submittedAt = const Value.absent(),
+    this.locationId = const Value.absent(),
+    this.assignedWorkerId = const Value.absent(),
+    this.deadline = const Value.absent(),
+    this.zoneAisle = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         location = Value(location),
@@ -1346,6 +1485,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
     Expression<String>? status,
     Expression<DateTime>? startedAt,
     Expression<DateTime>? submittedAt,
+    Expression<String>? locationId,
+    Expression<String>? assignedWorkerId,
+    Expression<DateTime>? deadline,
+    Expression<String>? zoneAisle,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1355,6 +1498,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
       if (status != null) 'status': status,
       if (startedAt != null) 'started_at': startedAt,
       if (submittedAt != null) 'submitted_at': submittedAt,
+      if (locationId != null) 'location_id': locationId,
+      if (assignedWorkerId != null) 'assigned_worker_id': assignedWorkerId,
+      if (deadline != null) 'deadline': deadline,
+      if (zoneAisle != null) 'zone_aisle': zoneAisle,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1366,6 +1513,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
       Value<String>? status,
       Value<DateTime>? startedAt,
       Value<DateTime?>? submittedAt,
+      Value<String?>? locationId,
+      Value<String?>? assignedWorkerId,
+      Value<DateTime?>? deadline,
+      Value<String?>? zoneAisle,
       Value<int>? rowid}) {
     return CountSessionsCompanion(
       id: id ?? this.id,
@@ -1374,6 +1525,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
       status: status ?? this.status,
       startedAt: startedAt ?? this.startedAt,
       submittedAt: submittedAt ?? this.submittedAt,
+      locationId: locationId ?? this.locationId,
+      assignedWorkerId: assignedWorkerId ?? this.assignedWorkerId,
+      deadline: deadline ?? this.deadline,
+      zoneAisle: zoneAisle ?? this.zoneAisle,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1399,6 +1554,18 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
     if (submittedAt.present) {
       map['submitted_at'] = Variable<DateTime>(submittedAt.value);
     }
+    if (locationId.present) {
+      map['location_id'] = Variable<String>(locationId.value);
+    }
+    if (assignedWorkerId.present) {
+      map['assigned_worker_id'] = Variable<String>(assignedWorkerId.value);
+    }
+    if (deadline.present) {
+      map['deadline'] = Variable<DateTime>(deadline.value);
+    }
+    if (zoneAisle.present) {
+      map['zone_aisle'] = Variable<String>(zoneAisle.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1414,6 +1581,10 @@ class CountSessionsCompanion extends UpdateCompanion<CountSession> {
           ..write('status: $status, ')
           ..write('startedAt: $startedAt, ')
           ..write('submittedAt: $submittedAt, ')
+          ..write('locationId: $locationId, ')
+          ..write('assignedWorkerId: $assignedWorkerId, ')
+          ..write('deadline: $deadline, ')
+          ..write('zoneAisle: $zoneAisle, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3619,6 +3790,10 @@ typedef $$CountSessionsTableCreateCompanionBuilder = CountSessionsCompanion
   required String status,
   required DateTime startedAt,
   Value<DateTime?> submittedAt,
+  Value<String?> locationId,
+  Value<String?> assignedWorkerId,
+  Value<DateTime?> deadline,
+  Value<String?> zoneAisle,
   Value<int> rowid,
 });
 typedef $$CountSessionsTableUpdateCompanionBuilder = CountSessionsCompanion
@@ -3629,6 +3804,10 @@ typedef $$CountSessionsTableUpdateCompanionBuilder = CountSessionsCompanion
   Value<String> status,
   Value<DateTime> startedAt,
   Value<DateTime?> submittedAt,
+  Value<String?> locationId,
+  Value<String?> assignedWorkerId,
+  Value<DateTime?> deadline,
+  Value<String?> zoneAisle,
   Value<int> rowid,
 });
 
@@ -3658,6 +3837,19 @@ class $$CountSessionsTableFilterComposer
 
   ColumnFilters<DateTime> get submittedAt => $composableBuilder(
       column: $table.submittedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get assignedWorkerId => $composableBuilder(
+      column: $table.assignedWorkerId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deadline => $composableBuilder(
+      column: $table.deadline, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get zoneAisle => $composableBuilder(
+      column: $table.zoneAisle, builder: (column) => ColumnFilters(column));
 }
 
 class $$CountSessionsTableOrderingComposer
@@ -3686,6 +3878,19 @@ class $$CountSessionsTableOrderingComposer
 
   ColumnOrderings<DateTime> get submittedAt => $composableBuilder(
       column: $table.submittedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get assignedWorkerId => $composableBuilder(
+      column: $table.assignedWorkerId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deadline => $composableBuilder(
+      column: $table.deadline, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get zoneAisle => $composableBuilder(
+      column: $table.zoneAisle, builder: (column) => ColumnOrderings(column));
 }
 
 class $$CountSessionsTableAnnotationComposer
@@ -3714,6 +3919,18 @@ class $$CountSessionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get submittedAt => $composableBuilder(
       column: $table.submittedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => column);
+
+  GeneratedColumn<String> get assignedWorkerId => $composableBuilder(
+      column: $table.assignedWorkerId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deadline =>
+      $composableBuilder(column: $table.deadline, builder: (column) => column);
+
+  GeneratedColumn<String> get zoneAisle =>
+      $composableBuilder(column: $table.zoneAisle, builder: (column) => column);
 }
 
 class $$CountSessionsTableTableManager extends RootTableManager<
@@ -3748,6 +3965,10 @@ class $$CountSessionsTableTableManager extends RootTableManager<
             Value<String> status = const Value.absent(),
             Value<DateTime> startedAt = const Value.absent(),
             Value<DateTime?> submittedAt = const Value.absent(),
+            Value<String?> locationId = const Value.absent(),
+            Value<String?> assignedWorkerId = const Value.absent(),
+            Value<DateTime?> deadline = const Value.absent(),
+            Value<String?> zoneAisle = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CountSessionsCompanion(
@@ -3757,6 +3978,10 @@ class $$CountSessionsTableTableManager extends RootTableManager<
             status: status,
             startedAt: startedAt,
             submittedAt: submittedAt,
+            locationId: locationId,
+            assignedWorkerId: assignedWorkerId,
+            deadline: deadline,
+            zoneAisle: zoneAisle,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -3766,6 +3991,10 @@ class $$CountSessionsTableTableManager extends RootTableManager<
             required String status,
             required DateTime startedAt,
             Value<DateTime?> submittedAt = const Value.absent(),
+            Value<String?> locationId = const Value.absent(),
+            Value<String?> assignedWorkerId = const Value.absent(),
+            Value<DateTime?> deadline = const Value.absent(),
+            Value<String?> zoneAisle = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CountSessionsCompanion.insert(
@@ -3775,6 +4004,10 @@ class $$CountSessionsTableTableManager extends RootTableManager<
             status: status,
             startedAt: startedAt,
             submittedAt: submittedAt,
+            locationId: locationId,
+            assignedWorkerId: assignedWorkerId,
+            deadline: deadline,
+            zoneAisle: zoneAisle,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

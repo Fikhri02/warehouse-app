@@ -2,11 +2,15 @@ import 'package:drift/drift.dart';
 
 class CountSessions extends Table {
   TextColumn get id => text()();
-  TextColumn get location => text()();
+  TextColumn get location => text()(); // keep this — legacy free-text
   TextColumn get label => text().nullable()();
   TextColumn get status => text()();
   DateTimeColumn get startedAt => dateTime()();
   DateTimeColumn get submittedAt => dateTime().nullable()();
+  TextColumn get locationId => text().nullable()();
+  TextColumn get assignedWorkerId => text().nullable()();
+  DateTimeColumn get deadline => dateTime().nullable()();
+  TextColumn get zoneAisle => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

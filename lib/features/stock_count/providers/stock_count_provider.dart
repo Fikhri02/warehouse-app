@@ -106,6 +106,10 @@ class StockCountNotifier extends Notifier<CountSession?> {
       startedAt: sessionRow.startedAt,
       status: _statusFromDb(sessionRow.status),
       items: itemRows.map(_itemFromDb).toList(),
+      locationId: sessionRow.locationId,
+      assignedWorkerId: sessionRow.assignedWorkerId,
+      deadline: sessionRow.deadline,
+      zoneAisle: sessionRow.zoneAisle,
     );
     state = session;
     return session;
@@ -126,12 +130,32 @@ class StockCountNotifier extends Notifier<CountSession?> {
         entryMethod: _entryMethodFromDb(data.entryMethod),
       );
 
-  CountSessionStatus _statusFromDb(String status) => status == 'submitted'
-      ? CountSessionStatus.submitted
-      : CountSessionStatus.inProgress;
+  CountSessionStatus _statusFromDb(String status) {
+    switch (status) {
+      case 'draft':
+        return CountSessionStatus.draft;
+      case 'submitted':
+        return CountSessionStatus.submitted;
+      case 'approved':
+        return CountSessionStatus.approved;
+      case 'in_progress':
+      default:
+        return CountSessionStatus.inProgress;
+    }
+  }
 
-  String _statusToDb(CountSessionStatus status) =>
-      status == CountSessionStatus.submitted ? 'submitted' : 'in_progress';
+  String _statusToDb(CountSessionStatus status) {
+    switch (status) {
+      case CountSessionStatus.draft:
+        return 'draft';
+      case CountSessionStatus.submitted:
+        return 'submitted';
+      case CountSessionStatus.approved:
+        return 'approved';
+      case CountSessionStatus.inProgress:
+        return 'in_progress';
+    }
+  }
 
   CountEntryMethod _entryMethodFromDb(String entryMethod) =>
       entryMethod == CountEntryMethod.typed.name

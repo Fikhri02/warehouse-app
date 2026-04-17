@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +48,20 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await customStatement(
               "ALTER TABLE count_items ADD COLUMN entry_method TEXT NOT NULL DEFAULT 'scanned'",
+            );
+          }
+          if (from < 3) {
+            await customStatement(
+              'ALTER TABLE count_sessions ADD COLUMN location_id TEXT',
+            );
+            await customStatement(
+              'ALTER TABLE count_sessions ADD COLUMN assigned_worker_id TEXT',
+            );
+            await customStatement(
+              'ALTER TABLE count_sessions ADD COLUMN deadline INTEGER',
+            );
+            await customStatement(
+              'ALTER TABLE count_sessions ADD COLUMN zone_aisle TEXT',
             );
           }
         },
