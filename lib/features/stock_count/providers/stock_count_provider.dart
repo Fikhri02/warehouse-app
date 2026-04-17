@@ -93,26 +93,13 @@ class StockCountNotifier extends Notifier<CountSession?> {
   Future<CountSession?> loadInProgressSession() async {
     final dao = ref.read(db.appDatabaseProvider).countSessionDao;
     final sessionRow = await dao.getLatestInProgressSession();
-    if (sessionRow == null) {
-      state = null;
-      return null;
-    }
+    return _hydrateSession(sessionRow);
+  }
 
-    final itemRows = await dao.getItemsForSession(sessionRow.id);
-    final session = CountSession(
-      id: sessionRow.id,
-      location: sessionRow.location,
-      label: sessionRow.label,
-      startedAt: sessionRow.startedAt,
-      status: _statusFromDb(sessionRow.status),
-      items: itemRows.map(_itemFromDb).toList(),
-      locationId: sessionRow.locationId,
-      assignedWorkerId: sessionRow.assignedWorkerId,
-      deadline: sessionRow.deadline,
-      zoneAisle: sessionRow.zoneAisle,
-    );
-    state = session;
-    return session;
+  Future<CountSession?> loadSessionById(String sessionId) async {
+    final dao = ref.read(db.appDatabaseProvider).countSessionDao;
+    final sessionRow = await dao.getSessionById(sessionId);
+    return _hydrateSession(sessionRow);
   }
 
   Future<CountSession?> tryResumeSession() async {
@@ -129,6 +116,32 @@ class StockCountNotifier extends Notifier<CountSession?> {
         counted: data.actualQty,
         entryMethod: _entryMethodFromDb(data.entryMethod),
       );
+
+  Future<CountSession?> _hydrateSession(db.CountSession? sessionRow) async {
+    if (sessionRow == null) {
+      state = null;
+      return null;
+    }
+
+    final itemRows = await ref
+        .read(db.appDatabaseProvider)
+        .countSessionDao
+        .getItemsForSession(sessionRow.id);
+    final session = CountSession(
+      id: sessionRow.id,
+      location: sessionRow.location,
+      label: sessionRow.label,
+      startedAt: sessionRow.startedAt,
+      status: _statusFromDb(sessionRow.status),
+      items: itemRows.map(_itemFromDb).toList(),
+      locationId: sessionRow.locationId,
+      assignedWorkerId: sessionRow.assignedWorkerId,
+      deadline: sessionRow.deadline,
+      zoneAisle: sessionRow.zoneAisle,
+    );
+    state = session;
+    return session;
+  }
 
   CountSessionStatus _statusFromDb(String status) {
     switch (status) {

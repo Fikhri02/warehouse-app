@@ -8,6 +8,7 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dashboard/presentation/supervisor_dashboard_screen.dart';
 import '../../features/dashboard/presentation/worker_dashboard_screen.dart';
 import '../../features/stock_count/presentation/start_count_screen.dart';
+import '../../features/stock_count/presentation/create_count_session_screen.dart';
 import '../../features/stock_count/presentation/scan_count_screen.dart';
 import '../../features/stock_count/presentation/count_manual_entry_screen.dart';
 import '../../features/stock_count/presentation/review_count_screen.dart';
@@ -108,6 +109,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.stockCount,
         builder: (_, __) => const StartCountScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.stockCountCreate,
+        builder: (_, __) => const CreateCountSessionScreen(),
       ),
       GoRoute(
         path: AppRoutes.stockCountScan,

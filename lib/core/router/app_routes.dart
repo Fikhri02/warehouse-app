@@ -4,6 +4,7 @@ class AppRoutes {
   static const login = '/login';
   static const dashboard = '/dashboard';
   static const stockCount = '/stock-count';
+  static const stockCountCreate = '/stock-count/create';
   static const stockCountScan = '/stock-count/scan';
   static const stockCountManualEntry = '/stock-count/scan/manual-entry';
   static const stockCountReview = '/stock-count/review';

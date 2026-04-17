@@ -44,6 +44,10 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
     return query.getSingleOrNull();
   }
 
+  Future<CountSession?> getSessionById(String sessionId) =>
+      (select(countSessions)..where((s) => s.id.equals(sessionId)))
+          .getSingleOrNull();
+
   Future<void> deleteItem(String itemId) =>
       (delete(countItems)..where((i) => i.id.equals(itemId))).go();
 
@@ -74,8 +78,7 @@ class CountSessionDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> discardSession(String sessionId) async {
     await transaction(() async {
-      await (delete(countItems)
-            ..where((i) => i.sessionId.equals(sessionId)))
+      await (delete(countItems)..where((i) => i.sessionId.equals(sessionId)))
           .go();
       await (delete(countSessions)..where((s) => s.id.equals(sessionId))).go();
     });
