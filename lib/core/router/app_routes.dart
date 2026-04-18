@@ -1,6 +1,7 @@
 class AppRoutes {
   AppRoutes._();
 
+  static const authGate = '/';
   static const login = '/login';
   static const dashboard = '/dashboard';
   static const stockCount = '/stock-count';

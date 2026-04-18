@@ -5,7 +5,7 @@ import 'package:warehouse_app/data/repositories/auth_repository.dart';
 class AuthNotifier extends AsyncNotifier<UserSession?> {
   @override
   Future<UserSession?> build() async {
-    return ref.read(authRepositoryProvider).getStoredSession();
+    return ref.watch(authRepositoryProvider).getStoredSession();
   }
 
   Future<void> login(String email, String password) async {

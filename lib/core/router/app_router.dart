@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/models/user_session.dart';
+import '../../features/auth/presentation/auth_gate_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dashboard/presentation/supervisor_dashboard_screen.dart';
 import '../../features/dashboard/presentation/worker_dashboard_screen.dart';
@@ -44,12 +45,20 @@ class _RouterNotifier extends ChangeNotifier {
 
   String? redirect(BuildContext context, GoRouterState state) {
     final authState = _ref.read(authNotifierProvider);
-    // While loading, don't redirect — let GoRouter stay where it is
-    if (authState.isLoading) return null;
+    final isAuthGateRoute = state.matchedLocation == AppRoutes.authGate;
+    final isLoginRoute = state.matchedLocation == AppRoutes.login;
+
+    // Hold startup on the auth gate until the stored session is resolved.
+    if (authState.isLoading) {
+      return isAuthGateRoute ? null : AppRoutes.authGate;
+    }
 
     final session = authState.valueOrNull;
     final isLoggedIn = session != null;
-    final isLoginRoute = state.matchedLocation == AppRoutes.login;
+
+    if (isAuthGateRoute) {
+      return isLoggedIn ? AppRoutes.dashboard : AppRoutes.login;
+    }
 
     if (!isLoggedIn && !isLoginRoute) return AppRoutes.login;
     if (isLoggedIn && isLoginRoute) return AppRoutes.dashboard;
@@ -75,11 +84,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    initialLocation: AppRoutes.login,
+    initialLocation: AppRoutes.authGate,
     refreshListenable: notifier,
     observers: [appRouteObserver],
     redirect: notifier.redirect,
     routes: [
+      GoRoute(
+        path: AppRoutes.authGate,
+        builder: (_, __) => const AuthGateScreen(),
+      ),
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
