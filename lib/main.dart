@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_router.dart';
 import 'package:warehouse_app/core/theme/app_theme.dart';
 import 'package:warehouse_app/data/repositories/alerts_repository.dart';
@@ -16,14 +17,21 @@ import 'package:warehouse_app/data/sync/sync_provider.dart';
 import 'package:warehouse_app/features/stock_count/providers/stock_count_provider.dart';
 import 'package:warehouse_app/features/profile/providers/profile_provider.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  const storage = FlutterSecureStorage();
+  final authRepository = SampleAuthRepository(storage);
+  final initialSession = await authRepository.getStoredSession();
+
   runApp(
     ProviderScope(
       overrides: [
         alertsRepositoryProvider.overrideWith((_) => SampleAlertsRepository()),
+        authBootstrapStateProvider.overrideWith(
+          (_) => AuthBootstrapState.hydrated(initialSession),
+        ),
         authRepositoryProvider.overrideWith(
-          (_) => SampleAuthRepository(const FlutterSecureStorage()),
+          (_) => authRepository,
         ),
         receivingRepositoryProvider.overrideWith(
           (_) => SampleReceivingRepository(),

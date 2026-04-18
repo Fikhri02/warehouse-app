@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/models/user_session.dart';
-import '../../features/auth/presentation/auth_gate_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dashboard/presentation/supervisor_dashboard_screen.dart';
 import '../../features/dashboard/presentation/worker_dashboard_screen.dart';
@@ -45,20 +44,12 @@ class _RouterNotifier extends ChangeNotifier {
 
   String? redirect(BuildContext context, GoRouterState state) {
     final authState = _ref.read(authNotifierProvider);
-    final isAuthGateRoute = state.matchedLocation == AppRoutes.authGate;
     final isLoginRoute = state.matchedLocation == AppRoutes.login;
 
-    // Hold startup on the auth gate until the stored session is resolved.
-    if (authState.isLoading) {
-      return (isAuthGateRoute || isLoginRoute) ? null : AppRoutes.authGate;
-    }
+    if (authState.isLoading) return null;
 
     final session = authState.valueOrNull;
     final isLoggedIn = session != null;
-
-    if (isAuthGateRoute) {
-      return isLoggedIn ? AppRoutes.dashboard : AppRoutes.login;
-    }
 
     if (!isLoggedIn && !isLoginRoute) return AppRoutes.login;
     if (isLoggedIn && isLoginRoute) return AppRoutes.dashboard;
@@ -82,17 +73,15 @@ class _RouterNotifier extends ChangeNotifier {
 final appRouterProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(ref);
   ref.onDispose(notifier.dispose);
+  final initialSession = ref.read(authNotifierProvider).valueOrNull;
 
   return GoRouter(
-    initialLocation: AppRoutes.authGate,
+    initialLocation:
+        initialSession == null ? AppRoutes.login : AppRoutes.dashboard,
     refreshListenable: notifier,
     observers: [appRouteObserver],
     redirect: notifier.redirect,
     routes: [
-      GoRoute(
-        path: AppRoutes.authGate,
-        builder: (_, __) => const AuthGateScreen(),
-      ),
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
