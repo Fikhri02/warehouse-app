@@ -33,6 +33,7 @@ class ScanCountScreen extends ConsumerStatefulWidget {
 class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     with RouteAware {
   static const double _collapsedCameraHeight = 240;
+  static const double _previewSwipeVelocityThreshold = 250;
 
   final MobileScannerController _scannerController = MobileScannerController();
   final Set<String> _skipDuplicateWarnings = <String>{};
@@ -403,6 +404,37 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     });
   }
 
+  void _handlePreviewSwipeDown() {
+    setState(() {
+      if (!_isCameraExpanded) {
+        _isCameraExpanded = true;
+        _keepCameraExpanded = false;
+        return;
+      }
+      _keepCameraExpanded = true;
+    });
+  }
+
+  void _handlePreviewSwipeUp() {
+    if (!_isCameraExpanded && !_keepCameraExpanded) return;
+    setState(() {
+      _isCameraExpanded = false;
+      _keepCameraExpanded = false;
+    });
+  }
+
+  void _handlePreviewVerticalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity;
+    if (velocity == null) return;
+    if (velocity > _previewSwipeVelocityThreshold) {
+      _handlePreviewSwipeDown();
+      return;
+    }
+    if (velocity < -_previewSwipeVelocityThreshold) {
+      _handlePreviewSwipeUp();
+    }
+  }
+
   Future<void> _setZoomScale(double zoomScale) async {
     if (!_scannerController.value.isInitialized ||
         !_scannerController.value.isRunning) {
@@ -723,6 +755,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
               children: [
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  onVerticalDragEnd: _handlePreviewVerticalDragEnd,
                   onScaleStart: _handlePreviewScaleStart,
                   onScaleUpdate: _handlePreviewScaleUpdate,
                   onScaleEnd: _handlePreviewScaleEnd,
