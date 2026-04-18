@@ -50,7 +50,7 @@ class _RouterNotifier extends ChangeNotifier {
 
     // Hold startup on the auth gate until the stored session is resolved.
     if (authState.isLoading) {
-      return isAuthGateRoute ? null : AppRoutes.authGate;
+      return (isAuthGateRoute || isLoginRoute) ? null : AppRoutes.authGate;
     }
 
     final session = authState.valueOrNull;
