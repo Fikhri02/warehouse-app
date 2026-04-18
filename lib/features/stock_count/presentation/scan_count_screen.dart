@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,13 +32,20 @@ class ScanCountScreen extends ConsumerStatefulWidget {
 
 class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     with RouteAware {
+  static const double _collapsedCameraHeight = 240;
+
+  final MobileScannerController _scannerController = MobileScannerController();
   final Set<String> _skipDuplicateWarnings = <String>{};
   DateTime? _lastBackPressAt;
   ({String code, String name})? _scanned;
   int _qty = 0;
   bool _scanning = true;
   bool _isRouteVisible = true;
+  bool _isCameraExpanded = false;
+  bool _keepCameraExpanded = false;
+  bool _didResetZoomScale = false;
   int _scannerMountVersion = 0;
+  double? _zoomScaleAtGestureStart;
   _CameraPermissionUiState _permissionState = _CameraPermissionUiState.checking;
 
   @override
@@ -61,6 +69,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
   void dispose() {
     WakelockPlus.disable();
     appRouteObserver.unsubscribe(this);
+    _scannerController.dispose();
     super.dispose();
   }
 
@@ -75,6 +84,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     if (!mounted) return;
     setState(() {
       _isRouteVisible = true;
+      _didResetZoomScale = false;
       _scannerMountVersion++;
     });
     Future.microtask(_refreshPermissionState);
@@ -116,7 +126,12 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null) return;
 
-    setState(() => _scanning = false);
+    setState(() {
+      _scanning = false;
+      if (_isCameraExpanded && !_keepCameraExpanded) {
+        _isCameraExpanded = false;
+      }
+    });
     try {
       final name = await ref
           .read(stockCountRepositoryProvider)
@@ -369,6 +384,50 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
       );
   }
 
+  void _toggleCameraExpansion() {
+    setState(() {
+      if (_isCameraExpanded) {
+        _isCameraExpanded = false;
+        _keepCameraExpanded = false;
+      } else {
+        _isCameraExpanded = true;
+        _keepCameraExpanded = false;
+      }
+    });
+  }
+
+  void _togglePinnedExpansion() {
+    setState(() {
+      _isCameraExpanded = true;
+      _keepCameraExpanded = !_keepCameraExpanded;
+    });
+  }
+
+  Future<void> _setZoomScale(double zoomScale) async {
+    if (!_scannerController.value.isInitialized ||
+        !_scannerController.value.isRunning) {
+      return;
+    }
+    await _scannerController.setZoomScale(zoomScale.clamp(0.0, 1.0));
+  }
+
+  void _handlePreviewScaleStart(ScaleStartDetails details) {
+    if (details.pointerCount < 2) return;
+    _zoomScaleAtGestureStart = _scannerController.value.zoomScale;
+  }
+
+  void _handlePreviewScaleUpdate(ScaleUpdateDetails details) {
+    if (details.pointerCount < 2) return;
+    final baseZoom =
+        _zoomScaleAtGestureStart ?? _scannerController.value.zoomScale;
+    final nextZoom = (baseZoom + ((details.scale - 1) * 0.35)).clamp(0.0, 1.0);
+    unawaited(_setZoomScale(nextZoom));
+  }
+
+  void _handlePreviewScaleEnd(ScaleEndDetails details) {
+    _zoomScaleAtGestureStart = null;
+  }
+
   Future<void> _showSessionPreview(CountSession session) async {
     final brightness = Theme.of(context).brightness;
     final location = _findLocation(session.locationId);
@@ -386,50 +445,14 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
 
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Session Information'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PreviewRow(
-              label: 'Location',
-              value: location?.name ?? session.location,
-              brightness: brightness,
-            ),
-            _PreviewRow(
-              label: 'Zone / Aisle',
-              value: session.zoneAisle ?? '—',
-              brightness: brightness,
-            ),
-            _PreviewRow(
-              label: 'Assigned worker',
-              value: worker?.name ?? 'Unassigned',
-              brightness: brightness,
-            ),
-            _PreviewRow(
-              label: 'Deadline',
-              value: deadline,
-              brightness: brightness,
-            ),
-            _PreviewRow(
-              label: 'Started',
-              value: '$startedDate, $startedTime',
-              brightness: brightness,
-            ),
-            _PreviewRow(
-              label: 'Count progress',
-              value: '${session.items.length} items · $totalUnits units',
-              brightness: brightness,
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+      builder: (context) => _SessionInfoDialog(
+        brightness: brightness,
+        location: location?.name ?? session.location,
+        zoneAisle: session.zoneAisle ?? '—',
+        assignedWorker: worker?.name ?? 'Unassigned',
+        deadline: deadline,
+        startedAt: '$startedDate, $startedTime',
+        progress: '${session.items.length} items · $totalUnits units',
       ),
     );
   }
@@ -490,6 +513,13 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     final items = session.items;
     final totalUnits = items.fold(0, (sum, i) => sum + i.counted);
     final brightness = Theme.of(context).brightness;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final expandedCameraHeight = math.min(
+      math.max(screenHeight * 0.42, 320.0),
+      420.0,
+    );
+    final cameraHeight =
+        _isCameraExpanded ? expandedCameraHeight : _collapsedCameraHeight;
 
     return PopScope(
       canPop: false,
@@ -526,8 +556,10 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
           top: false,
           child: Column(
             children: [
-              SizedBox(
-                height: 240,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                height: cameraHeight,
                 child: _buildCameraPanel(brightness),
               ),
               Expanded(
@@ -669,72 +701,153 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
         if (!_isRouteVisible) {
           return Container(color: Colors.black);
         }
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            MobileScanner(
-              key: ValueKey('scanner-$_scannerMountVersion'),
-              onDetect: _onDetect,
-              errorBuilder: (context, error, child) => Container(
-                color: Colors.black,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.white, size: 32),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Camera preview unavailable',
-                      style: AppTextStyles.body.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+        return ValueListenableBuilder<MobileScannerState>(
+          valueListenable: _scannerController,
+          builder: (context, scannerState, _) {
+            if (scannerState.isInitialized &&
+                scannerState.isRunning &&
+                !_didResetZoomScale) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted ||
+                    _didResetZoomScale ||
+                    !_scannerController.value.isInitialized ||
+                    !_scannerController.value.isRunning) {
+                  return;
+                }
+                _didResetZoomScale = true;
+                unawaited(_scannerController.resetZoomScale());
+              });
+            }
+
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onScaleStart: _handlePreviewScaleStart,
+                  onScaleUpdate: _handlePreviewScaleUpdate,
+                  onScaleEnd: _handlePreviewScaleEnd,
+                  child: MobileScanner(
+                    key: ValueKey('scanner-$_scannerMountVersion'),
+                    controller: _scannerController,
+                    onDetect: _onDetect,
+                    errorBuilder: (context, error, child) => Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.white, size: 32),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Camera preview unavailable',
+                            style: AppTextStyles.body.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            error.errorCode.name,
+                            style: AppTextStyles.caption
+                                .copyWith(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: () {
+                              setState(() {
+                                _didResetZoomScale = false;
+                                _scannerMountVersion++;
+                              });
+                              _refreshPermissionState();
+                            },
+                            child: const Text('Retry Camera'),
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      error.errorCode.name,
-                      style:
-                          AppTextStyles.caption.copyWith(color: Colors.white70),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() => _scannerMountVersion++);
-                        _refreshPermissionState();
-                      },
-                      child: const Text('Retry Camera'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (!_scanning)
-              Container(
-                color: Colors.black.withValues(alpha: 0.28),
-                alignment: Alignment.center,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Scan paused while reviewing item',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-              ),
-          ],
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Column(
+                    children: [
+                      _CameraControlButton(
+                        icon: scannerState.torchState == TorchState.on
+                            ? Icons.flashlight_on_rounded
+                            : Icons.flashlight_off_rounded,
+                        tooltip:
+                            scannerState.torchState == TorchState.unavailable
+                                ? 'Torch unavailable'
+                                : scannerState.torchState == TorchState.on
+                                    ? 'Turn torch off'
+                                    : 'Turn torch on',
+                        selected: scannerState.torchState == TorchState.on,
+                        enabled:
+                            scannerState.torchState != TorchState.unavailable,
+                        onPressed: () =>
+                            unawaited(_scannerController.toggleTorch()),
+                      ),
+                      const SizedBox(height: 8),
+                      _CameraControlButton(
+                        icon: _keepCameraExpanded
+                            ? Icons.push_pin_outlined
+                            : _isCameraExpanded
+                                ? Icons.unfold_less
+                                : Icons.unfold_more,
+                        tooltip: _keepCameraExpanded
+                            ? 'Pinned open'
+                            : _isCameraExpanded
+                                ? 'Collapse camera preview'
+                                : 'Expand camera preview',
+                        selected: _isCameraExpanded,
+                        onPressed: _toggleCameraExpansion,
+                        onDoubleTap: _togglePinnedExpansion,
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: _ZoomControlBar(
+                    zoomScale: scannerState.zoomScale,
+                    enabled:
+                        scannerState.isInitialized && scannerState.isRunning,
+                    onChanged: (value) => unawaited(_setZoomScale(value)),
+                  ),
+                ),
+                if (!_scanning)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.28),
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Scan paused while reviewing item',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       case _CameraPermissionUiState.denied:
         return _PermissionPanel(
@@ -755,6 +868,97 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
           brightness: brightness,
         );
     }
+  }
+}
+
+class _CameraControlButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback? onPressed;
+  final VoidCallback? onDoubleTap;
+
+  const _CameraControlButton({
+    required this.icon,
+    required this.tooltip,
+    this.selected = false,
+    this.enabled = true,
+    this.onPressed,
+    this.onDoubleTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = selected
+        ? AppColors.primary.withValues(alpha: 0.92)
+        : Colors.black.withValues(alpha: 0.42);
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: enabled ? backgroundColor : Colors.black.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          onDoubleTap: enabled ? onDoubleTap : null,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              icon,
+              size: 20,
+              color: enabled ? Colors.white : Colors.white54,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZoomControlBar extends StatelessWidget {
+  final double zoomScale;
+  final bool enabled;
+  final ValueChanged<double> onChanged;
+
+  const _ZoomControlBar({
+    required this.zoomScale,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.zoom_out_rounded, size: 18, color: Colors.white),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                activeTrackColor: Colors.white,
+                inactiveTrackColor: Colors.white24,
+                thumbColor: AppColors.primary,
+                overlayColor: Colors.white24,
+              ),
+              child: Slider(
+                value: zoomScale.clamp(0.0, 1.0),
+                onChanged: enabled ? onChanged : null,
+              ),
+            ),
+          ),
+          const Icon(Icons.zoom_in_rounded, size: 18, color: Colors.white),
+        ],
+      ),
+    );
   }
 }
 
@@ -880,6 +1084,143 @@ class _SmallBadge extends StatelessWidget {
         label,
         style: AppTextStyles.micro.copyWith(
           color: AppColors.textSecondary(brightness),
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionInfoDialog extends StatelessWidget {
+  final Brightness brightness;
+  final String location;
+  final String zoneAisle;
+  final String assignedWorker;
+  final String deadline;
+  final String startedAt;
+  final String progress;
+
+  const _SessionInfoDialog({
+    required this.brightness,
+    required this.location,
+    required this.zoneAisle,
+    required this.assignedWorker,
+    required this.deadline,
+    required this.startedAt,
+    required this.progress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ColoredBox(
+              color: AppColors.primary,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Session Information',
+                            style: AppTextStyles.display.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Current session snapshot',
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Material(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        borderRadius: BorderRadius.circular(10),
+                        child: const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Icon(Icons.close, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ColoredBox(
+              color: AppColors.surfaceFor(brightness),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _PreviewRow(
+                      label: 'Location',
+                      value: location,
+                      brightness: brightness,
+                    ),
+                    _PreviewRow(
+                      label: 'Zone / Aisle',
+                      value: zoneAisle,
+                      brightness: brightness,
+                    ),
+                    _PreviewRow(
+                      label: 'Assigned worker',
+                      value: assignedWorker,
+                      brightness: brightness,
+                    ),
+                    _PreviewRow(
+                      label: 'Deadline',
+                      value: deadline,
+                      brightness: brightness,
+                    ),
+                    _PreviewRow(
+                      label: 'Started',
+                      value: startedAt,
+                      brightness: brightness,
+                    ),
+                    _PreviewRow(
+                      label: 'Count progress',
+                      value: progress,
+                      brightness: brightness,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Close'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
