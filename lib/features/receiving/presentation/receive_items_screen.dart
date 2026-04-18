@@ -1,11 +1,15 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import '../../../core/models/purchase_order.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/scanner_preview_panel.dart';
 import '../providers/receiving_provider.dart';
 
 class ReceiveItemsScreen extends ConsumerStatefulWidget {
@@ -16,14 +20,10 @@ class ReceiveItemsScreen extends ConsumerStatefulWidget {
 }
 
 class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
-  final MobileScannerController _scanner = MobileScannerController();
-  bool _processingBarcode = false;
+  static const double _collapsedCameraHeight = 240;
 
-  @override
-  void dispose() {
-    _scanner.dispose();
-    super.dispose();
-  }
+  bool _processingBarcode = false;
+  bool _isCameraExpanded = false;
 
   void _onDetect(BarcodeCapture capture) {
     if (_processingBarcode) return;
@@ -298,80 +298,103 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                SizedBox(
-                  height: 140,
-                  child: MobileScanner(
-                    controller: _scanner,
-                    onDetect: _onDetect,
-                  ),
-                ),
-                Positioned(
-                  right: 10,
-                  bottom: 10,
-                  child: FilledButton.tonalIcon(
-                    onPressed: _showManualEntryDialog,
-                    icon: const Icon(Icons.keyboard, size: 14),
-                    label: const Text('Manual'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      textStyle: AppTextStyles.caption.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            IntrinsicHeight(
-              child: Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final actionsBar = SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _StatCell(
-                      label: 'Fulfilled',
-                      value: fulfilled,
-                      color: AppColors.success),
-                  _StatCell(
-                      label: 'Short', value: short, color: AppColors.warning),
-                  _StatCell(
-                      label: 'Extra', value: extra, color: AppColors.error),
-                  _StatCell(label: 'Remaining', value: remaining, color: null),
+                  OutlinedButton.icon(
+                    onPressed: _showManualEntryDialog,
+                    icon: const Icon(Icons.keyboard_alt_outlined),
+                    label: const Text('Manual Entry'),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () => _onProceed(order),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 44),
+                    ),
+                    child: const Text('Proceed'),
+                  ),
                 ],
               ),
-            ),
-            const _TableHeader(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return _ItemRow(
-                    index: index + 1,
-                    item: item,
-                    onFlag: () => _showFlagDialog(item),
-                  );
-                },
-              ),
-            ),
-            SafeArea(
-              top: false,
-              minimum: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: ElevatedButton(
-                onPressed: () => _onProceed(order),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 44),
+            );
+
+            final bottomInsets = MediaQuery.paddingOf(context).bottom;
+            final actionBarHeight = 120.0 + bottomInsets;
+            final expandedCameraHeight = math.max(
+              constraints.maxHeight - actionBarHeight,
+              _collapsedCameraHeight,
+            );
+
+            return Column(
+              children: [
+                ScannerPreviewPanel(
+                  collapsedHeight: _collapsedCameraHeight,
+                  expandedHeight: expandedCameraHeight,
+                  paused: _processingBarcode,
+                  pausedLabel: 'Scan paused while matching item',
+                  onExpandedChanged: (isExpanded) {
+                    if (_isCameraExpanded == isExpanded) return;
+                    setState(() => _isCameraExpanded = isExpanded);
+                  },
+                  onDetect: (capture) async => _onDetect(capture),
                 ),
-                child: const Text('Proceed'),
-              ),
-            ),
-          ],
+                if (!_isCameraExpanded)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        IntrinsicHeight(
+                          child: Row(
+                            children: [
+                              _StatCell(
+                                label: 'Fulfilled',
+                                value: fulfilled,
+                                color: AppColors.success,
+                              ),
+                              _StatCell(
+                                label: 'Short',
+                                value: short,
+                                color: AppColors.warning,
+                              ),
+                              _StatCell(
+                                label: 'Extra',
+                                value: extra,
+                                color: AppColors.error,
+                              ),
+                              _StatCell(
+                                label: 'Remaining',
+                                value: remaining,
+                                color: null,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const _TableHeader(),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              final item = items[index];
+                              return _ItemRow(
+                                index: index + 1,
+                                item: item,
+                                onFlag: () => _showFlagDialog(item),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                actionsBar,
+              ],
+            );
+          },
         ),
       ),
     );
