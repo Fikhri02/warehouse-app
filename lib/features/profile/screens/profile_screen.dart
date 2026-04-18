@@ -16,6 +16,7 @@ class ProfileScreen extends ConsumerWidget {
 
     if (session == null) return const SizedBox.shrink();
 
+    final brightness = Theme.of(context).brightness;
     final initials = session.name
         .split(' ')
         .take(2)
@@ -23,8 +24,9 @@ class ProfileScreen extends ConsumerWidget {
         .join();
 
     return Scaffold(
-      body: Column(
-        children: [
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
           // Green header with avatar
           Container(
             width: double.infinity,
@@ -48,25 +50,17 @@ class ProfileScreen extends ConsumerWidget {
                       AppTextStyles.headlineSmall.copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    session.role.name[0].toUpperCase() +
-                        session.role.name.substring(1),
-                    style:
-                        AppTextStyles.bodySmall.copyWith(color: Colors.white),
-                  ),
+                Text(
+                  session.role.name[0].toUpperCase() +
+                      session.role.name.substring(1),
+                  style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
                 ),
               ],
             ),
           ),
 
-          // Info rows
+          // Profile Information section
+          _SectionHeader(label: 'Profile Information', brightness: brightness),
           _InfoTile(
             label: 'Email',
             value: session.email,
@@ -77,9 +71,10 @@ class ProfileScreen extends ConsumerWidget {
             value: session.site,
             icon: Icons.warehouse_outlined,
           ),
-          const Divider(height: 1),
 
-          // Settings toggles
+          // Preferences section
+          _SectionHeader(label: 'Preferences', brightness: brightness),
+
           SwitchListTile(
             value: settings.biometricEnabled,
             onChanged: (_) => notifier.toggleBiometric(),
@@ -109,7 +104,7 @@ class ProfileScreen extends ConsumerWidget {
             activeThumbColor: AppColors.primary,
           ),
 
-          const Spacer(),
+          const SizedBox(height: 24),
 
           // Sign out
           Padding(
@@ -129,6 +124,28 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  final Brightness brightness;
+
+  const _SectionHeader({required this.label, required this.brightness});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: AppTextStyles.micro.copyWith(
+          color: AppColors.textSecondary(brightness),
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

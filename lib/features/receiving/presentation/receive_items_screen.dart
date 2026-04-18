@@ -6,6 +6,8 @@ import '../../../core/models/purchase_order.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/haptic_util.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../providers/receiving_provider.dart';
 
 class ReceiveItemsScreen extends ConsumerStatefulWidget {
@@ -31,6 +33,9 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
     if (barcode == null) return;
 
     _processingBarcode = true;
+    if (ref.read(profileSettingsProvider).hapticFeedbackEnabled) {
+      vibrateOnScan();
+    }
     final found =
         ref.read(activeReceiveNotifierProvider.notifier).scanItem(barcode);
     if (!found) {

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../core/utils/haptic_util.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -117,6 +117,9 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     if (code == null) return;
 
     setState(() => _scanning = false);
+    if (ref.read(profileSettingsProvider).hapticFeedbackEnabled) {
+      vibrateOnScan();
+    }
     try {
       final name = await ref
           .read(stockCountRepositoryProvider)
@@ -205,10 +208,6 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
 
     await ref.read(stockCountNotifierProvider.notifier).addItem(item);
     if (!mounted) return;
-
-    if (ref.read(profileSettingsProvider).hapticFeedbackEnabled) {
-      HapticFeedback.mediumImpact();
-    }
 
     // Capture notifier and messenger before any potential dispose —
     // SnackBar callbacks fire after the widget may be gone.
