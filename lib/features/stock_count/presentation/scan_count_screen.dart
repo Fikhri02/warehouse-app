@@ -511,15 +511,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
     }
 
     final items = session.items;
-    final totalUnits = items.fold(0, (sum, i) => sum + i.counted);
     final brightness = Theme.of(context).brightness;
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    final expandedCameraHeight = math.min(
-      math.max(screenHeight * 0.42, 320.0),
-      420.0,
-    );
-    final cameraHeight =
-        _isCameraExpanded ? expandedCameraHeight : _collapsedCameraHeight;
 
     return PopScope(
       canPop: false,
@@ -539,37 +531,13 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
               icon: const Icon(Icons.info_outline),
               tooltip: 'Session information',
             ),
-            if (items.isNotEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: Text(
-                    '${items.length} items · $totalUnits units',
-                    style:
-                        AppTextStyles.caption.copyWith(color: Colors.white70),
-                  ),
-                ),
-              ),
           ],
         ),
         body: SafeArea(
           top: false,
-          child: Column(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                height: cameraHeight,
-                child: _buildCameraPanel(brightness),
-              ),
-              Expanded(
-                child: _scanned != null
-                    ? _buildConfirmPanel(brightness)
-                    : items.isEmpty
-                        ? _buildHint(brightness)
-                        : _buildItemsList(items, brightness),
-              ),
-              SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final actionsBar = SafeArea(
                 top: false,
                 minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(
@@ -591,8 +559,39 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen>
                     ),
                   ],
                 ),
-              ),
-            ],
+              );
+
+              final bottomInsets = MediaQuery.paddingOf(context).bottom;
+              final actionBarHeight =
+                  _scanned == null ? 120.0 + bottomInsets : 72.0 + bottomInsets;
+              final expandedCameraHeight = math.max(
+                constraints.maxHeight - actionBarHeight,
+                _collapsedCameraHeight,
+              );
+              final cameraHeight = _isCameraExpanded
+                  ? expandedCameraHeight
+                  : _collapsedCameraHeight;
+
+              return Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    height: cameraHeight,
+                    child: _buildCameraPanel(brightness),
+                  ),
+                  if (!_isCameraExpanded)
+                    Expanded(
+                      child: _scanned != null
+                          ? _buildConfirmPanel(brightness)
+                          : items.isEmpty
+                              ? _buildHint(brightness)
+                              : _buildItemsList(items, brightness),
+                    ),
+                  actionsBar,
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -932,22 +931,30 @@ class _ZoomControlBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+      margin: const EdgeInsets.symmetric(horizontal: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.black.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.zoom_out_rounded, size: 18, color: Colors.white),
+          Icon(
+            Icons.zoom_out_rounded,
+            size: 14,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
           Expanded(
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                activeTrackColor: Colors.white,
-                inactiveTrackColor: Colors.white24,
-                thumbColor: AppColors.primary,
-                overlayColor: Colors.white24,
+                trackHeight: 2,
+                activeTrackColor: Colors.white.withValues(alpha: 0.7),
+                inactiveTrackColor: Colors.white.withValues(alpha: 0.18),
+                thumbColor: Colors.white.withValues(alpha: 0.82),
+                overlayColor: Colors.white.withValues(alpha: 0.08),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
               ),
               child: Slider(
                 value: zoomScale.clamp(0.0, 1.0),
@@ -955,7 +962,11 @@ class _ZoomControlBar extends StatelessWidget {
               ),
             ),
           ),
-          const Icon(Icons.zoom_in_rounded, size: 18, color: Colors.white),
+          Icon(
+            Icons.zoom_in_rounded,
+            size: 14,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
         ],
       ),
     );
