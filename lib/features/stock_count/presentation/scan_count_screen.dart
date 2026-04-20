@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../../core/haptics.dart';
 import '../../../core/models/count_session.dart';
 import '../../../core/models/location.dart';
 import '../../../core/models/worker.dart';
@@ -14,7 +14,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/qty_adjuster.dart';
-import '../../../core/widgets/scanner_preview_panel.dart';
+import '../../../core/widgets/scan_mode_panel.dart';
 import '../../../data/sample/sample_locations.dart';
 import '../../../data/sample/sample_workers.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -153,7 +153,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
     if (!mounted) return;
 
     if (ref.read(profileSettingsProvider).hapticFeedbackEnabled) {
-      HapticFeedback.mediumImpact();
+      triggerScanHapticFeedback();
     }
 
     // Capture notifier and messenger before any potential dispose —
@@ -458,11 +458,11 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
 
               return Column(
                 children: [
-                  ScannerPreviewPanel(
+                  ScanModePanel(
                     collapsedHeight: _collapsedCameraHeight,
                     expandedHeight: expandedCameraHeight,
-                    paused: !_scanning,
-                    pausedLabel: 'Scan paused while reviewing item',
+                    // paused: !_scanning,
+                    // pausedLabel: 'Scan paused while reviewing item',
                     onExpandedChanged: (isExpanded) {
                       if (_isCameraExpanded == isExpanded) return;
                       setState(() => _isCameraExpanded = isExpanded);

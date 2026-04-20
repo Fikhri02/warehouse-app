@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../core/haptics.dart';
 import '../../../core/models/purchase_order.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/scanner_preview_panel.dart';
+import '../../../core/widgets/scan_mode_panel.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../providers/receiving_provider.dart';
 
 class ReceiveItemsScreen extends ConsumerStatefulWidget {
@@ -21,9 +23,16 @@ class ReceiveItemsScreen extends ConsumerStatefulWidget {
 
 class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
   static const double _collapsedCameraHeight = 240;
+  static const double _minimumCollapsedCameraHeight = 120;
+  static const double _minimumDetailsPanelHeight = 140;
 
   bool _processingBarcode = false;
   bool _isCameraExpanded = false;
+
+  void _triggerScanHaptics() {
+    if (!ref.read(profileSettingsProvider).hapticFeedbackEnabled) return;
+    triggerScanHapticFeedback();
+  }
 
   void _onDetect(BarcodeCapture capture) {
     if (_processingBarcode) return;
@@ -36,6 +45,7 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
     if (!found) {
       _showUnknownItemDialog(barcode);
     } else {
+      _triggerScanHaptics();
       Future<void>.delayed(
         const Duration(milliseconds: 800),
         () => _processingBarcode = false,
@@ -142,65 +152,27 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
   }
 
   Future<void> _showManualEntryDialog() async {
-    final codeController = TextEditingController();
-    final qtyController = TextEditingController(text: '1');
-
-    await showDialog<void>(
+    final result = await showDialog<({String code, int qty})>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Manual Entry'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: codeController,
-              decoration: const InputDecoration(labelText: 'Item code'),
-              autofocus: true,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: qtyController,
-              decoration: const InputDecoration(labelText: 'Qty'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final code = codeController.text.trim();
-              final qty = int.tryParse(qtyController.text) ?? 1;
-              if (code.isEmpty) return;
-
-              Navigator.of(context).pop();
-              final found = ref
-                  .read(activeReceiveNotifierProvider.notifier)
-                  .scanItem(code);
-              if (!found) {
-                ref.read(activeReceiveNotifierProvider.notifier).addUnknownItem(
-                      itemCode: code,
-                      itemName: code,
-                      qty: qty,
-                    );
-              } else {
-                ref.read(activeReceiveNotifierProvider.notifier).confirmItem(
-                      itemCode: code,
-                      received: qty,
-                    );
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      builder: (context) => const _ManualEntryDialog(),
     );
+    if (result == null) return;
 
-    codeController.dispose();
-    qtyController.dispose();
+    final found =
+        ref.read(activeReceiveNotifierProvider.notifier).scanItem(result.code);
+    if (!found) {
+      ref.read(activeReceiveNotifierProvider.notifier).addUnknownItem(
+            itemCode: result.code,
+            itemName: result.code,
+            qty: result.qty,
+          );
+    } else {
+      ref.read(activeReceiveNotifierProvider.notifier).confirmItem(
+            itemCode: result.code,
+            received: result.qty,
+          );
+    }
+    _triggerScanHaptics();
   }
 
   Future<void> _onProceed(PurchaseOrder order) async {
@@ -326,18 +298,27 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
 
             final bottomInsets = MediaQuery.paddingOf(context).bottom;
             final actionBarHeight = 120.0 + bottomInsets;
+            final collapsedCameraHeight = math.min(
+              _collapsedCameraHeight,
+              math.max(
+                _minimumCollapsedCameraHeight,
+                constraints.maxHeight -
+                    actionBarHeight -
+                    _minimumDetailsPanelHeight,
+              ),
+            );
             final expandedCameraHeight = math.max(
               constraints.maxHeight - actionBarHeight,
-              _collapsedCameraHeight,
+              collapsedCameraHeight,
             );
 
             return Column(
               children: [
-                ScannerPreviewPanel(
-                  collapsedHeight: _collapsedCameraHeight,
+                ScanModePanel(
+                  collapsedHeight: collapsedCameraHeight,
                   expandedHeight: expandedCameraHeight,
-                  paused: _processingBarcode,
-                  pausedLabel: 'Scan paused while matching item',
+                  // paused: _processingBarcode,
+                  // pausedLabel: 'Scan paused while matching item',
                   onExpandedChanged: (isExpanded) {
                     if (_isCameraExpanded == isExpanded) return;
                     setState(() => _isCameraExpanded = isExpanded);
@@ -548,10 +529,10 @@ class _ItemRow extends StatelessWidget {
     }
 
     return Container(
-      color: _rowColor,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      decoration: BoxDecoration(
+        color: _rowColor,
+        border: const Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: Row(
         children: [
@@ -641,6 +622,77 @@ class _ItemRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ManualEntryDialog extends StatefulWidget {
+  const _ManualEntryDialog();
+
+  @override
+  State<_ManualEntryDialog> createState() => _ManualEntryDialogState();
+}
+
+class _ManualEntryDialogState extends State<_ManualEntryDialog> {
+  late final TextEditingController _codeController;
+  late final TextEditingController _qtyController;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController = TextEditingController();
+    _qtyController = TextEditingController(text: '1');
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _qtyController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final code = _codeController.text.trim();
+    if (code.isEmpty) return;
+
+    Navigator.of(context).pop((
+      code: code,
+      qty: int.tryParse(_qtyController.text) ?? 1,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Manual Entry'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _codeController,
+            decoration: const InputDecoration(labelText: 'Item code'),
+            autofocus: true,
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _qtyController,
+            decoration: const InputDecoration(labelText: 'Qty'),
+            keyboardType: TextInputType.number,
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Add'),
+        ),
+      ],
     );
   }
 }
