@@ -77,6 +77,18 @@ class SupervisorDashboardScreen extends ConsumerWidget {
                 icon: Icons.bar_chart_outlined,
                 onTap: () => context.push(AppRoutes.reports),
               ),
+              QuickActionCard(
+                label: 'Delivery Orders',
+                subtitle: 'Manage transfers',
+                icon: Icons.local_shipping_outlined,
+                onTap: () => context.push(AppRoutes.deliveryOrders),
+              ),
+              QuickActionCard(
+                label: 'Sales Orders',
+                subtitle: 'Customer sales',
+                icon: Icons.receipt_long_outlined,
+                onTap: () => context.push(AppRoutes.salesOrders),
+              ),
             ],
           ),
           const SizedBox(height: 20),

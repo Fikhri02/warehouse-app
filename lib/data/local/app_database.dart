@@ -5,11 +5,13 @@ import 'package:warehouse_app/data/local/tables/user_session_table.dart';
 import 'package:warehouse_app/data/local/tables/alert_table.dart';
 import 'package:warehouse_app/data/local/tables/staff_task_table.dart';
 import 'package:warehouse_app/data/local/tables/count_session_table.dart';
+import 'package:warehouse_app/data/local/tables/order_tables.dart';
 import 'package:warehouse_app/data/local/tables/purchase_order_table.dart';
 import 'package:warehouse_app/data/local/tables/sync_queue_table.dart';
 import 'package:warehouse_app/data/local/daos/alerts_dao.dart';
 import 'package:warehouse_app/data/local/daos/tasks_dao.dart';
 import 'package:warehouse_app/data/local/daos/count_session_dao.dart';
+import 'package:warehouse_app/data/local/daos/orders_dao.dart';
 import 'package:warehouse_app/data/local/daos/receiving_dao.dart';
 import 'package:warehouse_app/data/local/daos/sync_queue_dao.dart';
 
@@ -22,6 +24,11 @@ part 'app_database.g.dart';
     StaffTasks,
     CountSessions,
     CountItems,
+    LocationEntries,
+    DeliveryOrderEntries,
+    SalesOrderEntries,
+    OrderItemEntries,
+    OrderStatusHistoryEntries,
     PurchaseOrders,
     PoLineItems,
     SyncQueue,
@@ -30,6 +37,7 @@ part 'app_database.g.dart';
     AlertsDao,
     TasksDao,
     CountSessionDao,
+    OrdersDao,
     ReceivingDao,
     SyncQueueDao,
   ],
@@ -40,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +75,13 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await migrator.addColumn(purchaseOrders, purchaseOrders.dueDate);
             await migrator.addColumn(poLineItems, poLineItems.flagReason);
+          }
+          if (from < 5) {
+            await migrator.createTable(locationEntries);
+            await migrator.createTable(deliveryOrderEntries);
+            await migrator.createTable(salesOrderEntries);
+            await migrator.createTable(orderItemEntries);
+            await migrator.createTable(orderStatusHistoryEntries);
           }
         },
       );

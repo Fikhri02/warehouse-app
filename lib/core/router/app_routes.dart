@@ -13,6 +13,12 @@ class AppRoutes {
   static const receivingSummary = '/receiving/summary';
   static const receivingSignature = '/receiving/summary/signature';
   static const receivingDetails = '/receiving/details';
+  static const deliveryOrders = '/delivery-orders';
+  static const deliveryOrderNew = '/delivery-orders/new';
+  static const deliveryOrderDetail = '/delivery-orders/detail';
+  static const salesOrders = '/sales-orders';
+  static const salesOrderNew = '/sales-orders/new';
+  static const salesOrderDetail = '/sales-orders/detail';
   static const alerts = '/alerts';
   static const profile = '/profile';
   static const tasks = '/tasks';

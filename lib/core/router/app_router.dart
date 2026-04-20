@@ -17,6 +17,12 @@ import '../../features/receiving/presentation/po_details_screen.dart';
 import '../../features/receiving/presentation/receive_items_screen.dart';
 import '../../features/receiving/presentation/receive_summary_screen.dart';
 import '../../features/receiving/presentation/signature_pad_screen.dart';
+import '../../features/delivery_orders/presentation/delivery_orders_list_screen.dart';
+import '../../features/delivery_orders/presentation/delivery_order_create_screen.dart';
+import '../../features/delivery_orders/presentation/delivery_order_detail_screen.dart';
+import '../../features/sales_orders/presentation/sales_orders_list_screen.dart';
+import '../../features/sales_orders/presentation/sales_order_create_screen.dart';
+import '../../features/sales_orders/presentation/sales_order_detail_screen.dart';
 import '../../features/alerts/screens/alerts_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/tasks/screens/tasks_screen.dart';
@@ -154,6 +160,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.receivingDetails,
         builder: (_, state) => PoDetailsScreen(poId: state.extra as String),
+      ),
+      GoRoute(
+        path: AppRoutes.deliveryOrders,
+        builder: (_, __) => const DeliveryOrdersListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.deliveryOrderNew,
+        builder: (_, state) => DeliveryOrderCreateScreen(
+          editingOrder: state.extra as dynamic,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.deliveryOrderDetail,
+        builder: (_, state) =>
+            DeliveryOrderDetailScreen(id: state.extra as int),
+      ),
+      GoRoute(
+        path: AppRoutes.salesOrders,
+        builder: (_, __) => const SalesOrdersListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.salesOrderNew,
+        builder: (_, state) => SalesOrderCreateScreen(
+          editingOrder: state.extra as dynamic,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.salesOrderDetail,
+        builder: (_, state) => SalesOrderDetailScreen(id: state.extra as int),
       ),
       GoRoute(
         path: AppRoutes.tasks,

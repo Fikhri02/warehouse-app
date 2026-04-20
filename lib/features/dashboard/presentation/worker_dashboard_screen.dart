@@ -66,6 +66,18 @@ class WorkerDashboardScreen extends ConsumerWidget {
                 icon: Icons.move_to_inbox_outlined,
                 onTap: () => context.push(AppRoutes.receiving),
               ),
+              QuickActionCard(
+                label: 'Delivery Orders',
+                subtitle: 'Manage transfers',
+                icon: Icons.local_shipping_outlined,
+                onTap: () => context.push(AppRoutes.deliveryOrders),
+              ),
+              QuickActionCard(
+                label: 'Sales Orders',
+                subtitle: 'Customer sales',
+                icon: Icons.receipt_long_outlined,
+                onTap: () => context.push(AppRoutes.salesOrders),
+              ),
             ],
           ),
           const SizedBox(height: 20),

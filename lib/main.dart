@@ -6,6 +6,7 @@ import 'package:warehouse_app/core/router/app_router.dart';
 import 'package:warehouse_app/core/theme/app_theme.dart';
 import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 import 'package:warehouse_app/data/repositories/auth_repository.dart';
+import 'package:warehouse_app/data/repositories/orders_repository.dart';
 import 'package:warehouse_app/data/repositories/receiving_repository.dart';
 import 'package:warehouse_app/data/repositories/tasks_repository.dart';
 import 'package:warehouse_app/data/sample/sample_alerts_repository.dart';
@@ -32,6 +33,9 @@ Future<void> main() async {
         ),
         authRepositoryProvider.overrideWith(
           (_) => authRepository,
+        ),
+        ordersRepositoryProvider.overrideWith(
+          (_) => SampleOrdersRepository(),
         ),
         receivingRepositoryProvider.overrideWith(
           (_) => SampleReceivingRepository(),
