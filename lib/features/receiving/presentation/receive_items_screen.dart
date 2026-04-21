@@ -26,6 +26,7 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
   static const double _minimumCollapsedCameraHeight = 120;
   static const double _minimumDetailsPanelHeight = 140;
 
+  final ScanModeController _scanModeController = ScanModeController();
   bool _processingBarcode = false;
   bool _isCameraExpanded = false;
 
@@ -312,68 +313,72 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
               collapsedCameraHeight,
             );
 
-            return Column(
-              children: [
-                ScanModePanel(
-                  collapsedHeight: collapsedCameraHeight,
-                  expandedHeight: expandedCameraHeight,
-                  // paused: _processingBarcode,
-                  // pausedLabel: 'Scan paused while matching item',
-                  onExpandedChanged: (isExpanded) {
-                    if (_isCameraExpanded == isExpanded) return;
-                    setState(() => _isCameraExpanded = isExpanded);
-                  },
-                  onDetect: (capture) async => _onDetect(capture),
-                ),
-                if (!_isCameraExpanded)
-                  Expanded(
-                    child: Column(
-                      children: [
-                        IntrinsicHeight(
-                          child: Row(
-                            children: [
-                              _StatCell(
-                                label: 'Fulfilled',
-                                value: fulfilled,
-                                color: AppColors.success,
-                              ),
-                              _StatCell(
-                                label: 'Short',
-                                value: short,
-                                color: AppColors.warning,
-                              ),
-                              _StatCell(
-                                label: 'Extra',
-                                value: extra,
-                                color: AppColors.error,
-                              ),
-                              _StatCell(
-                                label: 'Remaining',
-                                value: remaining,
-                                color: null,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const _TableHeader(),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: items.length,
-                            itemBuilder: (context, index) {
-                              final item = items[index];
-                              return _ItemRow(
-                                index: index + 1,
-                                item: item,
-                                onFlag: () => _showFlagDialog(item),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+            return ScanModeSurface(
+              controller: _scanModeController,
+              child: Column(
+                children: [
+                  ScanModePanel(
+                    controller: _scanModeController,
+                    collapsedHeight: collapsedCameraHeight,
+                    expandedHeight: expandedCameraHeight,
+                    // paused: _processingBarcode,
+                    // pausedLabel: 'Scan paused while matching item',
+                    onExpandedChanged: (isExpanded) {
+                      if (_isCameraExpanded == isExpanded) return;
+                      setState(() => _isCameraExpanded = isExpanded);
+                    },
+                    onDetect: (capture) async => _onDetect(capture),
                   ),
-                actionsBar,
-              ],
+                  if (!_isCameraExpanded)
+                    Expanded(
+                      child: Column(
+                        children: [
+                          IntrinsicHeight(
+                            child: Row(
+                              children: [
+                                _StatCell(
+                                  label: 'Fulfilled',
+                                  value: fulfilled,
+                                  color: AppColors.success,
+                                ),
+                                _StatCell(
+                                  label: 'Short',
+                                  value: short,
+                                  color: AppColors.warning,
+                                ),
+                                _StatCell(
+                                  label: 'Extra',
+                                  value: extra,
+                                  color: AppColors.error,
+                                ),
+                                _StatCell(
+                                  label: 'Remaining',
+                                  value: remaining,
+                                  color: null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const _TableHeader(),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: items.length,
+                              itemBuilder: (context, index) {
+                                final item = items[index];
+                                return _ItemRow(
+                                  index: index + 1,
+                                  item: item,
+                                  onFlag: () => _showFlagDialog(item),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  actionsBar,
+                ],
+              ),
             );
           },
         ),

@@ -10,6 +10,59 @@ import 'scanner_preview_panel.dart';
 
 enum ScanMode { oneSnap, bulk, threeSecDelay }
 
+const double kScanModeSwipeVelocityThreshold = 220;
+
+class ScanModeController {
+  _ScanModePanelState? _state;
+
+  void nextMode() => _state?._changeMode(1);
+
+  void previousMode() => _state?._changeMode(-1);
+
+  void _attach(_ScanModePanelState state) {
+    _state = state;
+  }
+
+  void _detach(_ScanModePanelState state) {
+    if (_state == state) {
+      _state = null;
+    }
+  }
+}
+
+class ScanModeSurface extends StatelessWidget {
+  final ScanModeController controller;
+  final Widget child;
+
+  const ScanModeSurface({
+    required this.controller,
+    required this.child,
+    super.key,
+  });
+
+  void _handleHorizontalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity;
+    if (velocity == null || velocity.abs() < kScanModeSwipeVelocityThreshold) {
+      return;
+    }
+
+    if (velocity < 0) {
+      controller.nextMode();
+    } else {
+      controller.previousMode();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragEnd: _handleHorizontalDragEnd,
+      child: child,
+    );
+  }
+}
+
 class ScanModePanel extends StatefulWidget {
   final FutureOr<void> Function(BarcodeCapture capture) onDetect;
   final double collapsedHeight;
@@ -18,6 +71,9 @@ class ScanModePanel extends StatefulWidget {
   final String pausedLabel;
   final Widget? bottomRightOverlay;
   final ValueChanged<bool>? onExpandedChanged;
+  final ScanModeController? controller;
+  @visibleForTesting
+  final Widget? preview;
 
   const ScanModePanel({
     required this.onDetect,
@@ -27,6 +83,8 @@ class ScanModePanel extends StatefulWidget {
     this.pausedLabel = 'Scan paused',
     this.bottomRightOverlay,
     this.onExpandedChanged,
+    this.controller,
+    this.preview,
     super.key,
   });
 
@@ -40,7 +98,6 @@ class _ScanModePanelState extends State<ScanModePanel> {
     ScanMode.bulk,
     ScanMode.threeSecDelay,
   ];
-  static const double _swipeVelocityThreshold = 220;
   static const Duration _modePillDuration = Duration(milliseconds: 1500);
   static const Duration _delayDuration = Duration(seconds: 3);
   static const Duration _countdownTick = Duration(milliseconds: 100);
@@ -67,11 +124,23 @@ class _ScanModePanelState extends State<ScanModePanel> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._attach(this);
     _showModePillTemporarily();
   }
 
   @override
+  void didUpdateWidget(covariant ScanModePanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) {
+      return;
+    }
+    oldWidget.controller?._detach(this);
+    widget.controller?._attach(this);
+  }
+
+  @override
   void dispose() {
+    widget.controller?._detach(this);
     _modePillTimer?.cancel();
     _countdownTimer?.cancel();
     super.dispose();
@@ -146,16 +215,6 @@ class _ScanModePanelState extends State<ScanModePanel> {
     _showModePillTemporarily();
   }
 
-  void _handleHorizontalDragEnd(DragEndDetails details) {
-    final velocity = details.primaryVelocity;
-    if (velocity == null || velocity.abs() < _swipeVelocityThreshold) return;
-    if (velocity < 0) {
-      _changeMode(1);
-    } else {
-      _changeMode(-1);
-    }
-  }
-
   void _armOneSnapMode() {
     if (_mode != ScanMode.oneSnap) return;
     setState(() => _oneSnapArmed = true);
@@ -177,21 +236,16 @@ class _ScanModePanelState extends State<ScanModePanel> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        ScannerPreviewPanel(
-          collapsedHeight: widget.collapsedHeight,
-          expandedHeight: widget.expandedHeight,
-          paused: widget.paused,
-          pausedLabel: widget.pausedLabel,
-          bottomRightOverlay: widget.bottomRightOverlay,
-          onExpandedChanged: widget.onExpandedChanged,
-          onDetect: _handleDetect,
-        ),
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onHorizontalDragEnd: _handleHorizontalDragEnd,
-          ),
-        ),
+        widget.preview ??
+            ScannerPreviewPanel(
+              collapsedHeight: widget.collapsedHeight,
+              expandedHeight: widget.expandedHeight,
+              paused: widget.paused,
+              pausedLabel: widget.pausedLabel,
+              bottomRightOverlay: widget.bottomRightOverlay,
+              onExpandedChanged: widget.onExpandedChanged,
+              onDetect: _handleDetect,
+            ),
         Positioned(
           top: 12,
           left: 0,

@@ -30,6 +30,7 @@ class ScanCountScreen extends ConsumerStatefulWidget {
 class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
   static const double _collapsedCameraHeight = 240;
 
+  final ScanModeController _scanModeController = ScanModeController();
   final Set<String> _skipDuplicateWarnings = <String>{};
   DateTime? _lastBackPressAt;
   ({String code, String name})? _scanned;
@@ -456,29 +457,33 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
                 _collapsedCameraHeight,
               );
 
-              return Column(
-                children: [
-                  ScanModePanel(
-                    collapsedHeight: _collapsedCameraHeight,
-                    expandedHeight: expandedCameraHeight,
-                    // paused: !_scanning,
-                    // pausedLabel: 'Scan paused while reviewing item',
-                    onExpandedChanged: (isExpanded) {
-                      if (_isCameraExpanded == isExpanded) return;
-                      setState(() => _isCameraExpanded = isExpanded);
-                    },
-                    onDetect: _onDetect,
-                  ),
-                  if (!_isCameraExpanded)
-                    Expanded(
-                      child: _scanned != null
-                          ? _buildConfirmPanel(brightness)
-                          : items.isEmpty
-                              ? _buildHint(brightness)
-                              : _buildItemsList(items, brightness),
+              return ScanModeSurface(
+                controller: _scanModeController,
+                child: Column(
+                  children: [
+                    ScanModePanel(
+                      controller: _scanModeController,
+                      collapsedHeight: _collapsedCameraHeight,
+                      expandedHeight: expandedCameraHeight,
+                      // paused: !_scanning,
+                      // pausedLabel: 'Scan paused while reviewing item',
+                      onExpandedChanged: (isExpanded) {
+                        if (_isCameraExpanded == isExpanded) return;
+                        setState(() => _isCameraExpanded = isExpanded);
+                      },
+                      onDetect: _onDetect,
                     ),
-                  actionsBar,
-                ],
+                    if (!_isCameraExpanded)
+                      Expanded(
+                        child: _scanned != null
+                            ? _buildConfirmPanel(brightness)
+                            : items.isEmpty
+                                ? _buildHint(brightness)
+                                : _buildItemsList(items, brightness),
+                      ),
+                    actionsBar,
+                  ],
+                ),
               );
             },
           ),
