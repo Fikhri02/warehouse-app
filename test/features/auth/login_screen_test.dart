@@ -57,10 +57,8 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-        find.byType(TextFormField).first, 'bad@test.com');
-    await tester.enterText(
-        find.byType(TextFormField).last, 'wrongpassword');
+    await tester.enterText(find.byType(TextFormField).first, 'bad@test.com');
+    await tester.enterText(find.byType(TextFormField).last, 'wrongpassword');
     await tester.tap(find.text('Sign In'));
     await tester.pumpAndSettle();
 

@@ -49,7 +49,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Brand header
           Container(
             color: AppColors.primary,
             width: double.infinity,
@@ -77,7 +76,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ],
             ),
           ),
-          // Form
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),

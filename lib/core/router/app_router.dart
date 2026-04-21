@@ -5,6 +5,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/models/user_session.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/dashboard/presentation/supervisor_dashboard_screen.dart';
 import '../../features/dashboard/presentation/worker_dashboard_screen.dart';
 import '../../features/stock_count/presentation/start_count_screen.dart';
@@ -51,14 +52,16 @@ class _RouterNotifier extends ChangeNotifier {
   String? redirect(BuildContext context, GoRouterState state) {
     final authState = _ref.read(authNotifierProvider);
     final isLoginRoute = state.matchedLocation == AppRoutes.login;
+    final isWelcomeRoute = state.matchedLocation == AppRoutes.welcome;
+    final isAuthEntryRoute = isLoginRoute || isWelcomeRoute;
 
     if (authState.isLoading) return null;
 
     final session = authState.valueOrNull;
     final isLoggedIn = session != null;
 
-    if (!isLoggedIn && !isLoginRoute) return AppRoutes.login;
-    if (isLoggedIn && isLoginRoute) return AppRoutes.dashboard;
+    if (!isLoggedIn && !isAuthEntryRoute) return AppRoutes.welcome;
+    if (isLoggedIn && isAuthEntryRoute) return AppRoutes.dashboard;
 
     // Enforce supervisor-only routes
     final supervisorOnly = [
@@ -83,11 +86,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation:
-        initialSession == null ? AppRoutes.login : AppRoutes.dashboard,
+        initialSession == null ? AppRoutes.welcome : AppRoutes.dashboard,
     refreshListenable: notifier,
     observers: [appRouteObserver],
     redirect: notifier.redirect,
     routes: [
+      GoRoute(
+        path: AppRoutes.welcome,
+        builder: (_, __) => const WelcomeScreen(),
+      ),
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
