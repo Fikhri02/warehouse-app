@@ -1620,6 +1620,11 @@ class $CountItemsTable extends CountItems
   late final GeneratedColumn<String> itemName = GeneratedColumn<String>(
       'item_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+      'item_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _expectedQtyMeta =
       const VerificationMeta('expectedQty');
   @override
@@ -1656,6 +1661,7 @@ class $CountItemsTable extends CountItems
         sessionId,
         itemCode,
         itemName,
+        itemId,
         expectedQty,
         actualQty,
         entryMethod,
@@ -1693,6 +1699,10 @@ class $CountItemsTable extends CountItems
           itemName.isAcceptableOrUnknown(data['item_name']!, _itemNameMeta));
     } else if (isInserting) {
       context.missing(_itemNameMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
     }
     if (data.containsKey('expected_qty')) {
       context.handle(
@@ -1735,6 +1745,8 @@ class $CountItemsTable extends CountItems
           .read(DriftSqlType.string, data['${effectivePrefix}item_code'])!,
       itemName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}item_name'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}item_id']),
       expectedQty: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}expected_qty'])!,
       actualQty: attachedDatabase.typeMapping
@@ -1757,6 +1769,9 @@ class CountItem extends DataClass implements Insertable<CountItem> {
   final String sessionId;
   final String itemCode;
   final String itemName;
+
+  /// The server's item id. Null in Sample mode, where itemCode is all there is.
+  final String? itemId;
   final int expectedQty;
   final int actualQty;
   final String entryMethod;
@@ -1766,6 +1781,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       required this.sessionId,
       required this.itemCode,
       required this.itemName,
+      this.itemId,
       required this.expectedQty,
       required this.actualQty,
       required this.entryMethod,
@@ -1777,6 +1793,9 @@ class CountItem extends DataClass implements Insertable<CountItem> {
     map['session_id'] = Variable<String>(sessionId);
     map['item_code'] = Variable<String>(itemCode);
     map['item_name'] = Variable<String>(itemName);
+    if (!nullToAbsent || itemId != null) {
+      map['item_id'] = Variable<String>(itemId);
+    }
     map['expected_qty'] = Variable<int>(expectedQty);
     map['actual_qty'] = Variable<int>(actualQty);
     map['entry_method'] = Variable<String>(entryMethod);
@@ -1790,6 +1809,8 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       sessionId: Value(sessionId),
       itemCode: Value(itemCode),
       itemName: Value(itemName),
+      itemId:
+          itemId == null && nullToAbsent ? const Value.absent() : Value(itemId),
       expectedQty: Value(expectedQty),
       actualQty: Value(actualQty),
       entryMethod: Value(entryMethod),
@@ -1805,6 +1826,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       sessionId: serializer.fromJson<String>(json['sessionId']),
       itemCode: serializer.fromJson<String>(json['itemCode']),
       itemName: serializer.fromJson<String>(json['itemName']),
+      itemId: serializer.fromJson<String?>(json['itemId']),
       expectedQty: serializer.fromJson<int>(json['expectedQty']),
       actualQty: serializer.fromJson<int>(json['actualQty']),
       entryMethod: serializer.fromJson<String>(json['entryMethod']),
@@ -1819,6 +1841,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       'sessionId': serializer.toJson<String>(sessionId),
       'itemCode': serializer.toJson<String>(itemCode),
       'itemName': serializer.toJson<String>(itemName),
+      'itemId': serializer.toJson<String?>(itemId),
       'expectedQty': serializer.toJson<int>(expectedQty),
       'actualQty': serializer.toJson<int>(actualQty),
       'entryMethod': serializer.toJson<String>(entryMethod),
@@ -1831,6 +1854,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
           String? sessionId,
           String? itemCode,
           String? itemName,
+          Value<String?> itemId = const Value.absent(),
           int? expectedQty,
           int? actualQty,
           String? entryMethod,
@@ -1840,6 +1864,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
         sessionId: sessionId ?? this.sessionId,
         itemCode: itemCode ?? this.itemCode,
         itemName: itemName ?? this.itemName,
+        itemId: itemId.present ? itemId.value : this.itemId,
         expectedQty: expectedQty ?? this.expectedQty,
         actualQty: actualQty ?? this.actualQty,
         entryMethod: entryMethod ?? this.entryMethod,
@@ -1851,6 +1876,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
       itemCode: data.itemCode.present ? data.itemCode.value : this.itemCode,
       itemName: data.itemName.present ? data.itemName.value : this.itemName,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
       expectedQty:
           data.expectedQty.present ? data.expectedQty.value : this.expectedQty,
       actualQty: data.actualQty.present ? data.actualQty.value : this.actualQty,
@@ -1867,6 +1893,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
           ..write('sessionId: $sessionId, ')
           ..write('itemCode: $itemCode, ')
           ..write('itemName: $itemName, ')
+          ..write('itemId: $itemId, ')
           ..write('expectedQty: $expectedQty, ')
           ..write('actualQty: $actualQty, ')
           ..write('entryMethod: $entryMethod, ')
@@ -1876,7 +1903,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
   }
 
   @override
-  int get hashCode => Object.hash(id, sessionId, itemCode, itemName,
+  int get hashCode => Object.hash(id, sessionId, itemCode, itemName, itemId,
       expectedQty, actualQty, entryMethod, skipped);
   @override
   bool operator ==(Object other) =>
@@ -1886,6 +1913,7 @@ class CountItem extends DataClass implements Insertable<CountItem> {
           other.sessionId == this.sessionId &&
           other.itemCode == this.itemCode &&
           other.itemName == this.itemName &&
+          other.itemId == this.itemId &&
           other.expectedQty == this.expectedQty &&
           other.actualQty == this.actualQty &&
           other.entryMethod == this.entryMethod &&
@@ -1897,6 +1925,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
   final Value<String> sessionId;
   final Value<String> itemCode;
   final Value<String> itemName;
+  final Value<String?> itemId;
   final Value<int> expectedQty;
   final Value<int> actualQty;
   final Value<String> entryMethod;
@@ -1907,6 +1936,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     this.sessionId = const Value.absent(),
     this.itemCode = const Value.absent(),
     this.itemName = const Value.absent(),
+    this.itemId = const Value.absent(),
     this.expectedQty = const Value.absent(),
     this.actualQty = const Value.absent(),
     this.entryMethod = const Value.absent(),
@@ -1918,6 +1948,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     required String sessionId,
     required String itemCode,
     required String itemName,
+    this.itemId = const Value.absent(),
     required int expectedQty,
     required int actualQty,
     this.entryMethod = const Value.absent(),
@@ -1934,6 +1965,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     Expression<String>? sessionId,
     Expression<String>? itemCode,
     Expression<String>? itemName,
+    Expression<String>? itemId,
     Expression<int>? expectedQty,
     Expression<int>? actualQty,
     Expression<String>? entryMethod,
@@ -1945,6 +1977,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
       if (sessionId != null) 'session_id': sessionId,
       if (itemCode != null) 'item_code': itemCode,
       if (itemName != null) 'item_name': itemName,
+      if (itemId != null) 'item_id': itemId,
       if (expectedQty != null) 'expected_qty': expectedQty,
       if (actualQty != null) 'actual_qty': actualQty,
       if (entryMethod != null) 'entry_method': entryMethod,
@@ -1958,6 +1991,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
       Value<String>? sessionId,
       Value<String>? itemCode,
       Value<String>? itemName,
+      Value<String?>? itemId,
       Value<int>? expectedQty,
       Value<int>? actualQty,
       Value<String>? entryMethod,
@@ -1968,6 +2002,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
       sessionId: sessionId ?? this.sessionId,
       itemCode: itemCode ?? this.itemCode,
       itemName: itemName ?? this.itemName,
+      itemId: itemId ?? this.itemId,
       expectedQty: expectedQty ?? this.expectedQty,
       actualQty: actualQty ?? this.actualQty,
       entryMethod: entryMethod ?? this.entryMethod,
@@ -1990,6 +2025,9 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
     }
     if (itemName.present) {
       map['item_name'] = Variable<String>(itemName.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
     }
     if (expectedQty.present) {
       map['expected_qty'] = Variable<int>(expectedQty.value);
@@ -2016,6 +2054,7 @@ class CountItemsCompanion extends UpdateCompanion<CountItem> {
           ..write('sessionId: $sessionId, ')
           ..write('itemCode: $itemCode, ')
           ..write('itemName: $itemName, ')
+          ..write('itemId: $itemId, ')
           ..write('expectedQty: $expectedQty, ')
           ..write('actualQty: $actualQty, ')
           ..write('entryMethod: $entryMethod, ')
@@ -4946,9 +4985,54 @@ class $SyncQueueTable extends SyncQueue
   late final GeneratedColumn<DateTime> syncedAt = GeneratedColumn<DateTime>(
       'synced_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _idempotencyKeyMeta =
+      const VerificationMeta('idempotencyKey');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, operationType, referenceId, payload, queuedAt, synced, syncedAt];
+  late final GeneratedColumn<String> idempotencyKey = GeneratedColumn<String>(
+      'idempotency_key', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('pending'));
+  static const VerificationMeta _attemptsMeta =
+      const VerificationMeta('attempts');
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+      'attempts', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _lastErrorMeta =
+      const VerificationMeta('lastError');
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+      'last_error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        operationType,
+        referenceId,
+        payload,
+        queuedAt,
+        synced,
+        syncedAt,
+        idempotencyKey,
+        status,
+        attempts,
+        lastError,
+        warehouseId
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4996,6 +5080,30 @@ class $SyncQueueTable extends SyncQueue
       context.handle(_syncedAtMeta,
           syncedAt.isAcceptableOrUnknown(data['synced_at']!, _syncedAtMeta));
     }
+    if (data.containsKey('idempotency_key')) {
+      context.handle(
+          _idempotencyKeyMeta,
+          idempotencyKey.isAcceptableOrUnknown(
+              data['idempotency_key']!, _idempotencyKeyMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(_attemptsMeta,
+          attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta));
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(_lastErrorMeta,
+          lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta));
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    }
     return context;
   }
 
@@ -5019,6 +5127,16 @@ class $SyncQueueTable extends SyncQueue
           .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
       syncedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}synced_at']),
+      idempotencyKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}idempotency_key']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      attempts: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}attempts'])!,
+      lastError: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_error']),
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
     );
   }
 
@@ -5036,6 +5154,17 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   final DateTime queuedAt;
   final bool synced;
   final DateTime? syncedAt;
+
+  /// Sent as Idempotency-Key, unchanged on every retry of this command.
+  final String? idempotencyKey;
+
+  /// pending · synced · conflicted (the server answered 409) · failed (any other refusal) · dismissed
+  final String status;
+  final int attempts;
+
+  /// The server's problem details for a conflicted or failed command, as JSON.
+  final String? lastError;
+  final String? warehouseId;
   const SyncQueueData(
       {required this.id,
       required this.operationType,
@@ -5043,7 +5172,12 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
       required this.payload,
       required this.queuedAt,
       required this.synced,
-      this.syncedAt});
+      this.syncedAt,
+      this.idempotencyKey,
+      required this.status,
+      required this.attempts,
+      this.lastError,
+      this.warehouseId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -5055,6 +5189,17 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
     map['synced'] = Variable<bool>(synced);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
+    }
+    if (!nullToAbsent || idempotencyKey != null) {
+      map['idempotency_key'] = Variable<String>(idempotencyKey);
+    }
+    map['status'] = Variable<String>(status);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    if (!nullToAbsent || warehouseId != null) {
+      map['warehouse_id'] = Variable<String>(warehouseId);
     }
     return map;
   }
@@ -5070,6 +5215,17 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(syncedAt),
+      idempotencyKey: idempotencyKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(idempotencyKey),
+      status: Value(status),
+      attempts: Value(attempts),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      warehouseId: warehouseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warehouseId),
     );
   }
 
@@ -5084,6 +5240,11 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
       queuedAt: serializer.fromJson<DateTime>(json['queuedAt']),
       synced: serializer.fromJson<bool>(json['synced']),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
+      idempotencyKey: serializer.fromJson<String?>(json['idempotencyKey']),
+      status: serializer.fromJson<String>(json['status']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      warehouseId: serializer.fromJson<String?>(json['warehouseId']),
     );
   }
   @override
@@ -5097,6 +5258,11 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
       'queuedAt': serializer.toJson<DateTime>(queuedAt),
       'synced': serializer.toJson<bool>(synced),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
+      'idempotencyKey': serializer.toJson<String?>(idempotencyKey),
+      'status': serializer.toJson<String>(status),
+      'attempts': serializer.toJson<int>(attempts),
+      'lastError': serializer.toJson<String?>(lastError),
+      'warehouseId': serializer.toJson<String?>(warehouseId),
     };
   }
 
@@ -5107,7 +5273,12 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
           String? payload,
           DateTime? queuedAt,
           bool? synced,
-          Value<DateTime?> syncedAt = const Value.absent()}) =>
+          Value<DateTime?> syncedAt = const Value.absent(),
+          Value<String?> idempotencyKey = const Value.absent(),
+          String? status,
+          int? attempts,
+          Value<String?> lastError = const Value.absent(),
+          Value<String?> warehouseId = const Value.absent()}) =>
       SyncQueueData(
         id: id ?? this.id,
         operationType: operationType ?? this.operationType,
@@ -5116,6 +5287,12 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
         queuedAt: queuedAt ?? this.queuedAt,
         synced: synced ?? this.synced,
         syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
+        idempotencyKey:
+            idempotencyKey.present ? idempotencyKey.value : this.idempotencyKey,
+        status: status ?? this.status,
+        attempts: attempts ?? this.attempts,
+        lastError: lastError.present ? lastError.value : this.lastError,
+        warehouseId: warehouseId.present ? warehouseId.value : this.warehouseId,
       );
   SyncQueueData copyWithCompanion(SyncQueueCompanion data) {
     return SyncQueueData(
@@ -5129,6 +5306,14 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
       queuedAt: data.queuedAt.present ? data.queuedAt.value : this.queuedAt,
       synced: data.synced.present ? data.synced.value : this.synced,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
+      idempotencyKey: data.idempotencyKey.present
+          ? data.idempotencyKey.value
+          : this.idempotencyKey,
+      status: data.status.present ? data.status.value : this.status,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
     );
   }
 
@@ -5141,14 +5326,30 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
           ..write('payload: $payload, ')
           ..write('queuedAt: $queuedAt, ')
           ..write('synced: $synced, ')
-          ..write('syncedAt: $syncedAt')
+          ..write('syncedAt: $syncedAt, ')
+          ..write('idempotencyKey: $idempotencyKey, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('warehouseId: $warehouseId')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(
-      id, operationType, referenceId, payload, queuedAt, synced, syncedAt);
+      id,
+      operationType,
+      referenceId,
+      payload,
+      queuedAt,
+      synced,
+      syncedAt,
+      idempotencyKey,
+      status,
+      attempts,
+      lastError,
+      warehouseId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5159,7 +5360,12 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
           other.payload == this.payload &&
           other.queuedAt == this.queuedAt &&
           other.synced == this.synced &&
-          other.syncedAt == this.syncedAt);
+          other.syncedAt == this.syncedAt &&
+          other.idempotencyKey == this.idempotencyKey &&
+          other.status == this.status &&
+          other.attempts == this.attempts &&
+          other.lastError == this.lastError &&
+          other.warehouseId == this.warehouseId);
 }
 
 class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
@@ -5170,6 +5376,11 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   final Value<DateTime> queuedAt;
   final Value<bool> synced;
   final Value<DateTime?> syncedAt;
+  final Value<String?> idempotencyKey;
+  final Value<String> status;
+  final Value<int> attempts;
+  final Value<String?> lastError;
+  final Value<String?> warehouseId;
   const SyncQueueCompanion({
     this.id = const Value.absent(),
     this.operationType = const Value.absent(),
@@ -5178,6 +5389,11 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
     this.queuedAt = const Value.absent(),
     this.synced = const Value.absent(),
     this.syncedAt = const Value.absent(),
+    this.idempotencyKey = const Value.absent(),
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.warehouseId = const Value.absent(),
   });
   SyncQueueCompanion.insert({
     this.id = const Value.absent(),
@@ -5187,6 +5403,11 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
     this.queuedAt = const Value.absent(),
     this.synced = const Value.absent(),
     this.syncedAt = const Value.absent(),
+    this.idempotencyKey = const Value.absent(),
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.warehouseId = const Value.absent(),
   })  : operationType = Value(operationType),
         referenceId = Value(referenceId),
         payload = Value(payload);
@@ -5198,6 +5419,11 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
     Expression<DateTime>? queuedAt,
     Expression<bool>? synced,
     Expression<DateTime>? syncedAt,
+    Expression<String>? idempotencyKey,
+    Expression<String>? status,
+    Expression<int>? attempts,
+    Expression<String>? lastError,
+    Expression<String>? warehouseId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5207,6 +5433,11 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
       if (queuedAt != null) 'queued_at': queuedAt,
       if (synced != null) 'synced': synced,
       if (syncedAt != null) 'synced_at': syncedAt,
+      if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
+      if (status != null) 'status': status,
+      if (attempts != null) 'attempts': attempts,
+      if (lastError != null) 'last_error': lastError,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
     });
   }
 
@@ -5217,7 +5448,12 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
       Value<String>? payload,
       Value<DateTime>? queuedAt,
       Value<bool>? synced,
-      Value<DateTime?>? syncedAt}) {
+      Value<DateTime?>? syncedAt,
+      Value<String?>? idempotencyKey,
+      Value<String>? status,
+      Value<int>? attempts,
+      Value<String?>? lastError,
+      Value<String?>? warehouseId}) {
     return SyncQueueCompanion(
       id: id ?? this.id,
       operationType: operationType ?? this.operationType,
@@ -5226,6 +5462,11 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
       queuedAt: queuedAt ?? this.queuedAt,
       synced: synced ?? this.synced,
       syncedAt: syncedAt ?? this.syncedAt,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+      status: status ?? this.status,
+      attempts: attempts ?? this.attempts,
+      lastError: lastError ?? this.lastError,
+      warehouseId: warehouseId ?? this.warehouseId,
     );
   }
 
@@ -5253,6 +5494,21 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
     if (syncedAt.present) {
       map['synced_at'] = Variable<DateTime>(syncedAt.value);
     }
+    if (idempotencyKey.present) {
+      map['idempotency_key'] = Variable<String>(idempotencyKey.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
     return map;
   }
 
@@ -5265,7 +5521,1859 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
           ..write('payload: $payload, ')
           ..write('queuedAt: $queuedAt, ')
           ..write('synced: $synced, ')
-          ..write('syncedAt: $syncedAt')
+          ..write('syncedAt: $syncedAt, ')
+          ..write('idempotencyKey: $idempotencyKey, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('warehouseId: $warehouseId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CatalogItemsTable extends CatalogItems
+    with TableInfo<$CatalogItemsTable, CatalogItemRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _skuMeta = const VerificationMeta('sku');
+  @override
+  late final GeneratedColumn<String> sku = GeneratedColumn<String>(
+      'sku', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _uomMeta = const VerificationMeta('uom');
+  @override
+  late final GeneratedColumn<String> uom = GeneratedColumn<String>(
+      'uom', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'));
+  @override
+  List<GeneratedColumn> get $columns => [id, sku, name, uom, isActive];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'catalog_items';
+  @override
+  VerificationContext validateIntegrity(Insertable<CatalogItemRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sku')) {
+      context.handle(
+          _skuMeta, sku.isAcceptableOrUnknown(data['sku']!, _skuMeta));
+    } else if (isInserting) {
+      context.missing(_skuMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('uom')) {
+      context.handle(
+          _uomMeta, uom.isAcceptableOrUnknown(data['uom']!, _uomMeta));
+    } else if (isInserting) {
+      context.missing(_uomMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    } else if (isInserting) {
+      context.missing(_isActiveMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CatalogItemRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogItemRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sku: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sku'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      uom: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}uom'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+    );
+  }
+
+  @override
+  $CatalogItemsTable createAlias(String alias) {
+    return $CatalogItemsTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogItemRow extends DataClass implements Insertable<CatalogItemRow> {
+  final String id;
+  final String sku;
+  final String name;
+  final String uom;
+  final bool isActive;
+  const CatalogItemRow(
+      {required this.id,
+      required this.sku,
+      required this.name,
+      required this.uom,
+      required this.isActive});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sku'] = Variable<String>(sku);
+    map['name'] = Variable<String>(name);
+    map['uom'] = Variable<String>(uom);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  CatalogItemsCompanion toCompanion(bool nullToAbsent) {
+    return CatalogItemsCompanion(
+      id: Value(id),
+      sku: Value(sku),
+      name: Value(name),
+      uom: Value(uom),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory CatalogItemRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogItemRow(
+      id: serializer.fromJson<String>(json['id']),
+      sku: serializer.fromJson<String>(json['sku']),
+      name: serializer.fromJson<String>(json['name']),
+      uom: serializer.fromJson<String>(json['uom']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sku': serializer.toJson<String>(sku),
+      'name': serializer.toJson<String>(name),
+      'uom': serializer.toJson<String>(uom),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  CatalogItemRow copyWith(
+          {String? id,
+          String? sku,
+          String? name,
+          String? uom,
+          bool? isActive}) =>
+      CatalogItemRow(
+        id: id ?? this.id,
+        sku: sku ?? this.sku,
+        name: name ?? this.name,
+        uom: uom ?? this.uom,
+        isActive: isActive ?? this.isActive,
+      );
+  CatalogItemRow copyWithCompanion(CatalogItemsCompanion data) {
+    return CatalogItemRow(
+      id: data.id.present ? data.id.value : this.id,
+      sku: data.sku.present ? data.sku.value : this.sku,
+      name: data.name.present ? data.name.value : this.name,
+      uom: data.uom.present ? data.uom.value : this.uom,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogItemRow(')
+          ..write('id: $id, ')
+          ..write('sku: $sku, ')
+          ..write('name: $name, ')
+          ..write('uom: $uom, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sku, name, uom, isActive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogItemRow &&
+          other.id == this.id &&
+          other.sku == this.sku &&
+          other.name == this.name &&
+          other.uom == this.uom &&
+          other.isActive == this.isActive);
+}
+
+class CatalogItemsCompanion extends UpdateCompanion<CatalogItemRow> {
+  final Value<String> id;
+  final Value<String> sku;
+  final Value<String> name;
+  final Value<String> uom;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const CatalogItemsCompanion({
+    this.id = const Value.absent(),
+    this.sku = const Value.absent(),
+    this.name = const Value.absent(),
+    this.uom = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CatalogItemsCompanion.insert({
+    required String id,
+    required String sku,
+    required String name,
+    required String uom,
+    required bool isActive,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sku = Value(sku),
+        name = Value(name),
+        uom = Value(uom),
+        isActive = Value(isActive);
+  static Insertable<CatalogItemRow> custom({
+    Expression<String>? id,
+    Expression<String>? sku,
+    Expression<String>? name,
+    Expression<String>? uom,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sku != null) 'sku': sku,
+      if (name != null) 'name': name,
+      if (uom != null) 'uom': uom,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CatalogItemsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? sku,
+      Value<String>? name,
+      Value<String>? uom,
+      Value<bool>? isActive,
+      Value<int>? rowid}) {
+    return CatalogItemsCompanion(
+      id: id ?? this.id,
+      sku: sku ?? this.sku,
+      name: name ?? this.name,
+      uom: uom ?? this.uom,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sku.present) {
+      map['sku'] = Variable<String>(sku.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (uom.present) {
+      map['uom'] = Variable<String>(uom.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('sku: $sku, ')
+          ..write('name: $name, ')
+          ..write('uom: $uom, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CatalogBarcodesTable extends CatalogBarcodes
+    with TableInfo<$CatalogBarcodesTable, CatalogBarcodeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogBarcodesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+      'item_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+      'code', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, itemId, code];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'catalog_barcodes';
+  @override
+  VerificationContext validateIntegrity(Insertable<CatalogBarcodeRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CatalogBarcodeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogBarcodeRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}item_id'])!,
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+    );
+  }
+
+  @override
+  $CatalogBarcodesTable createAlias(String alias) {
+    return $CatalogBarcodesTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogBarcodeRow extends DataClass
+    implements Insertable<CatalogBarcodeRow> {
+  final String id;
+  final String itemId;
+  final String code;
+  const CatalogBarcodeRow(
+      {required this.id, required this.itemId, required this.code});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['item_id'] = Variable<String>(itemId);
+    map['code'] = Variable<String>(code);
+    return map;
+  }
+
+  CatalogBarcodesCompanion toCompanion(bool nullToAbsent) {
+    return CatalogBarcodesCompanion(
+      id: Value(id),
+      itemId: Value(itemId),
+      code: Value(code),
+    );
+  }
+
+  factory CatalogBarcodeRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogBarcodeRow(
+      id: serializer.fromJson<String>(json['id']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      code: serializer.fromJson<String>(json['code']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'itemId': serializer.toJson<String>(itemId),
+      'code': serializer.toJson<String>(code),
+    };
+  }
+
+  CatalogBarcodeRow copyWith({String? id, String? itemId, String? code}) =>
+      CatalogBarcodeRow(
+        id: id ?? this.id,
+        itemId: itemId ?? this.itemId,
+        code: code ?? this.code,
+      );
+  CatalogBarcodeRow copyWithCompanion(CatalogBarcodesCompanion data) {
+    return CatalogBarcodeRow(
+      id: data.id.present ? data.id.value : this.id,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      code: data.code.present ? data.code.value : this.code,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogBarcodeRow(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('code: $code')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, itemId, code);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogBarcodeRow &&
+          other.id == this.id &&
+          other.itemId == this.itemId &&
+          other.code == this.code);
+}
+
+class CatalogBarcodesCompanion extends UpdateCompanion<CatalogBarcodeRow> {
+  final Value<String> id;
+  final Value<String> itemId;
+  final Value<String> code;
+  final Value<int> rowid;
+  const CatalogBarcodesCompanion({
+    this.id = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CatalogBarcodesCompanion.insert({
+    required String id,
+    required String itemId,
+    required String code,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        itemId = Value(itemId),
+        code = Value(code);
+  static Insertable<CatalogBarcodeRow> custom({
+    Expression<String>? id,
+    Expression<String>? itemId,
+    Expression<String>? code,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (itemId != null) 'item_id': itemId,
+      if (code != null) 'code': code,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CatalogBarcodesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? itemId,
+      Value<String>? code,
+      Value<int>? rowid}) {
+    return CatalogBarcodesCompanion(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      code: code ?? this.code,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogBarcodesCompanion(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('code: $code, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WarehouseLocationsTable extends WarehouseLocations
+    with TableInfo<$WarehouseLocationsTable, WarehouseLocationRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WarehouseLocationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+      'code', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, warehouseId, code, type];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'warehouse_locations';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<WarehouseLocationRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WarehouseLocationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WarehouseLocationRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+    );
+  }
+
+  @override
+  $WarehouseLocationsTable createAlias(String alias) {
+    return $WarehouseLocationsTable(attachedDatabase, alias);
+  }
+}
+
+class WarehouseLocationRow extends DataClass
+    implements Insertable<WarehouseLocationRow> {
+  final String id;
+  final String warehouseId;
+  final String code;
+  final String type;
+  const WarehouseLocationRow(
+      {required this.id,
+      required this.warehouseId,
+      required this.code,
+      required this.type});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['code'] = Variable<String>(code);
+    map['type'] = Variable<String>(type);
+    return map;
+  }
+
+  WarehouseLocationsCompanion toCompanion(bool nullToAbsent) {
+    return WarehouseLocationsCompanion(
+      id: Value(id),
+      warehouseId: Value(warehouseId),
+      code: Value(code),
+      type: Value(type),
+    );
+  }
+
+  factory WarehouseLocationRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WarehouseLocationRow(
+      id: serializer.fromJson<String>(json['id']),
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      code: serializer.fromJson<String>(json['code']),
+      type: serializer.fromJson<String>(json['type']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'code': serializer.toJson<String>(code),
+      'type': serializer.toJson<String>(type),
+    };
+  }
+
+  WarehouseLocationRow copyWith(
+          {String? id, String? warehouseId, String? code, String? type}) =>
+      WarehouseLocationRow(
+        id: id ?? this.id,
+        warehouseId: warehouseId ?? this.warehouseId,
+        code: code ?? this.code,
+        type: type ?? this.type,
+      );
+  WarehouseLocationRow copyWithCompanion(WarehouseLocationsCompanion data) {
+    return WarehouseLocationRow(
+      id: data.id.present ? data.id.value : this.id,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      code: data.code.present ? data.code.value : this.code,
+      type: data.type.present ? data.type.value : this.type,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WarehouseLocationRow(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('code: $code, ')
+          ..write('type: $type')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, warehouseId, code, type);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WarehouseLocationRow &&
+          other.id == this.id &&
+          other.warehouseId == this.warehouseId &&
+          other.code == this.code &&
+          other.type == this.type);
+}
+
+class WarehouseLocationsCompanion
+    extends UpdateCompanion<WarehouseLocationRow> {
+  final Value<String> id;
+  final Value<String> warehouseId;
+  final Value<String> code;
+  final Value<String> type;
+  final Value<int> rowid;
+  const WarehouseLocationsCompanion({
+    this.id = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.type = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WarehouseLocationsCompanion.insert({
+    required String id,
+    required String warehouseId,
+    required String code,
+    required String type,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        warehouseId = Value(warehouseId),
+        code = Value(code),
+        type = Value(type);
+  static Insertable<WarehouseLocationRow> custom({
+    Expression<String>? id,
+    Expression<String>? warehouseId,
+    Expression<String>? code,
+    Expression<String>? type,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (code != null) 'code': code,
+      if (type != null) 'type': type,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WarehouseLocationsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? warehouseId,
+      Value<String>? code,
+      Value<String>? type,
+      Value<int>? rowid}) {
+    return WarehouseLocationsCompanion(
+      id: id ?? this.id,
+      warehouseId: warehouseId ?? this.warehouseId,
+      code: code ?? this.code,
+      type: type ?? this.type,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WarehouseLocationsCompanion(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('code: $code, ')
+          ..write('type: $type, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemoteCountSessionsTable extends RemoteCountSessions
+    with TableInfo<$RemoteCountSessionsTable, RemoteCountSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteCountSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdByUserIdMeta =
+      const VerificationMeta('createdByUserId');
+  @override
+  late final GeneratedColumn<String> createdByUserId = GeneratedColumn<String>(
+      'created_by_user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+      'label', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _submittedAtMeta =
+      const VerificationMeta('submittedAt');
+  @override
+  late final GeneratedColumn<DateTime> submittedAt = GeneratedColumn<DateTime>(
+      'submitted_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _reviewedAtMeta =
+      const VerificationMeta('reviewedAt');
+  @override
+  late final GeneratedColumn<DateTime> reviewedAt = GeneratedColumn<DateTime>(
+      'reviewed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _rejectReasonMeta =
+      const VerificationMeta('rejectReason');
+  @override
+  late final GeneratedColumn<String> rejectReason = GeneratedColumn<String>(
+      'reject_reason', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        warehouseId,
+        createdByUserId,
+        label,
+        status,
+        submittedAt,
+        reviewedAt,
+        rejectReason
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_count_sessions';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<RemoteCountSessionRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('created_by_user_id')) {
+      context.handle(
+          _createdByUserIdMeta,
+          createdByUserId.isAcceptableOrUnknown(
+              data['created_by_user_id']!, _createdByUserIdMeta));
+    } else if (isInserting) {
+      context.missing(_createdByUserIdMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+          _labelMeta, label.isAcceptableOrUnknown(data['label']!, _labelMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('submitted_at')) {
+      context.handle(
+          _submittedAtMeta,
+          submittedAt.isAcceptableOrUnknown(
+              data['submitted_at']!, _submittedAtMeta));
+    } else if (isInserting) {
+      context.missing(_submittedAtMeta);
+    }
+    if (data.containsKey('reviewed_at')) {
+      context.handle(
+          _reviewedAtMeta,
+          reviewedAt.isAcceptableOrUnknown(
+              data['reviewed_at']!, _reviewedAtMeta));
+    }
+    if (data.containsKey('reject_reason')) {
+      context.handle(
+          _rejectReasonMeta,
+          rejectReason.isAcceptableOrUnknown(
+              data['reject_reason']!, _rejectReasonMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemoteCountSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteCountSessionRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      createdByUserId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}created_by_user_id'])!,
+      label: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}label']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      submittedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}submitted_at'])!,
+      reviewedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}reviewed_at']),
+      rejectReason: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reject_reason']),
+    );
+  }
+
+  @override
+  $RemoteCountSessionsTable createAlias(String alias) {
+    return $RemoteCountSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteCountSessionRow extends DataClass
+    implements Insertable<RemoteCountSessionRow> {
+  final String id;
+  final String warehouseId;
+  final String createdByUserId;
+  final String? label;
+  final String status;
+  final DateTime submittedAt;
+  final DateTime? reviewedAt;
+  final String? rejectReason;
+  const RemoteCountSessionRow(
+      {required this.id,
+      required this.warehouseId,
+      required this.createdByUserId,
+      this.label,
+      required this.status,
+      required this.submittedAt,
+      this.reviewedAt,
+      this.rejectReason});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['created_by_user_id'] = Variable<String>(createdByUserId);
+    if (!nullToAbsent || label != null) {
+      map['label'] = Variable<String>(label);
+    }
+    map['status'] = Variable<String>(status);
+    map['submitted_at'] = Variable<DateTime>(submittedAt);
+    if (!nullToAbsent || reviewedAt != null) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt);
+    }
+    if (!nullToAbsent || rejectReason != null) {
+      map['reject_reason'] = Variable<String>(rejectReason);
+    }
+    return map;
+  }
+
+  RemoteCountSessionsCompanion toCompanion(bool nullToAbsent) {
+    return RemoteCountSessionsCompanion(
+      id: Value(id),
+      warehouseId: Value(warehouseId),
+      createdByUserId: Value(createdByUserId),
+      label:
+          label == null && nullToAbsent ? const Value.absent() : Value(label),
+      status: Value(status),
+      submittedAt: Value(submittedAt),
+      reviewedAt: reviewedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewedAt),
+      rejectReason: rejectReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejectReason),
+    );
+  }
+
+  factory RemoteCountSessionRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteCountSessionRow(
+      id: serializer.fromJson<String>(json['id']),
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      createdByUserId: serializer.fromJson<String>(json['createdByUserId']),
+      label: serializer.fromJson<String?>(json['label']),
+      status: serializer.fromJson<String>(json['status']),
+      submittedAt: serializer.fromJson<DateTime>(json['submittedAt']),
+      reviewedAt: serializer.fromJson<DateTime?>(json['reviewedAt']),
+      rejectReason: serializer.fromJson<String?>(json['rejectReason']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'createdByUserId': serializer.toJson<String>(createdByUserId),
+      'label': serializer.toJson<String?>(label),
+      'status': serializer.toJson<String>(status),
+      'submittedAt': serializer.toJson<DateTime>(submittedAt),
+      'reviewedAt': serializer.toJson<DateTime?>(reviewedAt),
+      'rejectReason': serializer.toJson<String?>(rejectReason),
+    };
+  }
+
+  RemoteCountSessionRow copyWith(
+          {String? id,
+          String? warehouseId,
+          String? createdByUserId,
+          Value<String?> label = const Value.absent(),
+          String? status,
+          DateTime? submittedAt,
+          Value<DateTime?> reviewedAt = const Value.absent(),
+          Value<String?> rejectReason = const Value.absent()}) =>
+      RemoteCountSessionRow(
+        id: id ?? this.id,
+        warehouseId: warehouseId ?? this.warehouseId,
+        createdByUserId: createdByUserId ?? this.createdByUserId,
+        label: label.present ? label.value : this.label,
+        status: status ?? this.status,
+        submittedAt: submittedAt ?? this.submittedAt,
+        reviewedAt: reviewedAt.present ? reviewedAt.value : this.reviewedAt,
+        rejectReason:
+            rejectReason.present ? rejectReason.value : this.rejectReason,
+      );
+  RemoteCountSessionRow copyWithCompanion(RemoteCountSessionsCompanion data) {
+    return RemoteCountSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      createdByUserId: data.createdByUserId.present
+          ? data.createdByUserId.value
+          : this.createdByUserId,
+      label: data.label.present ? data.label.value : this.label,
+      status: data.status.present ? data.status.value : this.status,
+      submittedAt:
+          data.submittedAt.present ? data.submittedAt.value : this.submittedAt,
+      reviewedAt:
+          data.reviewedAt.present ? data.reviewedAt.value : this.reviewedAt,
+      rejectReason: data.rejectReason.present
+          ? data.rejectReason.value
+          : this.rejectReason,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteCountSessionRow(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('label: $label, ')
+          ..write('status: $status, ')
+          ..write('submittedAt: $submittedAt, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('rejectReason: $rejectReason')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, warehouseId, createdByUserId, label,
+      status, submittedAt, reviewedAt, rejectReason);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteCountSessionRow &&
+          other.id == this.id &&
+          other.warehouseId == this.warehouseId &&
+          other.createdByUserId == this.createdByUserId &&
+          other.label == this.label &&
+          other.status == this.status &&
+          other.submittedAt == this.submittedAt &&
+          other.reviewedAt == this.reviewedAt &&
+          other.rejectReason == this.rejectReason);
+}
+
+class RemoteCountSessionsCompanion
+    extends UpdateCompanion<RemoteCountSessionRow> {
+  final Value<String> id;
+  final Value<String> warehouseId;
+  final Value<String> createdByUserId;
+  final Value<String?> label;
+  final Value<String> status;
+  final Value<DateTime> submittedAt;
+  final Value<DateTime?> reviewedAt;
+  final Value<String?> rejectReason;
+  final Value<int> rowid;
+  const RemoteCountSessionsCompanion({
+    this.id = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.label = const Value.absent(),
+    this.status = const Value.absent(),
+    this.submittedAt = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.rejectReason = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteCountSessionsCompanion.insert({
+    required String id,
+    required String warehouseId,
+    required String createdByUserId,
+    this.label = const Value.absent(),
+    required String status,
+    required DateTime submittedAt,
+    this.reviewedAt = const Value.absent(),
+    this.rejectReason = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        warehouseId = Value(warehouseId),
+        createdByUserId = Value(createdByUserId),
+        status = Value(status),
+        submittedAt = Value(submittedAt);
+  static Insertable<RemoteCountSessionRow> custom({
+    Expression<String>? id,
+    Expression<String>? warehouseId,
+    Expression<String>? createdByUserId,
+    Expression<String>? label,
+    Expression<String>? status,
+    Expression<DateTime>? submittedAt,
+    Expression<DateTime>? reviewedAt,
+    Expression<String>? rejectReason,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (createdByUserId != null) 'created_by_user_id': createdByUserId,
+      if (label != null) 'label': label,
+      if (status != null) 'status': status,
+      if (submittedAt != null) 'submitted_at': submittedAt,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt,
+      if (rejectReason != null) 'reject_reason': rejectReason,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteCountSessionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? warehouseId,
+      Value<String>? createdByUserId,
+      Value<String?>? label,
+      Value<String>? status,
+      Value<DateTime>? submittedAt,
+      Value<DateTime?>? reviewedAt,
+      Value<String?>? rejectReason,
+      Value<int>? rowid}) {
+    return RemoteCountSessionsCompanion(
+      id: id ?? this.id,
+      warehouseId: warehouseId ?? this.warehouseId,
+      createdByUserId: createdByUserId ?? this.createdByUserId,
+      label: label ?? this.label,
+      status: status ?? this.status,
+      submittedAt: submittedAt ?? this.submittedAt,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      rejectReason: rejectReason ?? this.rejectReason,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (createdByUserId.present) {
+      map['created_by_user_id'] = Variable<String>(createdByUserId.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (submittedAt.present) {
+      map['submitted_at'] = Variable<DateTime>(submittedAt.value);
+    }
+    if (reviewedAt.present) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt.value);
+    }
+    if (rejectReason.present) {
+      map['reject_reason'] = Variable<String>(rejectReason.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteCountSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('label: $label, ')
+          ..write('status: $status, ')
+          ..write('submittedAt: $submittedAt, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('rejectReason: $rejectReason, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemoteCountLinesTable extends RemoteCountLines
+    with TableInfo<$RemoteCountLinesTable, RemoteCountLineRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteCountLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+      'item_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _locationIdMeta =
+      const VerificationMeta('locationId');
+  @override
+  late final GeneratedColumn<String> locationId = GeneratedColumn<String>(
+      'location_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _countedMeta =
+      const VerificationMeta('counted');
+  @override
+  late final GeneratedColumn<double> counted = GeneratedColumn<double>(
+      'counted', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _systemAtSubmitMeta =
+      const VerificationMeta('systemAtSubmit');
+  @override
+  late final GeneratedColumn<double> systemAtSubmit = GeneratedColumn<double>(
+      'system_at_submit', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _adjustmentMeta =
+      const VerificationMeta('adjustment');
+  @override
+  late final GeneratedColumn<double> adjustment = GeneratedColumn<double>(
+      'adjustment', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, sessionId, itemId, locationId, counted, systemAtSubmit, adjustment];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_count_lines';
+  @override
+  VerificationContext validateIntegrity(Insertable<RemoteCountLineRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('location_id')) {
+      context.handle(
+          _locationIdMeta,
+          locationId.isAcceptableOrUnknown(
+              data['location_id']!, _locationIdMeta));
+    } else if (isInserting) {
+      context.missing(_locationIdMeta);
+    }
+    if (data.containsKey('counted')) {
+      context.handle(_countedMeta,
+          counted.isAcceptableOrUnknown(data['counted']!, _countedMeta));
+    } else if (isInserting) {
+      context.missing(_countedMeta);
+    }
+    if (data.containsKey('system_at_submit')) {
+      context.handle(
+          _systemAtSubmitMeta,
+          systemAtSubmit.isAcceptableOrUnknown(
+              data['system_at_submit']!, _systemAtSubmitMeta));
+    } else if (isInserting) {
+      context.missing(_systemAtSubmitMeta);
+    }
+    if (data.containsKey('adjustment')) {
+      context.handle(
+          _adjustmentMeta,
+          adjustment.isAcceptableOrUnknown(
+              data['adjustment']!, _adjustmentMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemoteCountLineRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteCountLineRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}item_id'])!,
+      locationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location_id'])!,
+      counted: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}counted'])!,
+      systemAtSubmit: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}system_at_submit'])!,
+      adjustment: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}adjustment']),
+    );
+  }
+
+  @override
+  $RemoteCountLinesTable createAlias(String alias) {
+    return $RemoteCountLinesTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteCountLineRow extends DataClass
+    implements Insertable<RemoteCountLineRow> {
+  final String id;
+  final String sessionId;
+  final String itemId;
+  final String locationId;
+  final double counted;
+  final double systemAtSubmit;
+  final double? adjustment;
+  const RemoteCountLineRow(
+      {required this.id,
+      required this.sessionId,
+      required this.itemId,
+      required this.locationId,
+      required this.counted,
+      required this.systemAtSubmit,
+      this.adjustment});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['item_id'] = Variable<String>(itemId);
+    map['location_id'] = Variable<String>(locationId);
+    map['counted'] = Variable<double>(counted);
+    map['system_at_submit'] = Variable<double>(systemAtSubmit);
+    if (!nullToAbsent || adjustment != null) {
+      map['adjustment'] = Variable<double>(adjustment);
+    }
+    return map;
+  }
+
+  RemoteCountLinesCompanion toCompanion(bool nullToAbsent) {
+    return RemoteCountLinesCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      itemId: Value(itemId),
+      locationId: Value(locationId),
+      counted: Value(counted),
+      systemAtSubmit: Value(systemAtSubmit),
+      adjustment: adjustment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(adjustment),
+    );
+  }
+
+  factory RemoteCountLineRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteCountLineRow(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      locationId: serializer.fromJson<String>(json['locationId']),
+      counted: serializer.fromJson<double>(json['counted']),
+      systemAtSubmit: serializer.fromJson<double>(json['systemAtSubmit']),
+      adjustment: serializer.fromJson<double?>(json['adjustment']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'itemId': serializer.toJson<String>(itemId),
+      'locationId': serializer.toJson<String>(locationId),
+      'counted': serializer.toJson<double>(counted),
+      'systemAtSubmit': serializer.toJson<double>(systemAtSubmit),
+      'adjustment': serializer.toJson<double?>(adjustment),
+    };
+  }
+
+  RemoteCountLineRow copyWith(
+          {String? id,
+          String? sessionId,
+          String? itemId,
+          String? locationId,
+          double? counted,
+          double? systemAtSubmit,
+          Value<double?> adjustment = const Value.absent()}) =>
+      RemoteCountLineRow(
+        id: id ?? this.id,
+        sessionId: sessionId ?? this.sessionId,
+        itemId: itemId ?? this.itemId,
+        locationId: locationId ?? this.locationId,
+        counted: counted ?? this.counted,
+        systemAtSubmit: systemAtSubmit ?? this.systemAtSubmit,
+        adjustment: adjustment.present ? adjustment.value : this.adjustment,
+      );
+  RemoteCountLineRow copyWithCompanion(RemoteCountLinesCompanion data) {
+    return RemoteCountLineRow(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      locationId:
+          data.locationId.present ? data.locationId.value : this.locationId,
+      counted: data.counted.present ? data.counted.value : this.counted,
+      systemAtSubmit: data.systemAtSubmit.present
+          ? data.systemAtSubmit.value
+          : this.systemAtSubmit,
+      adjustment:
+          data.adjustment.present ? data.adjustment.value : this.adjustment,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteCountLineRow(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('itemId: $itemId, ')
+          ..write('locationId: $locationId, ')
+          ..write('counted: $counted, ')
+          ..write('systemAtSubmit: $systemAtSubmit, ')
+          ..write('adjustment: $adjustment')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, sessionId, itemId, locationId, counted, systemAtSubmit, adjustment);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteCountLineRow &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.itemId == this.itemId &&
+          other.locationId == this.locationId &&
+          other.counted == this.counted &&
+          other.systemAtSubmit == this.systemAtSubmit &&
+          other.adjustment == this.adjustment);
+}
+
+class RemoteCountLinesCompanion extends UpdateCompanion<RemoteCountLineRow> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> itemId;
+  final Value<String> locationId;
+  final Value<double> counted;
+  final Value<double> systemAtSubmit;
+  final Value<double?> adjustment;
+  final Value<int> rowid;
+  const RemoteCountLinesCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.locationId = const Value.absent(),
+    this.counted = const Value.absent(),
+    this.systemAtSubmit = const Value.absent(),
+    this.adjustment = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteCountLinesCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String itemId,
+    required String locationId,
+    required double counted,
+    required double systemAtSubmit,
+    this.adjustment = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sessionId = Value(sessionId),
+        itemId = Value(itemId),
+        locationId = Value(locationId),
+        counted = Value(counted),
+        systemAtSubmit = Value(systemAtSubmit);
+  static Insertable<RemoteCountLineRow> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? itemId,
+    Expression<String>? locationId,
+    Expression<double>? counted,
+    Expression<double>? systemAtSubmit,
+    Expression<double>? adjustment,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (itemId != null) 'item_id': itemId,
+      if (locationId != null) 'location_id': locationId,
+      if (counted != null) 'counted': counted,
+      if (systemAtSubmit != null) 'system_at_submit': systemAtSubmit,
+      if (adjustment != null) 'adjustment': adjustment,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteCountLinesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? sessionId,
+      Value<String>? itemId,
+      Value<String>? locationId,
+      Value<double>? counted,
+      Value<double>? systemAtSubmit,
+      Value<double?>? adjustment,
+      Value<int>? rowid}) {
+    return RemoteCountLinesCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      itemId: itemId ?? this.itemId,
+      locationId: locationId ?? this.locationId,
+      counted: counted ?? this.counted,
+      systemAtSubmit: systemAtSubmit ?? this.systemAtSubmit,
+      adjustment: adjustment ?? this.adjustment,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (locationId.present) {
+      map['location_id'] = Variable<String>(locationId.value);
+    }
+    if (counted.present) {
+      map['counted'] = Variable<double>(counted.value);
+    }
+    if (systemAtSubmit.present) {
+      map['system_at_submit'] = Variable<double>(systemAtSubmit.value);
+    }
+    if (adjustment.present) {
+      map['adjustment'] = Variable<double>(adjustment.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteCountLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('itemId: $itemId, ')
+          ..write('locationId: $locationId, ')
+          ..write('counted: $counted, ')
+          ..write('systemAtSubmit: $systemAtSubmit, ')
+          ..write('adjustment: $adjustment, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncCursorsTable extends SyncCursors
+    with TableInfo<$SyncCursorsTable, SyncCursorRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncCursorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
+  @override
+  late final GeneratedColumn<int> cursor = GeneratedColumn<int>(
+      'cursor', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [warehouseId, cursor];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_cursors';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncCursorRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('cursor')) {
+      context.handle(_cursorMeta,
+          cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
+    } else if (isInserting) {
+      context.missing(_cursorMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {warehouseId};
+  @override
+  SyncCursorRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncCursorRow(
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      cursor: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}cursor'])!,
+    );
+  }
+
+  @override
+  $SyncCursorsTable createAlias(String alias) {
+    return $SyncCursorsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
+  final String warehouseId;
+  final int cursor;
+  const SyncCursorRow({required this.warehouseId, required this.cursor});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['cursor'] = Variable<int>(cursor);
+    return map;
+  }
+
+  SyncCursorsCompanion toCompanion(bool nullToAbsent) {
+    return SyncCursorsCompanion(
+      warehouseId: Value(warehouseId),
+      cursor: Value(cursor),
+    );
+  }
+
+  factory SyncCursorRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncCursorRow(
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      cursor: serializer.fromJson<int>(json['cursor']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'cursor': serializer.toJson<int>(cursor),
+    };
+  }
+
+  SyncCursorRow copyWith({String? warehouseId, int? cursor}) => SyncCursorRow(
+        warehouseId: warehouseId ?? this.warehouseId,
+        cursor: cursor ?? this.cursor,
+      );
+  SyncCursorRow copyWithCompanion(SyncCursorsCompanion data) {
+    return SyncCursorRow(
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      cursor: data.cursor.present ? data.cursor.value : this.cursor,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncCursorRow(')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('cursor: $cursor')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(warehouseId, cursor);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncCursorRow &&
+          other.warehouseId == this.warehouseId &&
+          other.cursor == this.cursor);
+}
+
+class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
+  final Value<String> warehouseId;
+  final Value<int> cursor;
+  final Value<int> rowid;
+  const SyncCursorsCompanion({
+    this.warehouseId = const Value.absent(),
+    this.cursor = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncCursorsCompanion.insert({
+    required String warehouseId,
+    required int cursor,
+    this.rowid = const Value.absent(),
+  })  : warehouseId = Value(warehouseId),
+        cursor = Value(cursor);
+  static Insertable<SyncCursorRow> custom({
+    Expression<String>? warehouseId,
+    Expression<int>? cursor,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (cursor != null) 'cursor': cursor,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncCursorsCompanion copyWith(
+      {Value<String>? warehouseId, Value<int>? cursor, Value<int>? rowid}) {
+    return SyncCursorsCompanion(
+      warehouseId: warehouseId ?? this.warehouseId,
+      cursor: cursor ?? this.cursor,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (cursor.present) {
+      map['cursor'] = Variable<int>(cursor.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncCursorsCompanion(')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('cursor: $cursor, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -5292,6 +7400,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PurchaseOrdersTable purchaseOrders = $PurchaseOrdersTable(this);
   late final $PoLineItemsTable poLineItems = $PoLineItemsTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
+  late final $CatalogItemsTable catalogItems = $CatalogItemsTable(this);
+  late final $CatalogBarcodesTable catalogBarcodes =
+      $CatalogBarcodesTable(this);
+  late final $WarehouseLocationsTable warehouseLocations =
+      $WarehouseLocationsTable(this);
+  late final $RemoteCountSessionsTable remoteCountSessions =
+      $RemoteCountSessionsTable(this);
+  late final $RemoteCountLinesTable remoteCountLines =
+      $RemoteCountLinesTable(this);
+  late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
   late final AlertsDao alertsDao = AlertsDao(this as AppDatabase);
   late final TasksDao tasksDao = TasksDao(this as AppDatabase);
   late final CountSessionDao countSessionDao =
@@ -5299,6 +7417,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final OrdersDao ordersDao = OrdersDao(this as AppDatabase);
   late final ReceivingDao receivingDao = ReceivingDao(this as AppDatabase);
   late final SyncQueueDao syncQueueDao = SyncQueueDao(this as AppDatabase);
+  late final ServerMirrorDao serverMirrorDao =
+      ServerMirrorDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5316,7 +7436,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         orderStatusHistoryEntries,
         purchaseOrders,
         poLineItems,
-        syncQueue
+        syncQueue,
+        catalogItems,
+        catalogBarcodes,
+        warehouseLocations,
+        remoteCountSessions,
+        remoteCountLines,
+        syncCursors
       ];
 }
 
@@ -6138,6 +8264,7 @@ typedef $$CountItemsTableCreateCompanionBuilder = CountItemsCompanion Function({
   required String sessionId,
   required String itemCode,
   required String itemName,
+  Value<String?> itemId,
   required int expectedQty,
   required int actualQty,
   Value<String> entryMethod,
@@ -6149,6 +8276,7 @@ typedef $$CountItemsTableUpdateCompanionBuilder = CountItemsCompanion Function({
   Value<String> sessionId,
   Value<String> itemCode,
   Value<String> itemName,
+  Value<String?> itemId,
   Value<int> expectedQty,
   Value<int> actualQty,
   Value<String> entryMethod,
@@ -6176,6 +8304,9 @@ class $$CountItemsTableFilterComposer
 
   ColumnFilters<String> get itemName => $composableBuilder(
       column: $table.itemName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get expectedQty => $composableBuilder(
       column: $table.expectedQty, builder: (column) => ColumnFilters(column));
@@ -6211,6 +8342,9 @@ class $$CountItemsTableOrderingComposer
   ColumnOrderings<String> get itemName => $composableBuilder(
       column: $table.itemName, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get expectedQty => $composableBuilder(
       column: $table.expectedQty, builder: (column) => ColumnOrderings(column));
 
@@ -6244,6 +8378,9 @@ class $$CountItemsTableAnnotationComposer
 
   GeneratedColumn<String> get itemName =>
       $composableBuilder(column: $table.itemName, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
 
   GeneratedColumn<int> get expectedQty => $composableBuilder(
       column: $table.expectedQty, builder: (column) => column);
@@ -6285,6 +8422,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             Value<String> sessionId = const Value.absent(),
             Value<String> itemCode = const Value.absent(),
             Value<String> itemName = const Value.absent(),
+            Value<String?> itemId = const Value.absent(),
             Value<int> expectedQty = const Value.absent(),
             Value<int> actualQty = const Value.absent(),
             Value<String> entryMethod = const Value.absent(),
@@ -6296,6 +8434,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             sessionId: sessionId,
             itemCode: itemCode,
             itemName: itemName,
+            itemId: itemId,
             expectedQty: expectedQty,
             actualQty: actualQty,
             entryMethod: entryMethod,
@@ -6307,6 +8446,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             required String sessionId,
             required String itemCode,
             required String itemName,
+            Value<String?> itemId = const Value.absent(),
             required int expectedQty,
             required int actualQty,
             Value<String> entryMethod = const Value.absent(),
@@ -6318,6 +8458,7 @@ class $$CountItemsTableTableManager extends RootTableManager<
             sessionId: sessionId,
             itemCode: itemCode,
             itemName: itemName,
+            itemId: itemId,
             expectedQty: expectedQty,
             actualQty: actualQty,
             entryMethod: entryMethod,
@@ -7824,6 +9965,11 @@ typedef $$SyncQueueTableCreateCompanionBuilder = SyncQueueCompanion Function({
   Value<DateTime> queuedAt,
   Value<bool> synced,
   Value<DateTime?> syncedAt,
+  Value<String?> idempotencyKey,
+  Value<String> status,
+  Value<int> attempts,
+  Value<String?> lastError,
+  Value<String?> warehouseId,
 });
 typedef $$SyncQueueTableUpdateCompanionBuilder = SyncQueueCompanion Function({
   Value<int> id,
@@ -7833,6 +9979,11 @@ typedef $$SyncQueueTableUpdateCompanionBuilder = SyncQueueCompanion Function({
   Value<DateTime> queuedAt,
   Value<bool> synced,
   Value<DateTime?> syncedAt,
+  Value<String?> idempotencyKey,
+  Value<String> status,
+  Value<int> attempts,
+  Value<String?> lastError,
+  Value<String?> warehouseId,
 });
 
 class $$SyncQueueTableFilterComposer
@@ -7864,6 +10015,22 @@ class $$SyncQueueTableFilterComposer
 
   ColumnFilters<DateTime> get syncedAt => $composableBuilder(
       column: $table.syncedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get idempotencyKey => $composableBuilder(
+      column: $table.idempotencyKey,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+      column: $table.attempts, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+      column: $table.lastError, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
 }
 
 class $$SyncQueueTableOrderingComposer
@@ -7896,6 +10063,22 @@ class $$SyncQueueTableOrderingComposer
 
   ColumnOrderings<DateTime> get syncedAt => $composableBuilder(
       column: $table.syncedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get idempotencyKey => $composableBuilder(
+      column: $table.idempotencyKey,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+      column: $table.attempts, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+      column: $table.lastError, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$SyncQueueTableAnnotationComposer
@@ -7927,6 +10110,21 @@ class $$SyncQueueTableAnnotationComposer
 
   GeneratedColumn<DateTime> get syncedAt =>
       $composableBuilder(column: $table.syncedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get idempotencyKey => $composableBuilder(
+      column: $table.idempotencyKey, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
 }
 
 class $$SyncQueueTableTableManager extends RootTableManager<
@@ -7962,6 +10160,11 @@ class $$SyncQueueTableTableManager extends RootTableManager<
             Value<DateTime> queuedAt = const Value.absent(),
             Value<bool> synced = const Value.absent(),
             Value<DateTime?> syncedAt = const Value.absent(),
+            Value<String?> idempotencyKey = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> attempts = const Value.absent(),
+            Value<String?> lastError = const Value.absent(),
+            Value<String?> warehouseId = const Value.absent(),
           }) =>
               SyncQueueCompanion(
             id: id,
@@ -7971,6 +10174,11 @@ class $$SyncQueueTableTableManager extends RootTableManager<
             queuedAt: queuedAt,
             synced: synced,
             syncedAt: syncedAt,
+            idempotencyKey: idempotencyKey,
+            status: status,
+            attempts: attempts,
+            lastError: lastError,
+            warehouseId: warehouseId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -7980,6 +10188,11 @@ class $$SyncQueueTableTableManager extends RootTableManager<
             Value<DateTime> queuedAt = const Value.absent(),
             Value<bool> synced = const Value.absent(),
             Value<DateTime?> syncedAt = const Value.absent(),
+            Value<String?> idempotencyKey = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> attempts = const Value.absent(),
+            Value<String?> lastError = const Value.absent(),
+            Value<String?> warehouseId = const Value.absent(),
           }) =>
               SyncQueueCompanion.insert(
             id: id,
@@ -7989,6 +10202,11 @@ class $$SyncQueueTableTableManager extends RootTableManager<
             queuedAt: queuedAt,
             synced: synced,
             syncedAt: syncedAt,
+            idempotencyKey: idempotencyKey,
+            status: status,
+            attempts: attempts,
+            lastError: lastError,
+            warehouseId: warehouseId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -8011,6 +10229,1045 @@ typedef $$SyncQueueTableProcessedTableManager = ProcessedTableManager<
       BaseReferences<_$AppDatabase, $SyncQueueTable, SyncQueueData>
     ),
     SyncQueueData,
+    PrefetchHooks Function()>;
+typedef $$CatalogItemsTableCreateCompanionBuilder = CatalogItemsCompanion
+    Function({
+  required String id,
+  required String sku,
+  required String name,
+  required String uom,
+  required bool isActive,
+  Value<int> rowid,
+});
+typedef $$CatalogItemsTableUpdateCompanionBuilder = CatalogItemsCompanion
+    Function({
+  Value<String> id,
+  Value<String> sku,
+  Value<String> name,
+  Value<String> uom,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+
+class $$CatalogItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $CatalogItemsTable> {
+  $$CatalogItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sku => $composableBuilder(
+      column: $table.sku, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get uom => $composableBuilder(
+      column: $table.uom, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+}
+
+class $$CatalogItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CatalogItemsTable> {
+  $$CatalogItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sku => $composableBuilder(
+      column: $table.sku, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get uom => $composableBuilder(
+      column: $table.uom, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CatalogItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CatalogItemsTable> {
+  $$CatalogItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sku =>
+      $composableBuilder(column: $table.sku, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get uom =>
+      $composableBuilder(column: $table.uom, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+}
+
+class $$CatalogItemsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CatalogItemsTable,
+    CatalogItemRow,
+    $$CatalogItemsTableFilterComposer,
+    $$CatalogItemsTableOrderingComposer,
+    $$CatalogItemsTableAnnotationComposer,
+    $$CatalogItemsTableCreateCompanionBuilder,
+    $$CatalogItemsTableUpdateCompanionBuilder,
+    (
+      CatalogItemRow,
+      BaseReferences<_$AppDatabase, $CatalogItemsTable, CatalogItemRow>
+    ),
+    CatalogItemRow,
+    PrefetchHooks Function()> {
+  $$CatalogItemsTableTableManager(_$AppDatabase db, $CatalogItemsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CatalogItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CatalogItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CatalogItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> sku = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> uom = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CatalogItemsCompanion(
+            id: id,
+            sku: sku,
+            name: name,
+            uom: uom,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String sku,
+            required String name,
+            required String uom,
+            required bool isActive,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CatalogItemsCompanion.insert(
+            id: id,
+            sku: sku,
+            name: name,
+            uom: uom,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CatalogItemsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CatalogItemsTable,
+    CatalogItemRow,
+    $$CatalogItemsTableFilterComposer,
+    $$CatalogItemsTableOrderingComposer,
+    $$CatalogItemsTableAnnotationComposer,
+    $$CatalogItemsTableCreateCompanionBuilder,
+    $$CatalogItemsTableUpdateCompanionBuilder,
+    (
+      CatalogItemRow,
+      BaseReferences<_$AppDatabase, $CatalogItemsTable, CatalogItemRow>
+    ),
+    CatalogItemRow,
+    PrefetchHooks Function()>;
+typedef $$CatalogBarcodesTableCreateCompanionBuilder = CatalogBarcodesCompanion
+    Function({
+  required String id,
+  required String itemId,
+  required String code,
+  Value<int> rowid,
+});
+typedef $$CatalogBarcodesTableUpdateCompanionBuilder = CatalogBarcodesCompanion
+    Function({
+  Value<String> id,
+  Value<String> itemId,
+  Value<String> code,
+  Value<int> rowid,
+});
+
+class $$CatalogBarcodesTableFilterComposer
+    extends Composer<_$AppDatabase, $CatalogBarcodesTable> {
+  $$CatalogBarcodesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnFilters(column));
+}
+
+class $$CatalogBarcodesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CatalogBarcodesTable> {
+  $$CatalogBarcodesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CatalogBarcodesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CatalogBarcodesTable> {
+  $$CatalogBarcodesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+}
+
+class $$CatalogBarcodesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CatalogBarcodesTable,
+    CatalogBarcodeRow,
+    $$CatalogBarcodesTableFilterComposer,
+    $$CatalogBarcodesTableOrderingComposer,
+    $$CatalogBarcodesTableAnnotationComposer,
+    $$CatalogBarcodesTableCreateCompanionBuilder,
+    $$CatalogBarcodesTableUpdateCompanionBuilder,
+    (
+      CatalogBarcodeRow,
+      BaseReferences<_$AppDatabase, $CatalogBarcodesTable, CatalogBarcodeRow>
+    ),
+    CatalogBarcodeRow,
+    PrefetchHooks Function()> {
+  $$CatalogBarcodesTableTableManager(
+      _$AppDatabase db, $CatalogBarcodesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CatalogBarcodesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CatalogBarcodesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CatalogBarcodesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> itemId = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CatalogBarcodesCompanion(
+            id: id,
+            itemId: itemId,
+            code: code,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String itemId,
+            required String code,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CatalogBarcodesCompanion.insert(
+            id: id,
+            itemId: itemId,
+            code: code,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CatalogBarcodesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CatalogBarcodesTable,
+    CatalogBarcodeRow,
+    $$CatalogBarcodesTableFilterComposer,
+    $$CatalogBarcodesTableOrderingComposer,
+    $$CatalogBarcodesTableAnnotationComposer,
+    $$CatalogBarcodesTableCreateCompanionBuilder,
+    $$CatalogBarcodesTableUpdateCompanionBuilder,
+    (
+      CatalogBarcodeRow,
+      BaseReferences<_$AppDatabase, $CatalogBarcodesTable, CatalogBarcodeRow>
+    ),
+    CatalogBarcodeRow,
+    PrefetchHooks Function()>;
+typedef $$WarehouseLocationsTableCreateCompanionBuilder
+    = WarehouseLocationsCompanion Function({
+  required String id,
+  required String warehouseId,
+  required String code,
+  required String type,
+  Value<int> rowid,
+});
+typedef $$WarehouseLocationsTableUpdateCompanionBuilder
+    = WarehouseLocationsCompanion Function({
+  Value<String> id,
+  Value<String> warehouseId,
+  Value<String> code,
+  Value<String> type,
+  Value<int> rowid,
+});
+
+class $$WarehouseLocationsTableFilterComposer
+    extends Composer<_$AppDatabase, $WarehouseLocationsTable> {
+  $$WarehouseLocationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+}
+
+class $$WarehouseLocationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WarehouseLocationsTable> {
+  $$WarehouseLocationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+}
+
+class $$WarehouseLocationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WarehouseLocationsTable> {
+  $$WarehouseLocationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+}
+
+class $$WarehouseLocationsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $WarehouseLocationsTable,
+    WarehouseLocationRow,
+    $$WarehouseLocationsTableFilterComposer,
+    $$WarehouseLocationsTableOrderingComposer,
+    $$WarehouseLocationsTableAnnotationComposer,
+    $$WarehouseLocationsTableCreateCompanionBuilder,
+    $$WarehouseLocationsTableUpdateCompanionBuilder,
+    (
+      WarehouseLocationRow,
+      BaseReferences<_$AppDatabase, $WarehouseLocationsTable,
+          WarehouseLocationRow>
+    ),
+    WarehouseLocationRow,
+    PrefetchHooks Function()> {
+  $$WarehouseLocationsTableTableManager(
+      _$AppDatabase db, $WarehouseLocationsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WarehouseLocationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WarehouseLocationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WarehouseLocationsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> warehouseId = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              WarehouseLocationsCompanion(
+            id: id,
+            warehouseId: warehouseId,
+            code: code,
+            type: type,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String warehouseId,
+            required String code,
+            required String type,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              WarehouseLocationsCompanion.insert(
+            id: id,
+            warehouseId: warehouseId,
+            code: code,
+            type: type,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$WarehouseLocationsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $WarehouseLocationsTable,
+    WarehouseLocationRow,
+    $$WarehouseLocationsTableFilterComposer,
+    $$WarehouseLocationsTableOrderingComposer,
+    $$WarehouseLocationsTableAnnotationComposer,
+    $$WarehouseLocationsTableCreateCompanionBuilder,
+    $$WarehouseLocationsTableUpdateCompanionBuilder,
+    (
+      WarehouseLocationRow,
+      BaseReferences<_$AppDatabase, $WarehouseLocationsTable,
+          WarehouseLocationRow>
+    ),
+    WarehouseLocationRow,
+    PrefetchHooks Function()>;
+typedef $$RemoteCountSessionsTableCreateCompanionBuilder
+    = RemoteCountSessionsCompanion Function({
+  required String id,
+  required String warehouseId,
+  required String createdByUserId,
+  Value<String?> label,
+  required String status,
+  required DateTime submittedAt,
+  Value<DateTime?> reviewedAt,
+  Value<String?> rejectReason,
+  Value<int> rowid,
+});
+typedef $$RemoteCountSessionsTableUpdateCompanionBuilder
+    = RemoteCountSessionsCompanion Function({
+  Value<String> id,
+  Value<String> warehouseId,
+  Value<String> createdByUserId,
+  Value<String?> label,
+  Value<String> status,
+  Value<DateTime> submittedAt,
+  Value<DateTime?> reviewedAt,
+  Value<String?> rejectReason,
+  Value<int> rowid,
+});
+
+class $$RemoteCountSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteCountSessionsTable> {
+  $$RemoteCountSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByUserId => $composableBuilder(
+      column: $table.createdByUserId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get label => $composableBuilder(
+      column: $table.label, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get submittedAt => $composableBuilder(
+      column: $table.submittedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get reviewedAt => $composableBuilder(
+      column: $table.reviewedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rejectReason => $composableBuilder(
+      column: $table.rejectReason, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteCountSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteCountSessionsTable> {
+  $$RemoteCountSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByUserId => $composableBuilder(
+      column: $table.createdByUserId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get label => $composableBuilder(
+      column: $table.label, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get submittedAt => $composableBuilder(
+      column: $table.submittedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get reviewedAt => $composableBuilder(
+      column: $table.reviewedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rejectReason => $composableBuilder(
+      column: $table.rejectReason,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteCountSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteCountSessionsTable> {
+  $$RemoteCountSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByUserId => $composableBuilder(
+      column: $table.createdByUserId, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get submittedAt => $composableBuilder(
+      column: $table.submittedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reviewedAt => $composableBuilder(
+      column: $table.reviewedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get rejectReason => $composableBuilder(
+      column: $table.rejectReason, builder: (column) => column);
+}
+
+class $$RemoteCountSessionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteCountSessionsTable,
+    RemoteCountSessionRow,
+    $$RemoteCountSessionsTableFilterComposer,
+    $$RemoteCountSessionsTableOrderingComposer,
+    $$RemoteCountSessionsTableAnnotationComposer,
+    $$RemoteCountSessionsTableCreateCompanionBuilder,
+    $$RemoteCountSessionsTableUpdateCompanionBuilder,
+    (
+      RemoteCountSessionRow,
+      BaseReferences<_$AppDatabase, $RemoteCountSessionsTable,
+          RemoteCountSessionRow>
+    ),
+    RemoteCountSessionRow,
+    PrefetchHooks Function()> {
+  $$RemoteCountSessionsTableTableManager(
+      _$AppDatabase db, $RemoteCountSessionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteCountSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteCountSessionsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteCountSessionsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> warehouseId = const Value.absent(),
+            Value<String> createdByUserId = const Value.absent(),
+            Value<String?> label = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<DateTime> submittedAt = const Value.absent(),
+            Value<DateTime?> reviewedAt = const Value.absent(),
+            Value<String?> rejectReason = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteCountSessionsCompanion(
+            id: id,
+            warehouseId: warehouseId,
+            createdByUserId: createdByUserId,
+            label: label,
+            status: status,
+            submittedAt: submittedAt,
+            reviewedAt: reviewedAt,
+            rejectReason: rejectReason,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String warehouseId,
+            required String createdByUserId,
+            Value<String?> label = const Value.absent(),
+            required String status,
+            required DateTime submittedAt,
+            Value<DateTime?> reviewedAt = const Value.absent(),
+            Value<String?> rejectReason = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteCountSessionsCompanion.insert(
+            id: id,
+            warehouseId: warehouseId,
+            createdByUserId: createdByUserId,
+            label: label,
+            status: status,
+            submittedAt: submittedAt,
+            reviewedAt: reviewedAt,
+            rejectReason: rejectReason,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteCountSessionsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemoteCountSessionsTable,
+    RemoteCountSessionRow,
+    $$RemoteCountSessionsTableFilterComposer,
+    $$RemoteCountSessionsTableOrderingComposer,
+    $$RemoteCountSessionsTableAnnotationComposer,
+    $$RemoteCountSessionsTableCreateCompanionBuilder,
+    $$RemoteCountSessionsTableUpdateCompanionBuilder,
+    (
+      RemoteCountSessionRow,
+      BaseReferences<_$AppDatabase, $RemoteCountSessionsTable,
+          RemoteCountSessionRow>
+    ),
+    RemoteCountSessionRow,
+    PrefetchHooks Function()>;
+typedef $$RemoteCountLinesTableCreateCompanionBuilder
+    = RemoteCountLinesCompanion Function({
+  required String id,
+  required String sessionId,
+  required String itemId,
+  required String locationId,
+  required double counted,
+  required double systemAtSubmit,
+  Value<double?> adjustment,
+  Value<int> rowid,
+});
+typedef $$RemoteCountLinesTableUpdateCompanionBuilder
+    = RemoteCountLinesCompanion Function({
+  Value<String> id,
+  Value<String> sessionId,
+  Value<String> itemId,
+  Value<String> locationId,
+  Value<double> counted,
+  Value<double> systemAtSubmit,
+  Value<double?> adjustment,
+  Value<int> rowid,
+});
+
+class $$RemoteCountLinesTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteCountLinesTable> {
+  $$RemoteCountLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get counted => $composableBuilder(
+      column: $table.counted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get systemAtSubmit => $composableBuilder(
+      column: $table.systemAtSubmit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get adjustment => $composableBuilder(
+      column: $table.adjustment, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteCountLinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteCountLinesTable> {
+  $$RemoteCountLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get counted => $composableBuilder(
+      column: $table.counted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get systemAtSubmit => $composableBuilder(
+      column: $table.systemAtSubmit,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get adjustment => $composableBuilder(
+      column: $table.adjustment, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteCountLinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteCountLinesTable> {
+  $$RemoteCountLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => column);
+
+  GeneratedColumn<double> get counted =>
+      $composableBuilder(column: $table.counted, builder: (column) => column);
+
+  GeneratedColumn<double> get systemAtSubmit => $composableBuilder(
+      column: $table.systemAtSubmit, builder: (column) => column);
+
+  GeneratedColumn<double> get adjustment => $composableBuilder(
+      column: $table.adjustment, builder: (column) => column);
+}
+
+class $$RemoteCountLinesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteCountLinesTable,
+    RemoteCountLineRow,
+    $$RemoteCountLinesTableFilterComposer,
+    $$RemoteCountLinesTableOrderingComposer,
+    $$RemoteCountLinesTableAnnotationComposer,
+    $$RemoteCountLinesTableCreateCompanionBuilder,
+    $$RemoteCountLinesTableUpdateCompanionBuilder,
+    (
+      RemoteCountLineRow,
+      BaseReferences<_$AppDatabase, $RemoteCountLinesTable, RemoteCountLineRow>
+    ),
+    RemoteCountLineRow,
+    PrefetchHooks Function()> {
+  $$RemoteCountLinesTableTableManager(
+      _$AppDatabase db, $RemoteCountLinesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteCountLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteCountLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteCountLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<String> itemId = const Value.absent(),
+            Value<String> locationId = const Value.absent(),
+            Value<double> counted = const Value.absent(),
+            Value<double> systemAtSubmit = const Value.absent(),
+            Value<double?> adjustment = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteCountLinesCompanion(
+            id: id,
+            sessionId: sessionId,
+            itemId: itemId,
+            locationId: locationId,
+            counted: counted,
+            systemAtSubmit: systemAtSubmit,
+            adjustment: adjustment,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String sessionId,
+            required String itemId,
+            required String locationId,
+            required double counted,
+            required double systemAtSubmit,
+            Value<double?> adjustment = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteCountLinesCompanion.insert(
+            id: id,
+            sessionId: sessionId,
+            itemId: itemId,
+            locationId: locationId,
+            counted: counted,
+            systemAtSubmit: systemAtSubmit,
+            adjustment: adjustment,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteCountLinesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemoteCountLinesTable,
+    RemoteCountLineRow,
+    $$RemoteCountLinesTableFilterComposer,
+    $$RemoteCountLinesTableOrderingComposer,
+    $$RemoteCountLinesTableAnnotationComposer,
+    $$RemoteCountLinesTableCreateCompanionBuilder,
+    $$RemoteCountLinesTableUpdateCompanionBuilder,
+    (
+      RemoteCountLineRow,
+      BaseReferences<_$AppDatabase, $RemoteCountLinesTable, RemoteCountLineRow>
+    ),
+    RemoteCountLineRow,
+    PrefetchHooks Function()>;
+typedef $$SyncCursorsTableCreateCompanionBuilder = SyncCursorsCompanion
+    Function({
+  required String warehouseId,
+  required int cursor,
+  Value<int> rowid,
+});
+typedef $$SyncCursorsTableUpdateCompanionBuilder = SyncCursorsCompanion
+    Function({
+  Value<String> warehouseId,
+  Value<int> cursor,
+  Value<int> rowid,
+});
+
+class $$SyncCursorsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncCursorsTable> {
+  $$SyncCursorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get cursor => $composableBuilder(
+      column: $table.cursor, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncCursorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncCursorsTable> {
+  $$SyncCursorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cursor => $composableBuilder(
+      column: $table.cursor, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncCursorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncCursorsTable> {
+  $$SyncCursorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<int> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => column);
+}
+
+class $$SyncCursorsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncCursorsTable,
+    SyncCursorRow,
+    $$SyncCursorsTableFilterComposer,
+    $$SyncCursorsTableOrderingComposer,
+    $$SyncCursorsTableAnnotationComposer,
+    $$SyncCursorsTableCreateCompanionBuilder,
+    $$SyncCursorsTableUpdateCompanionBuilder,
+    (
+      SyncCursorRow,
+      BaseReferences<_$AppDatabase, $SyncCursorsTable, SyncCursorRow>
+    ),
+    SyncCursorRow,
+    PrefetchHooks Function()> {
+  $$SyncCursorsTableTableManager(_$AppDatabase db, $SyncCursorsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncCursorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncCursorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncCursorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> warehouseId = const Value.absent(),
+            Value<int> cursor = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncCursorsCompanion(
+            warehouseId: warehouseId,
+            cursor: cursor,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String warehouseId,
+            required int cursor,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncCursorsCompanion.insert(
+            warehouseId: warehouseId,
+            cursor: cursor,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncCursorsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncCursorsTable,
+    SyncCursorRow,
+    $$SyncCursorsTableFilterComposer,
+    $$SyncCursorsTableOrderingComposer,
+    $$SyncCursorsTableAnnotationComposer,
+    $$SyncCursorsTableCreateCompanionBuilder,
+    $$SyncCursorsTableUpdateCompanionBuilder,
+    (
+      SyncCursorRow,
+      BaseReferences<_$AppDatabase, $SyncCursorsTable, SyncCursorRow>
+    ),
+    SyncCursorRow,
     PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
@@ -8043,4 +11300,16 @@ class $AppDatabaseManager {
       $$PoLineItemsTableTableManager(_db, _db.poLineItems);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
+  $$CatalogItemsTableTableManager get catalogItems =>
+      $$CatalogItemsTableTableManager(_db, _db.catalogItems);
+  $$CatalogBarcodesTableTableManager get catalogBarcodes =>
+      $$CatalogBarcodesTableTableManager(_db, _db.catalogBarcodes);
+  $$WarehouseLocationsTableTableManager get warehouseLocations =>
+      $$WarehouseLocationsTableTableManager(_db, _db.warehouseLocations);
+  $$RemoteCountSessionsTableTableManager get remoteCountSessions =>
+      $$RemoteCountSessionsTableTableManager(_db, _db.remoteCountSessions);
+  $$RemoteCountLinesTableTableManager get remoteCountLines =>
+      $$RemoteCountLinesTableTableManager(_db, _db.remoteCountLines);
+  $$SyncCursorsTableTableManager get syncCursors =>
+      $$SyncCursorsTableTableManager(_db, _db.syncCursors);
 }

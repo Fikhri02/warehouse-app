@@ -8,12 +8,14 @@ import 'package:warehouse_app/data/local/tables/count_session_table.dart';
 import 'package:warehouse_app/data/local/tables/order_tables.dart';
 import 'package:warehouse_app/data/local/tables/purchase_order_table.dart';
 import 'package:warehouse_app/data/local/tables/sync_queue_table.dart';
+import 'package:warehouse_app/data/local/tables/server_tables.dart';
 import 'package:warehouse_app/data/local/daos/alerts_dao.dart';
 import 'package:warehouse_app/data/local/daos/tasks_dao.dart';
 import 'package:warehouse_app/data/local/daos/count_session_dao.dart';
 import 'package:warehouse_app/data/local/daos/orders_dao.dart';
 import 'package:warehouse_app/data/local/daos/receiving_dao.dart';
 import 'package:warehouse_app/data/local/daos/sync_queue_dao.dart';
+import 'package:warehouse_app/data/local/daos/server_mirror_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -32,6 +34,12 @@ part 'app_database.g.dart';
     PurchaseOrders,
     PoLineItems,
     SyncQueue,
+    CatalogItems,
+    CatalogBarcodes,
+    WarehouseLocations,
+    RemoteCountSessions,
+    RemoteCountLines,
+    SyncCursors,
   ],
   daos: [
     AlertsDao,
@@ -40,6 +48,7 @@ part 'app_database.g.dart';
     OrdersDao,
     ReceivingDao,
     SyncQueueDao,
+    ServerMirrorDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -48,7 +57,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -83,8 +92,41 @@ class AppDatabase extends _$AppDatabase {
             await migrator.createTable(orderItemEntries);
             await migrator.createTable(orderStatusHistoryEntries);
           }
+          if (from < 6) {
+            await migrator.createTable(catalogItems);
+            await migrator.createTable(catalogBarcodes);
+            await migrator.createTable(warehouseLocations);
+            await migrator.createTable(remoteCountSessions);
+            await migrator.createTable(remoteCountLines);
+            await migrator.createTable(syncCursors);
+            await migrator.addColumn(countItems, countItems.itemId);
+            await migrator.addColumn(syncQueue, syncQueue.idempotencyKey);
+            await migrator.addColumn(syncQueue, syncQueue.status);
+            await migrator.addColumn(syncQueue, syncQueue.attempts);
+            await migrator.addColumn(syncQueue, syncQueue.lastError);
+            await migrator.addColumn(syncQueue, syncQueue.warehouseId);
+            // Rows the old service already marked done must not be sent again.
+            await customStatement("UPDATE sync_queue SET status = 'synced' WHERE synced = 1");
+          }
         },
       );
+
+  /// Signing out: neither this person's work nor the server's data stays on the phone.
+  Future<void> clearServerData() => transaction(() async {
+        for (final table in <TableInfo>[
+          catalogItems,
+          catalogBarcodes,
+          warehouseLocations,
+          remoteCountSessions,
+          remoteCountLines,
+          syncCursors,
+          syncQueue,
+          countItems,
+          countSessions,
+        ]) {
+          await delete(table).go();
+        }
+      });
 }
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {

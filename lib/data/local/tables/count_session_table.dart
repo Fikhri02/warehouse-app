@@ -21,6 +21,8 @@ class CountItems extends Table {
   TextColumn get sessionId => text()();
   TextColumn get itemCode => text()();
   TextColumn get itemName => text()();
+  /// The server's item id. Null in Sample mode, where itemCode is all there is.
+  TextColumn get itemId => text().nullable()();
   IntColumn get expectedQty => integer()();
   IntColumn get actualQty => integer()();
   TextColumn get entryMethod => text().withDefault(const Constant('scanned'))();
