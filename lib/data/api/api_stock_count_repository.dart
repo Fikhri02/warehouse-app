@@ -117,6 +117,65 @@ class ApiStockCountRepository implements StockCountRepository {
     return summaries;
   }
 
+  @override
+  Future<List<CountSummary>> getCountsToReview() async {
+    final warehouseId = _session()?.warehouseId;
+    if (warehouseId == null) return const [];
+    final decided = {
+      for (final op in [SyncOps.countApprove, SyncOps.countReject])
+        for (final item in await _db.syncQueueDao.itemsFor(op)) item.referenceId,
+    };
+    return [
+      for (final row in await _db.serverMirrorDao.countSessions(warehouseId: warehouseId, status: 'Submitted', limit: 100))
+        if (!decided.contains(row.id))
+          CountSummary(
+            id: row.id,
+            title: row.label ?? 'Count',
+            lineCount: (await _db.serverMirrorDao.linesFor(row.id)).length,
+            progress: CountProgress.waitingReview,
+            submittedAt: row.submittedAt,
+          ),
+    ];
+  }
+
+  @override
+  Future<CountReview> getCountReview(String sessionId) async {
+    final warehouseId = _session()?.warehouseId;
+    final json = await _client.get('/warehouses/$warehouseId/count-reviews/$sessionId') as Map<String, dynamic>;
+    return CountReview(
+      id: json['id'] as String,
+      title: json['label'] as String? ?? 'Count',
+      countedBy: json['createdByName'] as String,
+      submittedAt: DateTime.parse(json['submittedAt'] as String).toLocal(),
+      status: json['status'] as String,
+      lines: [
+        for (final l in (json['lines'] as List).cast<Map<String, dynamic>>())
+          CountReviewLine(
+            itemName: l['itemName'] as String,
+            sku: l['sku'] as String,
+            locationCode: l['locationCode'] as String,
+            counted: (l['counted'] as num).toDouble(),
+            systemAtSubmit: (l['systemAtSubmit'] as num).toDouble(),
+            current: (l['current'] as num).toDouble(),
+            difference: (l['difference'] as num).toDouble(),
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<void> approveCount(String sessionId) => _decide(SyncOps.countApprove, sessionId, const {});
+
+  @override
+  Future<void> rejectCount(String sessionId, String reason) => _decide(SyncOps.countReject, sessionId, {'reason': reason});
+
+  Future<void> _decide(String op, String sessionId, Map<String, Object?> body) async {
+    final warehouseId = _session()?.warehouseId;
+    if (warehouseId == null) throw StateError('No warehouse chosen.');
+    await _db.syncQueueDao.enqueue(operationType: op, referenceId: sessionId, warehouseId: warehouseId, payload: jsonEncode(body));
+    _onQueued();
+  }
+
   CountSummary _queued(SyncQueueData item) {
     final payload = jsonDecode(item.payload) as Map<String, dynamic>;
     final refused = item.status != 'pending';

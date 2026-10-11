@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:warehouse_app/core/models/alert.dart';
+import 'package:warehouse_app/core/models/count_records.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
@@ -61,7 +61,7 @@ class PendingReviewScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: reviews.length,
               itemBuilder: (context, i) =>
-                  _ReviewCard(alert: reviews[i], ref: ref),
+                  _ReviewCard(count: reviews[i]),
             );
           },
         ),
@@ -71,14 +71,14 @@ class PendingReviewScreen extends ConsumerWidget {
 }
 
 class _ReviewCard extends StatelessWidget {
-  final Alert alert;
-  final WidgetRef ref;
+  final CountSummary count;
 
-  const _ReviewCard({required this.alert, required this.ref});
+  const _ReviewCard({required this.count});
 
   @override
   Widget build(BuildContext context) {
     final secondaryText = AppColors.textSecondary(Theme.of(context).brightness);
+    final submitted = count.submittedAt == null ? null : MaterialLocalizations.of(context).formatMediumDate(count.submittedAt!);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Padding(
@@ -88,48 +88,28 @@ class _ReviewCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.warning_amber_outlined,
-                    color: AppColors.warning, size: 20),
+                const Icon(Icons.fact_check_outlined, color: AppColors.warning, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    alert.title,
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(fontWeight: FontWeight.w600),
-                  ),
+                  child: Text(count.title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              alert.body,
+              [
+                '${count.lineCount} ${count.lineCount == 1 ? 'item' : 'items'} counted',
+                if (submitted != null) 'submitted $submitted',
+              ].join(' · '),
               style: AppTextStyles.bodySmall.copyWith(color: secondaryText),
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Flagged for follow-up')),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.warning),
-                  child: const Text('Flag'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Approved')),
-                    );
-                    ref.read(pendingReviewProvider.notifier).refresh();
-                  },
-                  child: const Text('Approve'),
-                ),
-              ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () => context.push(AppRoutes.pendingReviewDetail, extra: count.id),
+                child: const Text('Review'),
+              ),
             ),
           ],
         ),

@@ -17,6 +17,16 @@ abstract class StockCountRepository {
 
   /// Hands a finished count over for sending (queued until the server has it).
   Future<void> submitSession(CountSession session);
+
+  /// Submitted counts in the current warehouse that nobody has decided on yet (supervisors).
+  Future<List<CountSummary>> getCountsToReview();
+
+  /// The count with live stock figures. Needs a connection.
+  Future<CountReview> getCountReview(String sessionId);
+
+  Future<void> approveCount(String sessionId);
+
+  Future<void> rejectCount(String sessionId, String reason);
 }
 
 final stockCountRepositoryProvider = Provider<StockCountRepository>((ref) {

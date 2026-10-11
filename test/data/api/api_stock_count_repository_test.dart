@@ -114,4 +114,48 @@ void main() {
     expect(recent[1].lineCount, 2);
     expect(recent[2].note, 'Count the back row too');
   });
+
+  test('counts to review come from the phone copy, minus ones already decided on this phone', () async {
+    final counts = await repo();
+    for (final id in ['c1', 'c2']) {
+      await db.serverMirrorDao.upsertCountSession(
+        RemoteCountSessionsCompanion.insert(id: id, warehouseId: w, createdByUserId: 'someone', label: Value('Aisle $id'), status: 'Submitted', submittedAt: DateTime(2026, 10, 11)),
+        [],
+      );
+    }
+
+    await counts.approveCount('c1');
+
+    expect((await counts.getCountsToReview()).map((c) => c.id), ['c2']);
+    final queued = (await db.syncQueueDao.getPendingItems()).single;
+    expect(queued.operationType, SyncOps.countApprove);
+    expect(queued.referenceId, 'c1');
+  });
+
+  test('a rejection is queued with its reason', () async {
+    final counts = await repo();
+
+    await counts.rejectCount('c1', 'Count the back row too');
+
+    final queued = (await db.syncQueueDao.getPendingItems()).single;
+    expect(queued.operationType, SyncOps.countReject);
+    expect(jsonDecode(queued.payload), {'reason': 'Count the back row too'});
+  });
+
+  test('the review shows each line and how many bins moved since the count', () async {
+    final counts = await repo((r) async => jsonResponse({
+          'id': 'c1', 'label': 'Aisle A', 'createdByUserId': 'u2', 'createdByName': 'Arjun Nair', 'status': 'Submitted',
+          'submittedAt': '2026-10-11T00:12:00Z', 'reviewedByUserId': null, 'reviewedAt': null, 'rejectReason': null,
+          'lines': [
+            {'id': 'l1', 'itemId': beras, 'sku': 'WT-0001', 'itemName': 'Beras Wangi 10kg', 'locationId': bin, 'locationCode': 'A-01-01',
+             'counted': 8, 'systemAtSubmit': 10, 'current': 9, 'difference': -2, 'adjustment': null},
+          ],
+        }));
+
+    final review = await counts.getCountReview('c1');
+
+    expect(review.countedBy, 'Arjun Nair');
+    expect(review.lines.single.difference, -2);
+    expect(review.movedLines, 1);
+  });
 }

@@ -2,16 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warehouse_app/core/models/staff_task.dart';
-import 'package:warehouse_app/core/models/alert.dart';
+import 'package:warehouse_app/core/models/count_records.dart';
 import 'package:warehouse_app/features/supervisor/providers/assign_tasks_provider.dart';
 import 'package:warehouse_app/features/supervisor/providers/pending_review_provider.dart';
 import 'package:warehouse_app/features/supervisor/providers/reports_provider.dart';
 import 'package:warehouse_app/data/repositories/tasks_repository.dart';
-import 'package:warehouse_app/data/repositories/alerts_repository.dart';
+import 'package:warehouse_app/data/repositories/stock_count_repository.dart';
 
 class MockTasksRepository extends Mock implements TasksRepository {}
 
-class MockAlertsRepository extends Mock implements AlertsRepository {}
+class MockStockCountRepository extends Mock implements StockCountRepository {}
 
 class _FakeStaffTask extends Fake implements StaffTask {}
 
@@ -48,30 +48,17 @@ void main() {
   });
 
   group('PendingReviewNotifier', () {
-    test('loads pending reviews on build', () async {
-      final mockRepo = MockAlertsRepository();
-
-      final pendingAlerts = [
-        Alert(
-          id: 'pa1',
-          type: AlertType.discrepancy,
-          title: 'Discrepancy: PO-001',
-          body: '2 items flagged',
-          createdAt: DateTime(2026, 4, 15, 10),
-          isRead: false,
-        ),
-      ];
-      when(() => mockRepo.getPendingReviews())
-          .thenAnswer((_) async => pendingAlerts);
-
-      final container = ProviderContainer(
-        overrides: [alertsRepositoryProvider.overrideWithValue(mockRepo)],
-      );
+    test('loads the counts waiting for review', () async {
+      final mockRepo = MockStockCountRepository();
+      when(() => mockRepo.getCountsToReview()).thenAnswer((_) async => const [
+            CountSummary(id: 'c1', title: 'Aisle A', lineCount: 2, progress: CountProgress.waitingReview),
+          ]);
+      final container = ProviderContainer(overrides: [stockCountRepositoryProvider.overrideWithValue(mockRepo)]);
       addTearDown(container.dispose);
 
-      await container.read(pendingReviewProvider.future);
-      final reviews = container.read(pendingReviewProvider).valueOrNull;
-      expect(reviews?.length, 1);
+      final reviews = await container.read(pendingReviewProvider.future);
+
+      expect(reviews.single.title, 'Aisle A');
     });
   });
 

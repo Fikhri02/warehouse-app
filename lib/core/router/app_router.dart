@@ -30,6 +30,7 @@ import '../../features/tasks/screens/tasks_screen.dart';
 import '../../features/supervisor/screens/assign_tasks_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
+import '../../features/supervisor/screens/count_review_screen.dart';
 import '../../features/auth/presentation/choose_warehouse_screen.dart';
 import '../../features/stock_count/presentation/count_item_picker_screen.dart';
 import '../../features/stock_count/presentation/count_setup_screen.dart';
@@ -242,6 +243,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.pendingReview,
         builder: (_, __) => const PendingReviewScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pendingReviewDetail,
+        builder: (_, state) => CountReviewScreen(sessionId: state.extra as String),
       ),
     ],
   );
