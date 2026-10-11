@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:warehouse_app/core/config/app_config.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_router.dart';
 import 'package:warehouse_app/core/theme/app_theme.dart';
+import 'package:warehouse_app/data/api/api_auth_repository.dart';
+import 'package:warehouse_app/data/api/api_client.dart';
+import 'package:warehouse_app/data/api/api_providers.dart';
+import 'package:warehouse_app/data/api/key_value_store.dart';
+import 'package:warehouse_app/data/api/token_store.dart';
+import 'package:warehouse_app/data/local/app_database.dart';
 import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 import 'package:warehouse_app/data/repositories/auth_repository.dart';
 import 'package:warehouse_app/data/repositories/orders_repository.dart';
@@ -15,34 +23,31 @@ import 'package:warehouse_app/data/sample/sample_receiving_repository.dart';
 import 'package:warehouse_app/data/sample/sample_stock_count_repository.dart';
 import 'package:warehouse_app/data/sample/sample_tasks_repository.dart';
 import 'package:warehouse_app/data/sync/sync_provider.dart';
-import 'package:warehouse_app/features/stock_count/providers/stock_count_provider.dart';
 import 'package:warehouse_app/features/profile/providers/profile_provider.dart';
+import 'package:warehouse_app/features/stock_count/providers/stock_count_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   const storage = FlutterSecureStorage();
-  final authRepository = SampleAuthRepository(storage);
+  final database = AppDatabase();
+  // Built with --dart-define=WARETRACK_API=https://host/api: the server. Otherwise: Sample data, as before.
+  final ApiClient? client = AppConfig.useApi
+      ? ApiClient(baseUrl: AppConfig.apiBaseUrl, httpClient: http.Client(), tokens: TokenStore(SecureKeyValueStore(storage)))
+      : null;
+  final AuthRepository authRepository = client != null ? ApiAuthRepository(client: client, db: database) : SampleAuthRepository(storage);
   final initialSession = await authRepository.getStoredSession();
 
   runApp(
     ProviderScope(
       overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        if (client != null) apiClientProvider.overrideWithValue(client),
         alertsRepositoryProvider.overrideWith((_) => SampleAlertsRepository()),
-        authBootstrapStateProvider.overrideWith(
-          (_) => AuthBootstrapState.hydrated(initialSession),
-        ),
-        authRepositoryProvider.overrideWith(
-          (_) => authRepository,
-        ),
-        ordersRepositoryProvider.overrideWith(
-          (_) => SampleOrdersRepository(),
-        ),
-        receivingRepositoryProvider.overrideWith(
-          (_) => SampleReceivingRepository(),
-        ),
-        stockCountRepositoryProvider.overrideWith(
-          (_) => SampleStockCountRepository(),
-        ),
+        authBootstrapStateProvider.overrideWith((_) => AuthBootstrapState.hydrated(initialSession)),
+        authRepositoryProvider.overrideWith((_) => authRepository),
+        ordersRepositoryProvider.overrideWith((_) => SampleOrdersRepository()),
+        receivingRepositoryProvider.overrideWith((_) => SampleReceivingRepository()),
+        stockCountRepositoryProvider.overrideWith((_) => SampleStockCountRepository()),
         tasksRepositoryProvider.overrideWith((_) => SampleTasksRepository()),
       ],
       child: const WarehouseApp(),
@@ -61,6 +66,10 @@ class _WarehouseAppState extends ConsumerState<WarehouseApp> {
   @override
   void initState() {
     super.initState();
+    if (ref.read(useApiProvider)) {
+      // The server refused the refresh token (revoked, deactivated): back to sign-in with nothing left behind.
+      ref.read(apiClientProvider).onSessionExpired = () => ref.read(authNotifierProvider.notifier).logout();
+    }
     Future.microtask(
       () => ref.read(stockCountNotifierProvider.notifier).tryResumeSession(),
     );

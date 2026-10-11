@@ -61,4 +61,7 @@ class SampleAuthRepository implements AuthRepository {
   Future<void> clearSession() async {
     await _storage.deleteAll();
   }
+
+  @override
+  Future<UserSession> selectWarehouse(UserSession session, String warehouseId) async => session; // one site in Sample mode
 }

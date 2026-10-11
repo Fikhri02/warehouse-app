@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
+import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/features/profile/providers/profile_provider.dart';
@@ -80,6 +82,13 @@ class ProfileScreen extends ConsumerWidget {
           const Divider(height: 1),
 
           // Settings toggles
+          if (session.warehouses.length > 1)
+            ListTile(
+              leading: const Icon(Icons.swap_horiz, color: AppColors.primary),
+              title: Text('Switch warehouse', style: AppTextStyles.bodyMedium),
+              subtitle: Text(session.site),
+              onTap: () => context.push(AppRoutes.chooseWarehouse),
+            ),
           SwitchListTile(
             value: settings.biometricEnabled,
             onChanged: (_) => notifier.toggleBiometric(),

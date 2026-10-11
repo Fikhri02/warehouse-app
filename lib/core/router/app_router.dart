@@ -30,7 +30,9 @@ import '../../features/tasks/screens/tasks_screen.dart';
 import '../../features/supervisor/screens/assign_tasks_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
+import '../../features/auth/presentation/choose_warehouse_screen.dart';
 import 'app_route_observer.dart';
+import 'auth_redirect.dart';
 import 'app_routes.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -56,32 +58,7 @@ class _RouterNotifier extends ChangeNotifier {
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
-    final authState = _ref.read(authNotifierProvider);
-    final isLoginRoute = state.matchedLocation == AppRoutes.login;
-    final isWelcomeRoute = state.matchedLocation == AppRoutes.welcome;
-    final isAuthEntryRoute = isLoginRoute || isWelcomeRoute;
-
-    if (authState.isLoading) return null;
-
-    final session = authState.valueOrNull;
-    final isLoggedIn = session != null;
-
-    if (!isLoggedIn && !isAuthEntryRoute) return AppRoutes.welcome;
-    if (isLoggedIn && isAuthEntryRoute) return AppRoutes.dashboard;
-
-    // Enforce supervisor-only routes
-    final supervisorOnly = [
-      AppRoutes.assignTasks,
-      AppRoutes.reports,
-      AppRoutes.pendingReview,
-    ];
-    if (isLoggedIn &&
-        session.role == UserRole.worker &&
-        supervisorOnly.contains(state.matchedLocation)) {
-      return AppRoutes.dashboard;
-    }
-
-    return null;
+    return authRedirect(auth: _ref.read(authNotifierProvider), location: state.matchedLocation);
   }
 }
 
@@ -105,6 +82,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.chooseWarehouse,
+        builder: (_, __) => const ChooseWarehouseScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

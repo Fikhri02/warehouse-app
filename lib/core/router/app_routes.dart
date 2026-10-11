@@ -26,4 +26,7 @@ class AppRoutes {
   static const assignTasks = '/assign-tasks';
   static const reports = '/reports';
   static const pendingReview = '/pending-review';
+  static const chooseWarehouse = '/choose-warehouse';
+  static const syncIssues = '/sync';
+  static const pendingReviewDetail = '/pending-review/detail';
 }

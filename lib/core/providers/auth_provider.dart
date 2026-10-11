@@ -42,6 +42,13 @@ class AuthNotifier extends AsyncNotifier<UserSession?> {
     );
   }
 
+  /// Chooses (or switches to) one of the person's warehouses.
+  Future<void> selectWarehouse(String warehouseId) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncData(await ref.read(authRepositoryProvider).selectWarehouse(current, warehouseId));
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).clearSession();
     state = const AsyncData(null);
