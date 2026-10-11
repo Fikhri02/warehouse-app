@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warehouse_app/data/local/app_database.dart';
+import 'package:warehouse_app/data/api/api_exception.dart';
 
 void main() {
   late AppDatabase db;
@@ -51,5 +52,18 @@ void main() {
     );
 
     expect(await db.syncQueueDao.countPending(), 2);
+  });
+
+  test('a dismissed issue no longer shows, and each command keeps one key', () async {
+    final dao = db.syncQueueDao;
+    await dao.enqueue(operationType: 'count.submit', referenceId: 'c1', payload: '{}');
+    final item = (await dao.getPendingItems()).single;
+    expect(item.idempotencyKey, matches(RegExp(r'^[0-9a-f-]{36}$')));
+
+    await dao.markFailed(item.id, const ApiException(status: 422, title: 'Invalid'));
+    expect((await dao.watchIssues().first).single.id, item.id);
+
+    await dao.dismiss(item.id);
+    expect(await dao.watchIssues().first, isEmpty);
   });
 }

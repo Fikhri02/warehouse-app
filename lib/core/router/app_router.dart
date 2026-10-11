@@ -31,6 +31,7 @@ import '../../features/supervisor/screens/assign_tasks_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
 import '../../features/auth/presentation/choose_warehouse_screen.dart';
+import '../../features/sync/sync_issues_screen.dart';
 import 'app_route_observer.dart';
 import 'auth_redirect.dart';
 import 'app_routes.dart';
@@ -189,6 +190,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.alerts,
         builder: (_, __) => const AlertsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.syncIssues,
+        builder: (_, __) => const SyncIssuesScreen(),
       ),
       GoRoute(
         path: AppRoutes.deliveryOrders,

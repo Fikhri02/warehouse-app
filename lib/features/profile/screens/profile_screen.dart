@@ -5,6 +5,7 @@ import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
+import 'package:warehouse_app/data/sync/sync_provider.dart';
 import 'package:warehouse_app/features/profile/providers/profile_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -82,6 +83,7 @@ class ProfileScreen extends ConsumerWidget {
           const Divider(height: 1),
 
           // Settings toggles
+          const _SyncTile(),
           if (session.warehouses.length > 1)
             ListTile(
               leading: const Icon(Icons.swap_horiz, color: AppColors.primary),
@@ -129,7 +131,7 @@ class ProfileScreen extends ConsumerWidget {
                 foregroundColor: AppColors.error,
                 minimumSize: const Size(double.infinity, 52),
               ),
-              onPressed: () => ref.read(authNotifierProvider.notifier).logout(),
+              onPressed: () => _signOut(context, ref),
               child: Text(
                 'Sign Out',
                 style:
@@ -163,4 +165,48 @@ class _InfoTile extends StatelessWidget {
       subtitle: Text(value, style: AppTextStyles.bodyMedium),
     );
   }
+}
+
+class _SyncTile extends ConsumerWidget {
+  const _SyncTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = ref.watch(pendingChangesProvider).valueOrNull ?? 0;
+    final issues = ref.watch(syncIssuesProvider).valueOrNull?.length ?? 0;
+    final subtitle = issues > 0
+        ? '$issues ${issues == 1 ? 'change was' : 'changes were'} not accepted'
+        : pending > 0
+            ? '$pending ${pending == 1 ? 'change' : 'changes'} waiting to send'
+            : 'Everything sent';
+    return ListTile(
+      leading: Icon(Icons.sync, color: issues > 0 ? AppColors.error : AppColors.primary),
+      title: Text('Sync', style: AppTextStyles.bodyMedium),
+      subtitle: Text(subtitle),
+      onTap: () => context.push(AppRoutes.syncIssues),
+    );
+  }
+}
+
+/// Unsent changes belong to this person: signing out deletes them, so say so first.
+Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+  final pending = ref.read(pendingChangesProvider).valueOrNull ?? 0;
+  if (pending > 0) {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign out with unsent changes?'),
+        content: Text(
+          "$pending ${pending == 1 ? "change hasn't" : "changes haven't"} been sent yet. Signing out deletes "
+          "${pending == 1 ? 'it' : 'them'} from this phone.",
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Sign Out')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+  }
+  await ref.read(authNotifierProvider.notifier).logout();
 }
