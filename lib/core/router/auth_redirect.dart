@@ -6,8 +6,9 @@ import 'app_routes.dart';
 const _supervisorOnly = [AppRoutes.assignTasks, AppRoutes.reports, AppRoutes.pendingReview, AppRoutes.pendingReviewDetail];
 
 /// Where to send someone who asked for [location], or null to let them through.
-String? authRedirect({required AsyncValue<UserSession?> auth, required String location}) {
+String? authRedirect({required AsyncValue<UserSession?> auth, required String location, UserSession? locked}) {
   if (auth.isLoading) return null;
+  if (auth.valueOrNull == null && locked != null) return location == AppRoutes.login ? null : AppRoutes.login;
   final session = auth.valueOrNull;
   final onEntry = location == AppRoutes.login || location == AppRoutes.welcome;
   if (session == null) return onEntry ? null : AppRoutes.welcome;

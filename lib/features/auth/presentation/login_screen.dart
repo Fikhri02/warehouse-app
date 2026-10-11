@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:warehouse_app/core/biometrics.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
@@ -17,6 +18,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Biometric login is on and a session is stored: ask straight away.
+    if (ref.read(lockedSessionProvider) != null) Future.microtask(_biometricSignIn);
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -32,9 +40,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _biometricSignIn() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Biometric authentication')),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    if (ref.read(lockedSessionProvider) == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('Sign in with your password, then turn on biometric login in Profile.')));
+      return;
+    }
+    if (await ref.read(biometricAuthProvider).authenticate('Unlock WareTrack')) {
+      ref.read(authNotifierProvider.notifier).unlock();
+    }
   }
 
   @override

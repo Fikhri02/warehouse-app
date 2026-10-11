@@ -24,6 +24,9 @@ final authBootstrapStateProvider = Provider<AuthBootstrapState>(
   (_) => const AuthBootstrapState.unhydrated(),
 );
 
+/// A stored session waiting for a fingerprint (biometric login on). main.dart sets it at launch.
+final lockedSessionProvider = StateProvider<UserSession?>((_) => null);
+
 class AuthNotifier extends AsyncNotifier<UserSession?> {
   @override
   FutureOr<UserSession?> build() {
@@ -40,6 +43,7 @@ class AuthNotifier extends AsyncNotifier<UserSession?> {
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).login(email, password),
     );
+    if (state.hasValue && state.value != null) ref.read(lockedSessionProvider.notifier).state = null;
   }
 
   /// Chooses (or switches to) one of the person's warehouses.
@@ -47,6 +51,14 @@ class AuthNotifier extends AsyncNotifier<UserSession?> {
     final current = state.valueOrNull;
     if (current == null) return;
     state = AsyncData(await ref.read(authRepositoryProvider).selectWarehouse(current, warehouseId));
+  }
+
+  /// Opens the locked session after a successful fingerprint.
+  void unlock() {
+    final locked = ref.read(lockedSessionProvider);
+    if (locked == null) return;
+    ref.read(lockedSessionProvider.notifier).state = null;
+    state = AsyncData(locked);
   }
 
   Future<void> logout() async {

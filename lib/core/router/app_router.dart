@@ -51,19 +51,26 @@ final _profileNavigatorKey = GlobalKey<NavigatorState>();
 class _RouterNotifier extends ChangeNotifier {
   final Ref _ref;
   late final ProviderSubscription<AsyncValue<UserSession?>> _sub;
+  late final ProviderSubscription<UserSession?> _lockSub;
 
   _RouterNotifier(this._ref) {
     _sub = _ref.listen(authNotifierProvider, (_, __) => notifyListeners());
+    _lockSub = _ref.listen(lockedSessionProvider, (_, __) => notifyListeners());
   }
 
   @override
   void dispose() {
     _sub.close();
+    _lockSub.close();
     super.dispose();
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
-    return authRedirect(auth: _ref.read(authNotifierProvider), location: state.matchedLocation);
+    return authRedirect(
+      auth: _ref.read(authNotifierProvider),
+      location: state.matchedLocation,
+      locked: _ref.read(lockedSessionProvider),
+    );
   }
 }
 

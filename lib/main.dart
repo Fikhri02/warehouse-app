@@ -39,6 +39,9 @@ Future<void> main() async {
       : null;
   final AuthRepository authRepository = client != null ? ApiAuthRepository(client: client, db: database) : SampleAuthRepository(storage);
   final initialSession = await authRepository.getStoredSession();
+  final settingsStore = SecureKeyValueStore(storage);
+  final biometricOn = await settingsStore.read('settings.biometric') == 'true';
+  final locked = biometricOn && initialSession != null; // ask for a fingerprint before opening a stored session
 
   runApp(
     ProviderScope(
@@ -46,7 +49,10 @@ Future<void> main() async {
         appDatabaseProvider.overrideWithValue(database),
         if (client != null) apiClientProvider.overrideWithValue(client),
         alertsRepositoryProvider.overrideWith((_) => SampleAlertsRepository()),
-        authBootstrapStateProvider.overrideWith((_) => AuthBootstrapState.hydrated(initialSession)),
+        authBootstrapStateProvider.overrideWith((_) => AuthBootstrapState.hydrated(locked ? null : initialSession)),
+        settingsStoreProvider.overrideWithValue(settingsStore),
+        biometricPreferenceProvider.overrideWithValue(biometricOn),
+        lockedSessionProvider.overrideWith((_) => locked ? initialSession : null),
         authRepositoryProvider.overrideWith((_) => authRepository),
         ordersRepositoryProvider.overrideWith((_) => SampleOrdersRepository()),
         receivingRepositoryProvider.overrideWith((_) => SampleReceivingRepository()),

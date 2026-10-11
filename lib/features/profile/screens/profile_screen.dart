@@ -93,7 +93,14 @@ class ProfileScreen extends ConsumerWidget {
             ),
           SwitchListTile(
             value: settings.biometricEnabled,
-            onChanged: (_) => notifier.toggleBiometric(),
+            onChanged: (_) async {
+              final ok = await notifier.toggleBiometric();
+              if (!ok && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Biometric login needs a fingerprint or face set up on this phone.")),
+                );
+              }
+            },
             title: Text('Biometric login', style: AppTextStyles.bodyMedium),
             secondary: const Icon(Icons.fingerprint),
             activeThumbColor: AppColors.primary,

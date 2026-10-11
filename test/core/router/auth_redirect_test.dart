@@ -44,4 +44,11 @@ void main() {
   test('Sample-mode sessions (no warehouses) go straight in', () {
     expect(authRedirect(auth: AsyncData(session()), location: AppRoutes.login), AppRoutes.dashboard);
   });
+
+  test('a locked session waits on the sign-in screen for a fingerprint', () {
+    final locked = session(warehouseId: 'sa1', warehouses: [sa1]);
+    expect(authRedirect(auth: const AsyncData(null), location: AppRoutes.dashboard, locked: locked), AppRoutes.login);
+    expect(authRedirect(auth: const AsyncData(null), location: AppRoutes.welcome, locked: locked), AppRoutes.login);
+    expect(authRedirect(auth: const AsyncData(null), location: AppRoutes.login, locked: locked), isNull);
+  });
 }

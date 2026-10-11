@@ -2,11 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:warehouse_app/core/biometrics.dart';
+import 'package:warehouse_app/core/models/user_session.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/theme/app_theme.dart';
 import 'package:warehouse_app/data/repositories/auth_repository.dart';
 import 'package:warehouse_app/features/auth/presentation/login_screen.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
+
+class FakeBiometrics implements BiometricAuth {
+  @override
+  Future<bool> canCheck() async => true;
+
+  @override
+  Future<bool> authenticate(String reason) async => true;
+}
 
 void main() {
   late MockAuthRepository mockRepo;
@@ -63,5 +74,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Invalid credentials'), findsOneWidget);
+  });
+
+  testWidgets('a locked session opens with a fingerprint', (tester) async {
+    const locked = UserSession(userId: 'u1', name: 'Arjun Nair', email: 'arjun@waretrack.local', site: 'Shah Alam DC', role: UserRole.worker, token: 't');
+    final container = ProviderContainer(overrides: [
+      authRepositoryProvider.overrideWithValue(mockRepo),
+      authBootstrapStateProvider.overrideWithValue(const AuthBootstrapState.hydrated(null)),
+      lockedSessionProvider.overrideWith((_) => locked),
+      biometricAuthProvider.overrideWithValue(FakeBiometrics()),
+    ]);
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(theme: AppTheme.light, home: const LoginScreen()),
+    ));
+    await tester.pumpAndSettle(); // the prompt opens on its own
+
+    expect(container.read(authNotifierProvider).valueOrNull?.userId, 'u1');
+    expect(container.read(lockedSessionProvider), isNull);
   });
 }
