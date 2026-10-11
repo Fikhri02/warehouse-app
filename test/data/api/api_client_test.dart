@@ -9,6 +9,7 @@ import 'package:warehouse_app/data/api/key_value_store.dart';
 import 'package:warehouse_app/data/api/token_store.dart';
 
 import '../../support/api_fakes.dart';
+import 'dart:io';
 
 void main() {
   test('sends the bearer token and the idempotency key, and reads the JSON answer', () async {
@@ -133,5 +134,25 @@ void main() {
     await client.get('/me');
 
     expect(paths, ['/api/auth/refresh', '/api/me']);
+  });
+
+  test('an_answer_that_is_not_json_pauses_instead_of_crashing', () async {
+    final client = ApiClient(
+      baseUrl: testBaseUrl,
+      tokens: await signedInTokens(),
+      httpClient: MockClient((_) async => http.Response('<html>Sign in to the Wi-Fi</html>', 200)),
+    );
+
+    await expectLater(client.get('/a'), throwsA(isA<ApiException>().having((e) => e.status, 'status', 502)));
+  });
+
+  test('a failed secure connection counts as offline', () async {
+    final client = ApiClient(
+      baseUrl: testBaseUrl,
+      tokens: await signedInTokens(),
+      httpClient: MockClient((_) async => throw const HandshakeException('bad certificate')),
+    );
+
+    await expectLater(client.get('/a'), throwsA(isA<ApiOfflineException>()));
   });
 }

@@ -89,10 +89,12 @@ void main() {
   test('a_stored_session_whose_refresh_is_refused_is_gone', () async {
     final tokens = await signedInTokens(store: keys);
     await tokens.saveUser(userJson(warehouses: [membershipJson(sa1, 'SA1', 'Shah Alam DC', 'Worker')]));
+    await db.syncQueueDao.enqueue(operationType: 'count.submit', referenceId: 'c1', payload: '{}');
     final repo = repoAnswering((_) async => jsonResponse({'status': 401, 'code': 'invalid-refresh-token'}, 401), tokens: TokenStore(keys));
 
     expect(await repo.getStoredSession(), isNull);
     expect(keys.values['api.refreshToken'], isNull);
+    expect(await db.syncQueueDao.countPending(), 0); // nothing of theirs is left for the next person to send
   });
 
   test('signing out revokes the refresh token and wipes the server data', () async {
@@ -109,5 +111,27 @@ void main() {
     expect(paths, ['/api/auth/logout']);
     expect(keys.values['api.refreshToken'], isNull);
     expect(await db.syncQueueDao.countPending(), 0);
+  });
+
+  test('a_different_person_signing_in_starts_with_an_empty_phone', () async {
+    final tokens = await signedInTokens(store: keys);
+    await tokens.saveUser(userJson(id: 'someone-else', warehouses: [membershipJson(sa1, 'SA1', 'Shah Alam DC', 'Worker')]));
+    await db.syncQueueDao.enqueue(operationType: 'count.submit', referenceId: 'theirs', payload: '{}');
+    final repo = repoAnswering((_) async => jsonResponse(loginAnswer([membershipJson(sa1, 'SA1', 'Shah Alam DC', 'Worker')])), tokens: TokenStore(keys));
+
+    await repo.login('arjun@waretrack.local', 'Waretrack#2026');
+
+    expect(await db.syncQueueDao.countPending(), 0);
+  });
+
+  test('the same person signing in again keeps their unsent work', () async {
+    final tokens = await signedInTokens(store: keys);
+    await tokens.saveUser(userJson(warehouses: [membershipJson(sa1, 'SA1', 'Shah Alam DC', 'Worker')]));
+    await db.syncQueueDao.enqueue(operationType: 'count.submit', referenceId: 'mine', payload: '{}');
+    final repo = repoAnswering((_) async => jsonResponse(loginAnswer([membershipJson(sa1, 'SA1', 'Shah Alam DC', 'Worker')])), tokens: TokenStore(keys));
+
+    await repo.login('arjun@waretrack.local', 'Waretrack#2026');
+
+    expect(await db.syncQueueDao.countPending(), 1);
   });
 }

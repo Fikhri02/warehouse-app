@@ -24,6 +24,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>WareTrack uses Face ID to unlock your saved sign-in.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Warehouse App uses the camera to scan item barcodes during stock counts.</string>
 	<key>UILaunchStoryboardName</key>

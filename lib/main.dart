@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:warehouse_app/core/config/app_config.dart';
+import 'package:warehouse_app/core/models/user_session.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_router.dart';
 import 'package:warehouse_app/core/theme/app_theme.dart';
@@ -14,7 +15,7 @@ import 'package:warehouse_app/data/api/api_providers.dart';
 import 'package:warehouse_app/data/api/api_stock_count_repository.dart';
 import 'package:warehouse_app/data/api/key_value_store.dart';
 import 'package:warehouse_app/data/api/token_store.dart';
-import 'package:warehouse_app/data/local/app_database.dart';
+import 'package:warehouse_app/data/local/app_database.dart' hide UserSession;
 import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 import 'package:warehouse_app/data/repositories/auth_repository.dart';
 import 'package:warehouse_app/data/repositories/orders_repository.dart';
@@ -38,7 +39,12 @@ Future<void> main() async {
       ? ApiClient(baseUrl: AppConfig.apiBaseUrl, httpClient: http.Client(), tokens: TokenStore(SecureKeyValueStore(storage)))
       : null;
   final AuthRepository authRepository = client != null ? ApiAuthRepository(client: client, db: database) : SampleAuthRepository(storage);
-  final initialSession = await authRepository.getStoredSession();
+  UserSession? initialSession;
+  try {
+    initialSession = await authRepository.getStoredSession();
+  } on Exception {
+    initialSession = null; // anything unexpected on the way in: start at sign-in rather than not at all
+  }
   final settingsStore = SecureKeyValueStore(storage);
   final biometricOn = await settingsStore.read('settings.biometric') == 'true';
   final locked = biometricOn && initialSession != null; // ask for a fingerprint before opening a stored session

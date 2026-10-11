@@ -122,4 +122,24 @@ void main() {
     expect(await db.serverMirrorDao.cursorFor(w), 0);
     expect(await db.syncQueueDao.countPending(), 0);
   });
+
+  test('a_page_arriving_after_sign_out_is_not_written_back', () async {
+    final tokens = await signedInTokens();
+    final puller = ChangeFeedPuller(
+      db: db,
+      client: ApiClient(
+        baseUrl: testBaseUrl,
+        tokens: tokens,
+        httpClient: MockClient((r) async {
+          await tokens.clear(); // signed out while this page was on its way
+          return http.Response(jsonEncode(page([change('location', bin, 7, {'id': bin, 'warehouseId': w, 'code': 'A-01-01', 'type': 'Bin'})], next: 7)), 200);
+        }),
+      ),
+    );
+
+    await expectLater(puller.pull(w), throwsA(isA<SessionExpiredException>()));
+
+    expect(await db.serverMirrorDao.locationsFor(w), isEmpty);
+    expect(await db.serverMirrorDao.cursorFor(w), 0);
+  });
 }

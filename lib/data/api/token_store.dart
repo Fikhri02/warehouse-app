@@ -32,6 +32,10 @@ class TokenStore {
   final KeyValueStore _store;
   String? _accessToken;
   DateTime? _accessExpiresAt;
+  int _generation = 0;
+
+  /// Changes every time the person signs out, so work started before can tell it no longer belongs.
+  int get generation => _generation;
 
   String? get accessToken => _accessToken;
 
@@ -69,6 +73,7 @@ class TokenStore {
 
   /// Signing out keeps only the device id.
   Future<void> clear() async {
+    _generation++;
     _accessToken = null;
     _accessExpiresAt = null;
     await _store.delete(_refreshKey);

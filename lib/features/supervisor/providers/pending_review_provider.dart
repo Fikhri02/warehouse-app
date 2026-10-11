@@ -1,11 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:warehouse_app/core/models/count_records.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/data/repositories/stock_count_repository.dart';
 import 'package:warehouse_app/data/sync/sync_provider.dart';
 
 class PendingReviewNotifier extends AsyncNotifier<List<CountSummary>> {
   @override
-  Future<List<CountSummary>> build() => ref.watch(stockCountRepositoryProvider).getCountsToReview();
+  Future<List<CountSummary>> build() {
+    // Another warehouse or another person: another list.
+    ref.watch(authNotifierProvider.select((auth) => (auth.valueOrNull?.userId, auth.valueOrNull?.warehouseId)));
+    return ref.watch(stockCountRepositoryProvider).getCountsToReview();
+  }
 
   /// Sends anything queued, pulls the latest counts, then reloads.
   Future<void> refresh() async {

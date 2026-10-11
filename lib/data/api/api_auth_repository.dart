@@ -38,6 +38,9 @@ class ApiAuthRepository implements AuthRepository {
     if (session.warehouses.isEmpty) {
       throw const AuthFailure("Your account isn't part of any warehouse yet. Ask an administrator to add you to one.");
     }
+    // Someone else's queued commands and copy must never go out under this account.
+    final previous = await _tokens.readUser();
+    if (previous == null || previous['id'] != user['id']) await _db.clearServerData();
     await _tokens.save(AuthTokens.fromJson(json));
     await _tokens.saveUser(user);
     if (session.warehouseId != null) await _tokens.saveWarehouseId(session.warehouseId!);
@@ -50,6 +53,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       await _client.refresh(); // a fresh access token and up-to-date warehouses when online
     } on SessionExpiredException {
+      await _db.clearServerData(); // nothing of theirs is left for the next person to send
       return null;
     } on ApiOfflineException {
       // Keep working offline with what was stored.
@@ -59,6 +63,7 @@ class ApiAuthRepository implements AuthRepository {
     final user = await _tokens.readUser();
     if (user == null) {
       await _tokens.clear();
+      await _db.clearServerData();
       return null;
     }
     final session = _sessionFrom(user, _tokens.accessToken ?? '', await _tokens.readWarehouseId());

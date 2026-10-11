@@ -55,7 +55,7 @@ class ApiClient {
       response = await _raw(method, path, query, body, idempotencyKey, authenticated);
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response.body.isEmpty ? null : jsonDecode(response.body);
+      return response.body.isEmpty ? null : _decode(response.body);
     }
     throw ApiException.fromResponse(response.statusCode, response.body);
   }
@@ -65,7 +65,7 @@ class ApiClient {
     if (refreshToken == null) throw const SessionExpiredException();
     final response = await _raw('POST', '/auth/refresh', null, {'refreshToken': refreshToken}, null, false);
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final json = _decode(response.body) as Map<String, dynamic>;
       await _tokens.save(AuthTokens.fromJson(json));
       await _tokens.saveUser(json['user'] as Map<String, dynamic>);
       return;
@@ -76,6 +76,16 @@ class ApiClient {
       throw const SessionExpiredException();
     }
     throw ApiException.fromResponse(response.statusCode, response.body); // 429 or 5xx: keep the tokens, try later
+  }
+
+  /// A 2xx that is not JSON (a captive portal's login page, a misconfigured proxy) is treated as server trouble:
+  /// the outbox pauses and tries again later instead of crashing.
+  static dynamic _decode(String body) {
+    try {
+      return jsonDecode(body);
+    } on FormatException {
+      throw const ApiException(status: 502, title: 'WareTrack sent an answer this app cannot read.');
+    }
   }
 
   Future<http.Response> _raw(
@@ -98,7 +108,8 @@ class ApiClient {
     try {
       final streamed = await _http.send(request).timeout(timeout);
       return await http.Response.fromStream(streamed).timeout(timeout);
-    } on SocketException catch (e) {
+    } on IOException catch (e) {
+      // Sockets, TLS handshakes, HTTP protocol errors: the server was not properly reached.
       throw ApiOfflineException(e);
     } on TimeoutException catch (e) {
       throw ApiOfflineException(e);

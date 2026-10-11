@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:warehouse_app/core/config/app_config.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
@@ -29,9 +30,36 @@ final syncCoordinatorProvider = Provider<SyncCoordinator>((ref) => SyncCoordinat
       warehouseId: () => ref.read(authNotifierProvider).valueOrNull?.warehouseId,
     ));
 
-/// Syncs when the phone comes back online and whenever a warehouse is chosen (sign-in, restart, switch).
+/// Tries again while changes wait. A dead zone or a busy server often brings no connectivity event, so a paused
+/// outbox would otherwise wait for one forever.
+class SyncRetry {
+  SyncRetry({required Future<int> Function() pending, required Future<void> Function() sync})
+      : _pending = pending,
+        _sync = sync;
+
+  final Future<int> Function() _pending;
+  final Future<void> Function() _sync;
+
+  Future<void> tick() async {
+    if (await _pending() > 0) await _sync();
+  }
+}
+
+/// Syncs when the phone comes back online, when the app returns to the foreground, every minute while changes
+/// wait, and whenever a warehouse is chosen (sign-in, restart, switch).
 /// Attach this provider in WarehouseApp.build() to activate it.
 final syncWatcherProvider = Provider<void>((ref) {
+  final retry = SyncRetry(
+    pending: () => ref.read(appDatabaseProvider).syncQueueDao.countPending(),
+    sync: () => ref.read(syncCoordinatorProvider).syncNow(),
+  );
+  final timer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(retry.tick()));
+  final lifecycle = AppLifecycleListener(onResume: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()));
+  ref.onDispose(() {
+    timer.cancel();
+    lifecycle.dispose();
+  });
+
   ref.listen<bool>(isOnlineProvider, (previous, next) {
     if (previous == false && next) unawaited(ref.read(syncCoordinatorProvider).syncNow());
   });

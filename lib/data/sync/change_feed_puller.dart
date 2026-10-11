@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:warehouse_app/data/api/api_client.dart';
+import 'package:warehouse_app/data/api/api_exception.dart';
 import 'package:warehouse_app/data/local/app_database.dart';
 
 /// Brings the phone's copy up to date: reads `/warehouses/{w}/sync/changes` from the stored cursor until the server
@@ -15,6 +16,7 @@ class ChangeFeedPuller {
 
   Future<int> pull(String warehouseId) async {
     var applied = 0;
+    final generation = _client.tokens.generation;
     var cursor = await _db.serverMirrorDao.cursorFor(warehouseId);
     while (true) {
       final page = await _client.get(
@@ -24,6 +26,8 @@ class ChangeFeedPuller {
       final changes = (page['changes'] as List).cast<Map<String, dynamic>>();
       final next = (page['nextCursor'] as num).toInt();
       await _db.transaction(() async {
+        // Signed out while this page was on its way: the wiped phone must stay wiped.
+        if (_client.tokens.generation != generation) throw const SessionExpiredException();
         for (final change in changes) {
           await _apply(change);
         }

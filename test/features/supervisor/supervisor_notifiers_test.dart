@@ -8,10 +8,15 @@ import 'package:warehouse_app/features/supervisor/providers/pending_review_provi
 import 'package:warehouse_app/features/supervisor/providers/reports_provider.dart';
 import 'package:warehouse_app/data/repositories/tasks_repository.dart';
 import 'package:warehouse_app/data/repositories/stock_count_repository.dart';
+import 'package:warehouse_app/core/models/user_session.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
+import 'package:warehouse_app/data/repositories/auth_repository.dart';
 
 class MockTasksRepository extends Mock implements TasksRepository {}
 
 class MockStockCountRepository extends Mock implements StockCountRepository {}
+
+class MockAuthRepository extends Mock implements AuthRepository {}
 
 class _FakeStaffTask extends Fake implements StaffTask {}
 
@@ -76,5 +81,27 @@ void main() {
       final reports = container.read(reportsProvider).valueOrNull;
       expect(reports, isNotNull);
     });
+  });
+
+  test('the_review_list_follows_the_chosen_warehouse', () async {
+    final counts = MockStockCountRepository();
+    final auth = MockAuthRepository();
+    const a = UserSession(userId: 'u1', name: 'Hafiz', email: 'h@w', site: 'A', role: UserRole.supervisor, token: 't', warehouseId: 'wa');
+    registerFallbackValue(a);
+    when(() => counts.getCountsToReview()).thenAnswer((_) async => const []);
+    when(() => auth.selectWarehouse(any(), 'wb')).thenAnswer((_) async => a.copyWith(warehouseId: 'wb', site: 'B'));
+    final container = ProviderContainer(overrides: [
+      stockCountRepositoryProvider.overrideWithValue(counts),
+      authRepositoryProvider.overrideWithValue(auth),
+      authBootstrapStateProvider.overrideWithValue(const AuthBootstrapState.hydrated(a)),
+    ]);
+    addTearDown(container.dispose);
+    container.listen(pendingReviewProvider, (_, __) {});
+
+    await container.read(pendingReviewProvider.future);
+    await container.read(authNotifierProvider.notifier).selectWarehouse('wb');
+    await container.read(pendingReviewProvider.future);
+
+    verify(() => counts.getCountsToReview()).called(2);
   });
 }
