@@ -11,14 +11,14 @@ class OfflineBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOnline = ref.watch(isOnlineProvider);
 
-    return SafeArea(
-      bottom: false,
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        child: isOnline
-            ? const SizedBox.shrink()
-            : Container(
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      child: isOnline
+          ? const SizedBox.shrink()
+          : SafeArea(
+              bottom: false,
+              child: Container(
                 width: double.infinity,
                 color: AppColors.warning,
                 padding:
@@ -39,7 +39,7 @@ class OfflineBanner extends ConsumerWidget {
                   ],
                 ),
               ),
-      ),
+            ),
     );
   }
 }

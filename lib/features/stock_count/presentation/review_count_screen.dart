@@ -109,7 +109,7 @@ class ReviewCountScreen extends ConsumerWidget {
                     await ref
                         .read(stockCountNotifierProvider.notifier)
                         .submitSession();
-                    if (context.mounted) context.go(AppRoutes.dashboard);
+                    if (context.mounted) context.go(AppRoutes.stockCount);
                   } catch (_) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

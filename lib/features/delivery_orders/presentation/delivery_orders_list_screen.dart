@@ -12,30 +12,40 @@ class DeliveryOrdersListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Delivery Orders'),
-          bottom: const TabBar(
-            tabs: [Tab(text: 'Active'), Tab(text: 'Completed')],
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go(AppRoutes.dashboard);
+      },
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            leading: BackButton(
+              onPressed: () => context.go(AppRoutes.dashboard),
+            ),
+            title: const Text('Delivery Orders'),
+            bottom: const TabBar(
+              tabs: [Tab(text: 'Active'), Tab(text: 'Completed')],
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white60,
+            ),
           ),
-        ),
-        body: const SafeArea(
-          top: false,
-          child: TabBarView(
-            children: [
-              _OrdersTab(active: true),
-              _OrdersTab(active: false),
-            ],
+          body: const SafeArea(
+            top: false,
+            child: TabBarView(
+              children: [
+                _OrdersTab(active: true),
+                _OrdersTab(active: false),
+              ],
+            ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => context.push(AppRoutes.deliveryOrderNew),
-          child: const Icon(Icons.add),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => context.push(AppRoutes.deliveryOrderNew),
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );

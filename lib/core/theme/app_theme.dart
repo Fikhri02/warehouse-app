@@ -38,8 +38,8 @@ class AppTheme {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.onPrimary,
+            backgroundColor: AppColors.button,
+            foregroundColor: AppColors.onButton,
             minimumSize: const Size(double.infinity, 48),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -92,7 +92,8 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.darkBackground,
         dividerColor: AppColors.darkBorder,
         appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
+          // backgroundColor: AppColors.primaryDark,
+          backgroundColor: Colors.transparent,
           foregroundColor: AppColors.onPrimary,
           elevation: 0,
         ),
@@ -107,7 +108,8 @@ class AppTheme {
           headlineMedium: TextStyle(color: AppColors.darkOnSurface),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: AppColors.darkSurface,
+          // backgroundColor: AppColors.darkSurface,
+          backgroundColor: Colors.transparent,
           selectedItemColor: AppColors.darkAccent,
           unselectedItemColor: AppColors.darkSubtitle,
         ),
@@ -132,7 +134,7 @@ class AppTheme {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.darkAccent,
+            backgroundColor: AppColors.button,
             foregroundColor: AppColors.darkBackground,
             minimumSize: const Size(double.infinity, 48),
             shape:

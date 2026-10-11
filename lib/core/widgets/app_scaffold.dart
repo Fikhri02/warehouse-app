@@ -10,8 +10,8 @@ import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'offline_banner.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
-  final Widget child;
-  const AppScaffold({super.key, required this.child});
+  final StatefulNavigationShell navigationShell;
+  const AppScaffold({super.key, required this.navigationShell});
 
   @override
   ConsumerState<AppScaffold> createState() => _AppScaffoldState();
@@ -24,11 +24,17 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
   Widget build(BuildContext context) {
     final session = ref.watch(authNotifierProvider).valueOrNull;
     final location = GoRouterState.of(context).matchedLocation;
+    final currentIndex = widget.navigationShell.currentIndex;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+
+        if (currentIndex != 0) {
+          widget.navigationShell.goBranch(0);
+          return;
+        }
 
         final now = DateTime.now();
         final shouldExit = _lastBackPressAt != null &&
@@ -53,11 +59,14 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         body: Column(
           children: [
             const OfflineBanner(),
-            Expanded(child: widget.child),
+            Expanded(child: widget.navigationShell),
           ],
         ),
         drawer: session == null ? null : _AppDrawer(session: session),
-        bottomNavigationBar: _BottomBar(currentLocation: location),
+        bottomNavigationBar: _BottomBar(
+          currentLocation: location,
+          navigationShell: widget.navigationShell,
+        ),
       ),
     );
   }
@@ -65,46 +74,74 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
 
 class _BottomBar extends StatelessWidget {
   final String currentLocation;
-  const _BottomBar({required this.currentLocation});
+  final StatefulNavigationShell navigationShell;
+  const _BottomBar({
+    required this.currentLocation,
+    required this.navigationShell,
+  });
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     const items = [
       _BarItem(
-          icon: Icons.home_outlined, label: 'Home', route: AppRoutes.dashboard),
+        icon: _BrandHomeIcon(active: false, size: 24),
+        activeIcon: _BrandHomeIcon(active: true, size: 24),
+        label: 'Home',
+        route: AppRoutes.dashboard,
+      ),
       _BarItem(
-          icon: Icons.notifications_outlined,
-          label: 'Alerts',
-          route: AppRoutes.alerts),
+        icon: Icon(Icons.inventory_2_outlined),
+        label: 'Stock Count',
+        route: AppRoutes.stockCount,
+      ),
       _BarItem(
-          icon: Icons.person_outline,
-          label: 'Profile',
-          route: AppRoutes.profile),
+        icon: Icon(Icons.move_to_inbox_outlined),
+        label: 'Stock Receive',
+        route: AppRoutes.receiving,
+      ),
+      _BarItem(
+        icon: Icon(Icons.person_outline),
+        label: 'Profile',
+        route: AppRoutes.profile,
+      ),
     ];
     final idx = items.indexWhere((i) => currentLocation.startsWith(i.route));
 
     return BottomNavigationBar(
-      currentIndex: idx < 0 ? 0 : idx,
-      onTap: (i) => context.go(items[i].route),
+      type: BottomNavigationBarType.fixed,
+      showUnselectedLabels: true,
+      currentIndex: idx < 0 ? navigationShell.currentIndex : idx,
+      onTap: (i) => navigationShell.goBranch(
+        i,
+        initialLocation: i == navigationShell.currentIndex,
+      ),
       selectedItemColor: brightness == Brightness.dark
           ? AppColors.darkAccent
           : AppColors.primary,
       unselectedItemColor: AppColors.textSecondary(brightness),
       items: items
-          .map((i) =>
-              BottomNavigationBarItem(icon: Icon(i.icon), label: i.label))
+          .map((i) => BottomNavigationBarItem(
+                icon: i.icon,
+                activeIcon: i.activeIcon,
+                label: i.label,
+              ))
           .toList(),
     );
   }
 }
 
 class _BarItem {
-  final IconData icon;
+  final Widget icon;
+  final Widget? activeIcon;
   final String label;
   final String route;
-  const _BarItem(
-      {required this.icon, required this.label, required this.route});
+  const _BarItem({
+    required this.icon,
+    this.activeIcon,
+    required this.label,
+    required this.route,
+  });
 }
 
 class _AppDrawer extends ConsumerWidget {
@@ -158,7 +195,8 @@ class _AppDrawer extends ConsumerWidget {
               padding: EdgeInsets.zero,
               children: [
                 const _DrawerItem(
-                    Icons.home_outlined, 'Home', AppRoutes.dashboard),
+                    Icons.home_outlined, 'Home', AppRoutes.dashboard,
+                    useBrandIcon: true),
                 const _DrawerItem(Icons.inventory_2_outlined, 'Stock Count',
                     AppRoutes.stockCount),
                 const _DrawerItem(Icons.move_to_inbox_outlined, 'Stock Receive',
@@ -200,7 +238,9 @@ class _DrawerItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String route;
-  const _DrawerItem(this.icon, this.label, this.route);
+  final bool useBrandIcon;
+  const _DrawerItem(this.icon, this.label, this.route,
+      {this.useBrandIcon = false});
 
   @override
   Widget build(BuildContext context) {
@@ -211,13 +251,16 @@ class _DrawerItem extends StatelessWidget {
         ? AppColors.darkAccent
         : AppColors.primary;
     final isTabRoute = route == AppRoutes.dashboard ||
-        route == AppRoutes.alerts ||
+        route == AppRoutes.stockCount ||
+        route == AppRoutes.receiving ||
         route == AppRoutes.profile;
 
     return ListTile(
-      leading: Icon(icon,
-          color: active ? activeColor : AppColors.textSecondary(brightness),
-          size: 20),
+      leading: useBrandIcon
+          ? _BrandHomeIcon(active: active, size: 26)
+          : Icon(icon,
+              color: active ? activeColor : AppColors.textSecondary(brightness),
+              size: 20),
       title: Text(label,
           style: AppTextStyles.body.copyWith(
               color: active ? activeColor : AppColors.textPrimary(brightness),
@@ -231,6 +274,29 @@ class _DrawerItem extends StatelessWidget {
           context.push(route);
         }
       },
+    );
+  }
+}
+
+class _BrandHomeIcon extends StatelessWidget {
+  final bool active;
+  final double size;
+  const _BrandHomeIcon({required this.active, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final useBrightDarkActive = active && brightness == Brightness.dark;
+    return Image.asset(
+      active
+          ? 'assets/branding/logo_icon_original.png'
+          : brightness == Brightness.dark
+              ? 'assets/branding/logo_icon_original_white_outline.png'
+              : 'assets/branding/logo_icon_original_grey_outline.png',
+      width: size,
+      height: size,
+      color: useBrightDarkActive ? AppColors.darkAccent : null,
+      colorBlendMode: useBrightDarkActive ? BlendMode.srcIn : null,
     );
   }
 }

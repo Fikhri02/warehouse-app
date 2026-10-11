@@ -33,6 +33,12 @@ import '../../features/supervisor/screens/pending_review_screen.dart';
 import 'app_route_observer.dart';
 import 'app_routes.dart';
 
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _homeNavigatorKey = GlobalKey<NavigatorState>();
+final _stockCountNavigatorKey = GlobalKey<NavigatorState>();
+final _receivingNavigatorKey = GlobalKey<NavigatorState>();
+final _profileNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Bridges Riverpod auth state to GoRouter's refreshListenable.
 /// Created once; notifies the router whenever auth state changes.
 class _RouterNotifier extends ChangeNotifier {
@@ -85,6 +91,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final initialSession = ref.read(authNotifierProvider).valueOrNull;
 
   return GoRouter(
+    navigatorKey: _rootNavigatorKey,
     initialLocation:
         initialSession == null ? AppRoutes.welcome : AppRoutes.dashboard,
     refreshListenable: notifier,
@@ -99,74 +106,108 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
       ),
-      ShellRoute(
-        builder: (context, state, child) => AppScaffold(child: child),
-        routes: [
-          GoRoute(
-            path: AppRoutes.dashboard,
-            builder: (context, state) {
-              final session = ref.read(authNotifierProvider).valueOrNull;
-              if (session?.role == UserRole.supervisor) {
-                return const SupervisorDashboardScreen();
-              }
-              return const WorkerDashboardScreen();
-            },
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppScaffold(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            navigatorKey: _homeNavigatorKey,
+            routes: [
+              GoRoute(
+                path: AppRoutes.dashboard,
+                builder: (context, state) {
+                  final session = ref.read(authNotifierProvider).valueOrNull;
+                  if (session?.role == UserRole.supervisor) {
+                    return const SupervisorDashboardScreen();
+                  }
+                  return const WorkerDashboardScreen();
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: AppRoutes.alerts,
-            builder: (_, __) => const AlertsScreen(),
+          StatefulShellBranch(
+            navigatorKey: _stockCountNavigatorKey,
+            routes: [
+              GoRoute(
+                path: AppRoutes.stockCount,
+                builder: (_, __) => const StartCountScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'create',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, __) => const CreateCountSessionScreen(),
+                  ),
+                  GoRoute(
+                    path: 'scan',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, __) => const ScanCountScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'manual-entry',
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (_, state) => CountManualEntryScreen(
+                          initialCode: state.extra as String?,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'review',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, __) => const ReviewCountScreen(),
+                  ),
+                ],
+              ),
+            ],
           ),
-          GoRoute(
-            path: AppRoutes.profile,
-            builder: (_, __) => const ProfileScreen(),
+          StatefulShellBranch(
+            navigatorKey: _receivingNavigatorKey,
+            routes: [
+              GoRoute(
+                path: AppRoutes.receiving,
+                builder: (_, __) => const PoListScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'items',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, __) => const ReceiveItemsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'summary',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, __) => const ReceiveSummaryScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'signature',
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (_, __) => const SignaturePadScreen(),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'details',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, state) =>
+                        PoDetailsScreen(poId: state.extra as String),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _profileNavigatorKey,
+            routes: [
+              GoRoute(
+                path: AppRoutes.profile,
+                builder: (_, __) => const ProfileScreen(),
+              ),
+            ],
           ),
         ],
       ),
       GoRoute(
-        path: AppRoutes.stockCount,
-        builder: (_, __) => const StartCountScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.stockCountCreate,
-        builder: (_, __) => const CreateCountSessionScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.stockCountScan,
-        builder: (_, __) => const ScanCountScreen(),
-        routes: [
-          GoRoute(
-            path: 'manual-entry',
-            builder: (_, state) => CountManualEntryScreen(
-              initialCode: state.extra as String?,
-            ),
-          ),
-        ],
-      ),
-      GoRoute(
-        path: AppRoutes.stockCountReview,
-        builder: (_, __) => const ReviewCountScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.receiving,
-        builder: (_, __) => const PoListScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.receivingItems,
-        builder: (_, __) => const ReceiveItemsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.receivingSummary,
-        builder: (_, __) => const ReceiveSummaryScreen(),
-        routes: [
-          GoRoute(
-            path: 'signature',
-            builder: (_, __) => const SignaturePadScreen(),
-          ),
-        ],
-      ),
-      GoRoute(
-        path: AppRoutes.receivingDetails,
-        builder: (_, state) => PoDetailsScreen(poId: state.extra as String),
+        path: AppRoutes.alerts,
+        builder: (_, __) => const AlertsScreen(),
       ),
       GoRoute(
         path: AppRoutes.deliveryOrders,

@@ -32,7 +32,6 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
 
   final ScanModeController _scanModeController = ScanModeController();
   final Set<String> _skipDuplicateWarnings = <String>{};
-  DateTime? _lastBackPressAt;
   ({String code, String name})? _scanned;
   int _qty = 0;
   bool _scanning = true;
@@ -296,24 +295,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
   }
 
   void _handleBackPress() {
-    final now = DateTime.now();
-    final shouldLeave = _lastBackPressAt != null &&
-        now.difference(_lastBackPressAt!) <= const Duration(seconds: 2);
-
-    if (shouldLeave) {
-      context.go(AppRoutes.dashboard);
-      return;
-    }
-
-    _lastBackPressAt = now;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text('Press back again to go to Home'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    context.go(AppRoutes.stockCount);
   }
 
   Future<void> _showSessionPreview(CountSession session) async {

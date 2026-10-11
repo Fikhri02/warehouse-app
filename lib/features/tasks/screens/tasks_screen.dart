@@ -13,9 +13,9 @@ class TasksScreen extends ConsumerWidget {
 
   void _openTask(BuildContext context, StaffTask task) {
     if (task.type == TaskType.stockCount) {
-      context.push(AppRoutes.stockCount);
+      context.go(AppRoutes.stockCount);
     } else {
-      context.push(AppRoutes.receiving);
+      context.go(AppRoutes.receiving);
     }
   }
 
@@ -24,48 +24,58 @@ class TasksScreen extends ConsumerWidget {
     final tasksAsync = ref.watch(tasksProvider);
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Tasks'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(tasksProvider.notifier).refresh(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go(AppRoutes.dashboard);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(
+            onPressed: () => context.go(AppRoutes.dashboard),
           ),
-        ],
-      ),
-      body: tasksAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (tasks) {
-          if (tasks.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.task_outlined,
-                      size: 48, color: Colors.grey.shade400),
-                  const SizedBox(height: 12),
-                  Text('No tasks assigned',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary(brightness),
-                      )),
-                ],
+          title: const Text('My Tasks'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => ref.read(tasksProvider.notifier).refresh(),
+            ),
+          ],
+        ),
+        body: tasksAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
+          data: (tasks) {
+            if (tasks.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.task_outlined,
+                        size: 48, color: Colors.grey.shade400),
+                    const SizedBox(height: 12),
+                    Text('No tasks assigned',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary(brightness),
+                        )),
+                  ],
+                ),
+              );
+            }
+            return RefreshIndicator(
+              onRefresh: () => ref.read(tasksProvider.notifier).refresh(),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: tasks.length,
+                itemBuilder: (context, i) => TaskCard(
+                  task: tasks[i],
+                  onTap: () => _openTask(context, tasks[i]),
+                ),
               ),
             );
-          }
-          return RefreshIndicator(
-            onRefresh: () => ref.read(tasksProvider.notifier).refresh(),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: tasks.length,
-              itemBuilder: (context, i) => TaskCard(
-                task: tasks[i],
-                onTap: () => _openTask(context, tasks[i]),
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

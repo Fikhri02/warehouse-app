@@ -32,6 +32,20 @@ dev_dependencies:
   riverpod_generator: ^2.6.1
   mocktail: ^1.0.4
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+dependency_overrides:
+  device_info_plus: 12.3.0
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/wa_logo_main.png"
+  background_color: "#01483E"
+  adaptive_icon_background: "#01483E"
+  adaptive_icon_foreground: "assets/branding/wa_logo_main.png"

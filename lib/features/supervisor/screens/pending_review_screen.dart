@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/models/alert.dart';
+import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/features/supervisor/providers/pending_review_provider.dart';
@@ -13,45 +15,56 @@ class PendingReviewScreen extends ConsumerWidget {
     final reviewsAsync = ref.watch(pendingReviewProvider);
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pending Review'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(pendingReviewProvider.notifier).refresh(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go(AppRoutes.dashboard);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(
+            onPressed: () => context.go(AppRoutes.dashboard),
           ),
-        ],
-      ),
-      body: reviewsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (reviews) {
-          if (reviews.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.rate_review_outlined,
-                      size: 48, color: Colors.grey.shade400),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Nothing to review',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary(brightness),
+          title: const Text('Pending Review'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () =>
+                  ref.read(pendingReviewProvider.notifier).refresh(),
+            ),
+          ],
+        ),
+        body: reviewsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
+          data: (reviews) {
+            if (reviews.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.rate_review_outlined,
+                        size: 48, color: Colors.grey.shade400),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Nothing to review',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary(brightness),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: reviews.length,
+              itemBuilder: (context, i) =>
+                  _ReviewCard(alert: reviews[i], ref: ref),
             );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: reviews.length,
-            itemBuilder: (context, i) =>
-                _ReviewCard(alert: reviews[i], ref: ref),
-          );
-        },
+          },
+        ),
       ),
     );
   }

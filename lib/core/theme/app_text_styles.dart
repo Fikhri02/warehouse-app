@@ -37,11 +37,11 @@ class AppTextStyles {
 
   // Material-naming aliases used in later feature screens
   static const TextStyle headlineMedium = TextStyle(
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: FontWeight.w600,
     height: 1.3,
   );
-  static TextStyle get headlineSmall => display;   // 20sp bold
-  static TextStyle get bodyMedium => body;         // 13sp regular
-  static TextStyle get bodySmall => caption;       // 11sp medium
+  static TextStyle get headlineSmall => display; // 20sp bold
+  static TextStyle get bodyMedium => body; // 13sp regular
+  static TextStyle get bodySmall => caption; // 11sp medium
 }

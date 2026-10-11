@@ -57,14 +57,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(14),
+                  width: 68,
+                  height: 68,
+                  alignment: Alignment.centerLeft,
+                  child: Image.asset(
+                    'assets/branding/logo_mark_white.png',
+                    width: 68,
+                    height: 68,
                   ),
-                  child: const Icon(Icons.inventory_2_outlined,
-                      color: Colors.white, size: 28),
                 ),
                 const SizedBox(height: 12),
                 Text('WareTrack',

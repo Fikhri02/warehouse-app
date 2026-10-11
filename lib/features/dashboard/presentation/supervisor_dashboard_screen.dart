@@ -18,6 +18,7 @@ class SupervisorDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 64,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -31,7 +32,7 @@ class SupervisorDashboardScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () => context.go(AppRoutes.alerts),
+            onPressed: () => context.push(AppRoutes.alerts),
           ),
         ],
       ),
@@ -57,13 +58,13 @@ class SupervisorDashboardScreen extends ConsumerWidget {
                 subtitle: '2 active',
                 icon: Icons.inventory_2_outlined,
                 isPrimary: true,
-                onTap: () => context.push(AppRoutes.stockCount),
+                onTap: () => context.go(AppRoutes.stockCount),
               ),
               QuickActionCard(
                 label: 'Stock Receive',
                 subtitle: '1 pending',
                 icon: Icons.move_to_inbox_outlined,
-                onTap: () => context.push(AppRoutes.receiving),
+                onTap: () => context.go(AppRoutes.receiving),
               ),
               QuickActionCard(
                 label: 'Assign Tasks',
