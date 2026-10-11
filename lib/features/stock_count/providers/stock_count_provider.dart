@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:uuid/uuid.dart';
 import '../../../core/models/count_session.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../../../data/repositories/stock_count_repository.dart';
@@ -16,13 +17,15 @@ class StockCountNotifier extends Notifier<CountSession?> {
   Future<void> startSession({
     required String location,
     String? label,
+    String? locationId,
   }) async {
     final session = CountSession(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       location: location,
       label: label,
       startedAt: DateTime.now(),
       status: CountSessionStatus.inProgress,
+      locationId: locationId,
     );
     final dao = ref.read(db.appDatabaseProvider).countSessionDao;
     await dao.createSession(
@@ -32,6 +35,7 @@ class StockCountNotifier extends Notifier<CountSession?> {
         status: _statusToDb(session.status),
         startedAt: session.startedAt,
         label: Value(session.label),
+        locationId: Value(session.locationId),
       ),
     );
     state = session;
@@ -50,6 +54,7 @@ class StockCountNotifier extends Notifier<CountSession?> {
         expectedQty: item.expected,
         actualQty: item.counted,
         entryMethod: Value(item.entryMethod.name),
+        itemId: Value(item.itemId),
       ),
     );
     state = current.copyWith(items: [...current.items, item]);
@@ -110,6 +115,7 @@ class StockCountNotifier extends Notifier<CountSession?> {
 
   CountItem _itemFromDb(db.CountItem data) => CountItem(
         id: data.id,
+        itemId: data.itemId,
         itemCode: data.itemCode,
         itemName: data.itemName,
         expected: data.expectedQty,

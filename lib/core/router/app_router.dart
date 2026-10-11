@@ -31,6 +31,9 @@ import '../../features/supervisor/screens/assign_tasks_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
 import '../../features/auth/presentation/choose_warehouse_screen.dart';
+import '../../features/stock_count/presentation/count_item_picker_screen.dart';
+import '../../features/stock_count/presentation/count_setup_screen.dart';
+import '../config/app_config.dart';
 import '../../features/sync/sync_issues_screen.dart';
 import 'app_route_observer.dart';
 import 'auth_redirect.dart';
@@ -117,7 +120,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'create',
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (_, __) => const CreateCountSessionScreen(),
+                    builder: (_, __) => ref.read(useApiProvider) ? const CountSetupScreen() : const CreateCountSessionScreen(),
                   ),
                   GoRoute(
                     path: 'scan',
@@ -127,9 +130,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: 'manual-entry',
                         parentNavigatorKey: _rootNavigatorKey,
-                        builder: (_, state) => CountManualEntryScreen(
-                          initialCode: state.extra as String?,
-                        ),
+                        builder: (_, state) => ref.read(useApiProvider)
+                            ? CountItemPickerScreen(initialCode: state.extra as String?)
+                            : CountManualEntryScreen(initialCode: state.extra as String?),
                       ),
                     ],
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/models/count_session.dart';
+import '../../../core/providers/connectivity_provider.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -46,8 +47,6 @@ class ReviewCountScreen extends ConsumerWidget {
                     const Divider(height: 1, indent: 14, endIndent: 14),
                 itemBuilder: (context, idx) {
                   final item = session.items[idx];
-                  final color =
-                      item.matched ? AppColors.success : AppColors.error;
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -79,20 +78,9 @@ class ReviewCountScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${item.counted}',
-                              style: AppTextStyles.title.copyWith(color: color),
-                            ),
-                            Text(
-                              item.variance >= 0
-                                  ? '+${item.variance}'
-                                  : '${item.variance}',
-                              style: AppTextStyles.micro.copyWith(color: color),
-                            ),
-                          ],
+                        Text(
+                          '${item.counted}',
+                          style: AppTextStyles.title.copyWith(color: AppColors.textPrimary(brightness)),
                         ),
                       ],
                     ),
@@ -109,6 +97,13 @@ class ReviewCountScreen extends ConsumerWidget {
                     await ref
                         .read(stockCountNotifierProvider.notifier)
                         .submitSession();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(ref.read(isOnlineProvider)
+                            ? 'Count sent for review.'
+                            : "Count saved. It will be sent when you're back online."),
+                      ));
+                    }
                     if (context.mounted) context.go(AppRoutes.stockCount);
                   } catch (_) {
                     if (context.mounted) {

@@ -57,6 +57,9 @@ class CountSession {
 
 class CountItem {
   final String id;
+
+  /// The server's item id; null in Sample mode.
+  final String? itemId;
   final String itemCode;
   final String itemName;
   final int expected;
@@ -65,6 +68,7 @@ class CountItem {
 
   CountItem({
     String? id,
+    this.itemId,
     required this.itemCode,
     required this.itemName,
     required this.expected,
@@ -74,6 +78,7 @@ class CountItem {
 
   CountItem copyWith({int? counted}) => CountItem(
         id: id,
+        itemId: itemId,
         itemCode: itemCode,
         itemName: itemName,
         expected: expected,

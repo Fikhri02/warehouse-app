@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../data/local/app_database.dart' as db;
 
@@ -161,7 +162,7 @@ class CreateCountSessionNotifier extends Notifier<CreateCountSessionState> {
   String _getOrCreateDraftId() {
     final existing = state.draftId;
     if (existing != null) return existing;
-    final newId = DateTime.now().millisecondsSinceEpoch.toString();
+    final newId = const Uuid().v4();
     state = state.copyWith(draftId: newId);
     return newId;
   }

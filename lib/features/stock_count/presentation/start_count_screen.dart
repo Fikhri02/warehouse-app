@@ -7,7 +7,10 @@ import '../../../core/router/app_routes.dart';
 import '../../../data/sample/sample_locations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/models/count_records.dart';
 import '../../../core/models/count_session.dart';
+import '../../../data/repositories/stock_count_repository.dart';
+import '../../../data/sync/sync_provider.dart';
 import '../providers/create_count_session_notifier.dart';
 import '../providers/stock_count_provider.dart';
 
@@ -128,151 +131,159 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
       appBar: AppBar(title: const Text('New Count Session')),
       body: SafeArea(
         top: false,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              'Create and manage count sessions before the team starts scanning.',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textSecondary(brightness),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (_loadingSession)
-              const Center(
-                  child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: CircularProgressIndicator(),
-              ))
-            else if (latestSession != null) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.warningSurface(brightness),
-                  border: Border.all(
-                    color: AppColors.warningBorder(brightness),
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      isDraft
-                          ? 'Resume saved draft'
-                          : 'Resume in-progress session',
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.warningForeground(brightness),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      latestLocationName,
-                      style: AppTextStyles.title.copyWith(
-                        color: AppColors.warningForeground(brightness),
-                      ),
-                    ),
-                    if (latestSession.zoneAisle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        latestSession.zoneAisle!,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.warningForeground(brightness),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      'Started ${_formatDateTime(context, latestSession.startedAt)}',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.warningForeground(brightness),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      isDraft
-                          ? 'You can resume the saved draft or start a new session after discarding it.'
-                          : 'You can resume the active session or start a new one after discarding the current session.',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.warningForeground(brightness),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _resumeSession,
-                        child: Text(isDraft ? 'Resume Draft' : 'Resume'),
-                      ),
-                    ),
-                  ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(syncCoordinatorProvider).syncNow();
+            ref.invalidate(recentCountsProvider);
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'Create and manage count sessions before the team starts scanning.',
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary(brightness),
                 ),
               ),
               const SizedBox(height: 12),
-            ],
-            if (!isOnline)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warningSurface(brightness),
-                  border: Border.all(
-                    color: AppColors.warningBorder(brightness),
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: AppColors.warningForeground(brightness),
+              if (_loadingSession)
+                const Center(
+                    child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: CircularProgressIndicator(),
+                ))
+              else if (latestSession != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningSurface(brightness),
+                    border: Border.all(
+                      color: AppColors.warningBorder(brightness),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'No connection — drafts and active sessions stay local and can sync later.',
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        isDraft
+                            ? 'Resume saved draft'
+                            : 'Resume in-progress session',
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.warningForeground(brightness),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        latestLocationName,
+                        style: AppTextStyles.title.copyWith(
+                          color: AppColors.warningForeground(brightness),
+                        ),
+                      ),
+                      if (latestSession.zoneAisle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          latestSession.zoneAisle!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.warningForeground(brightness),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 4),
+                      Text(
+                        'Started ${_formatDateTime(context, latestSession.startedAt)}',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.warningForeground(brightness),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      Text(
+                        isDraft
+                            ? 'You can resume the saved draft or start a new session after discarding it.'
+                            : 'You can resume the active session or start a new one after discarding the current session.',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.warningForeground(brightness),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _resumeSession,
+                          child: Text(isDraft ? 'Resume Draft' : 'Resume'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!isOnline)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningSurface(brightness),
+                    border: Border.all(
+                      color: AppColors.warningBorder(brightness),
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.warningForeground(brightness),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'No connection — drafts and active sessions stay local and can sync later.',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.warningForeground(brightness),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'New session',
+                        style: AppTextStyles.title,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        latestSession == null
+                            ? 'Set the location, optional worker, and deadline before counting begins.'
+                            : 'Starting a new session will discard the current active session after confirmation.',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.textSecondary(brightness),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _startNewSession,
+                          child: const Text('Create Session'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'New session',
-                      style: AppTextStyles.title,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      latestSession == null
-                          ? 'Set the location, optional worker, and deadline before counting begins.'
-                          : 'Starting a new session will discard the current active session after confirmation.',
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.textSecondary(brightness),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _startNewSession,
-                        child: const Text('Create Session'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              const _RecentCounts(),
+            ],
+          ),
         ),
       ),
     );
@@ -300,4 +311,62 @@ class _StartCountScreenState extends ConsumerState<StartCountScreen> {
 
 extension<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
+}
+
+class _RecentCounts extends ConsumerWidget {
+  const _RecentCounts();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final brightness = Theme.of(context).brightness;
+    final recent =
+        ref.watch(recentCountsProvider).valueOrNull ?? const <CountSummary>[];
+    if (recent.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Recent counts', style: AppTextStyles.title),
+        const SizedBox(height: 8),
+        Card(
+          child: Column(
+            children: [
+              for (final count in recent)
+                ListTile(
+                  title: Text(count.title, style: AppTextStyles.bodyMedium),
+                  subtitle: Text(
+                    [
+                      '${count.lineCount} ${count.lineCount == 1 ? 'item' : 'items'}',
+                      if (count.note != null) count.note!,
+                    ].join(' · '),
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.textSecondary(brightness)),
+                  ),
+                  trailing: _ProgressLabel(count.progress),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProgressLabel extends StatelessWidget {
+  const _ProgressLabel(this.progress);
+
+  final CountProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final (text, color) = switch (progress) {
+      CountProgress.sending => ('Waiting to send', AppColors.warning),
+      CountProgress.notAccepted => ('Not accepted', AppColors.error),
+      CountProgress.waitingReview => ('Waiting for review', AppColors.warning),
+      CountProgress.approved => ('Approved', AppColors.success),
+      CountProgress.rejected => ('Rejected', AppColors.error),
+    };
+    return Text(text,
+        style: AppTextStyles.caption
+            .copyWith(color: color, fontWeight: FontWeight.w600));
+  }
 }

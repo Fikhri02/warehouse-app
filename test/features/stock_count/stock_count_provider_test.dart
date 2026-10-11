@@ -137,4 +137,23 @@ void main() {
       expect(restored.items.single.entryMethod, CountEntryMethod.typed);
     });
   });
+
+  test('new sessions get server-style ids and keep where they count', () async {
+    await container.read(stockCountNotifierProvider.notifier).startSession(location: 'A-01-01', label: null, locationId: 'bin-1');
+
+    final session = container.read(stockCountNotifierProvider)!;
+    expect(session.id, matches(RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')));
+    expect(session.locationId, 'bin-1');
+  });
+
+  test('counted items keep their catalogue id through a restart', () async {
+    final notifier = container.read(stockCountNotifierProvider.notifier);
+    await notifier.startSession(location: 'A-01-01', label: null, locationId: 'bin-1');
+    await notifier.addItem(CountItem(itemId: 'item-1', itemCode: 'WT-0001', itemName: 'Beras', expected: 0, counted: 4));
+    final id = container.read(stockCountNotifierProvider)!.id;
+
+    final reloaded = await notifier.loadSessionById(id);
+
+    expect(reloaded!.items.single.itemId, 'item-1');
+  });
 }

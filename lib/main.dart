@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -9,6 +11,7 @@ import 'package:warehouse_app/core/theme/app_theme.dart';
 import 'package:warehouse_app/data/api/api_auth_repository.dart';
 import 'package:warehouse_app/data/api/api_client.dart';
 import 'package:warehouse_app/data/api/api_providers.dart';
+import 'package:warehouse_app/data/api/api_stock_count_repository.dart';
 import 'package:warehouse_app/data/api/key_value_store.dart';
 import 'package:warehouse_app/data/api/token_store.dart';
 import 'package:warehouse_app/data/local/app_database.dart';
@@ -47,7 +50,16 @@ Future<void> main() async {
         authRepositoryProvider.overrideWith((_) => authRepository),
         ordersRepositoryProvider.overrideWith((_) => SampleOrdersRepository()),
         receivingRepositoryProvider.overrideWith((_) => SampleReceivingRepository()),
-        stockCountRepositoryProvider.overrideWith((_) => SampleStockCountRepository()),
+        stockCountRepositoryProvider.overrideWith(
+          (ref) => client == null
+              ? SampleStockCountRepository()
+              : ApiStockCountRepository(
+                  client: client,
+                  db: database,
+                  session: () => ref.read(authNotifierProvider).valueOrNull,
+                  onQueued: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()),
+                ),
+        ),
         tasksRepositoryProvider.overrideWith((_) => SampleTasksRepository()),
       ],
       child: const WarehouseApp(),

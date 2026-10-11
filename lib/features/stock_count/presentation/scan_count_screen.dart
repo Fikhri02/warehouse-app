@@ -32,7 +32,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
 
   final ScanModeController _scanModeController = ScanModeController();
   final Set<String> _skipDuplicateWarnings = <String>{};
-  ({String code, String name})? _scanned;
+  ({String itemId, String code, String name})? _scanned;
   int _qty = 0;
   bool _scanning = true;
   bool _isCameraExpanded = false;
@@ -64,11 +64,11 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
 
     setState(() => _scanning = false);
     try {
-      final name = await ref
+      final found = await ref
           .read(stockCountRepositoryProvider)
           .lookupItemByBarcode(code);
       if (!mounted) return;
-      if (name == null) {
+      if (found == null) {
         final addManually = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -95,7 +95,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
         return;
       }
       setState(() {
-        _scanned = (code: code, name: name);
+        _scanned = (itemId: found.id, code: found.sku, name: found.name);
         _qty = 1;
       });
     } catch (_) {
@@ -113,6 +113,7 @@ class _ScanCountScreenState extends ConsumerState<ScanCountScreen> {
     if (item == null) return;
     await _addItem(
       CountItem(
+        itemId: item.itemId,
         itemCode: item.code,
         itemName: item.name,
         expected: 0,
