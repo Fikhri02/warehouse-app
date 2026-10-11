@@ -1,0 +1,3 @@
+tags:
+  live:
+    # Needs a running WareTrack API: WARETRACK_API=http://localhost:5050 flutter test test/live
