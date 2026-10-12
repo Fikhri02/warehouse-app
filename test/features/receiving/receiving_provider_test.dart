@@ -4,8 +4,17 @@ import 'package:mocktail/mocktail.dart';
 import 'package:warehouse_app/core/models/purchase_order.dart';
 import 'package:warehouse_app/data/repositories/receiving_repository.dart';
 import 'package:warehouse_app/features/receiving/providers/receiving_provider.dart';
+import 'package:warehouse_app/core/models/user_session.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
+import 'package:warehouse_app/data/repositories/auth_repository.dart';
+import 'package:warehouse_app/data/sync/sync_coordinator.dart';
+import 'package:warehouse_app/data/sync/sync_provider.dart';
 
 class MockReceivingRepository extends Mock implements ReceivingRepository {}
+
+class MockAuthRepository extends Mock implements AuthRepository {}
+
+class MockSyncCoordinator extends Mock implements SyncCoordinator {}
 
 void main() {
   late MockReceivingRepository mockRepo;
@@ -26,6 +35,48 @@ void main() {
   tearDown(() => container.dispose());
 
   group('PurchaseOrdersNotifier', () {
+    test('pulling the list down sends and fetches first, then reloads', () async {
+      final sync = MockSyncCoordinator();
+      final calls = <String>[];
+      when(() => sync.syncNow()).thenAnswer((_) async => calls.add('sync'));
+      when(() => mockRepo.getPurchaseOrders()).thenAnswer((_) async {
+        calls.add('load');
+        return const [];
+      });
+      final withSync = ProviderContainer(overrides: [
+        receivingRepositoryProvider.overrideWithValue(mockRepo),
+        syncCoordinatorProvider.overrideWithValue(sync),
+      ]);
+      addTearDown(withSync.dispose);
+      withSync.listen(purchaseOrdersNotifierProvider, (_, __) {});
+      await withSync.read(purchaseOrdersNotifierProvider.future);
+
+      await withSync.read(purchaseOrdersNotifierProvider.notifier).syncAndReload();
+
+      expect(calls, ['load', 'sync', 'load']);
+    });
+
+    test('the order list follows the chosen warehouse', () async {
+      final auth = MockAuthRepository();
+      const a = UserSession(userId: 'u1', name: 'Hafiz', email: 'h@w', site: 'A', role: UserRole.worker, token: 't', warehouseId: 'wa');
+      registerFallbackValue(a);
+      when(() => mockRepo.getPurchaseOrders()).thenAnswer((_) async => const []);
+      when(() => auth.selectWarehouse(any(), 'wb')).thenAnswer((_) async => a.copyWith(warehouseId: 'wb', site: 'B'));
+      final signedIn = ProviderContainer(overrides: [
+        receivingRepositoryProvider.overrideWithValue(mockRepo),
+        authRepositoryProvider.overrideWithValue(auth),
+        authBootstrapStateProvider.overrideWithValue(const AuthBootstrapState.hydrated(a)),
+      ]);
+      addTearDown(signedIn.dispose);
+      signedIn.listen(purchaseOrdersNotifierProvider, (_, __) {});
+
+      await signedIn.read(purchaseOrdersNotifierProvider.future);
+      await signedIn.read(authNotifierProvider.notifier).selectWarehouse('wb');
+      await signedIn.read(purchaseOrdersNotifierProvider.future);
+
+      verify(() => mockRepo.getPurchaseOrders()).called(2);
+    });
+
     test('loads purchase orders on init', () async {
       when(() => mockRepo.getPurchaseOrders()).thenAnswer((_) async => [
             const PurchaseOrder(

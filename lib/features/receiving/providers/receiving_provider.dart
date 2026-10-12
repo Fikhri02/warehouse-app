@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/purchase_order.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../data/sync/sync_provider.dart';
 import '../../../data/repositories/receiving_repository.dart';
 
 export '../../../data/repositories/receiving_repository.dart'
@@ -10,7 +12,16 @@ export '../../../data/repositories/receiving_repository.dart'
 class PurchaseOrdersNotifier extends AsyncNotifier<List<PurchaseOrder>> {
   @override
   Future<List<PurchaseOrder>> build() async {
+    // Another warehouse or another person: another list.
+    ref.watch(authNotifierProvider.select((auth) => (auth.valueOrNull?.userId, auth.valueOrNull?.warehouseId)));
     return ref.watch(receivingRepositoryProvider).getPurchaseOrders();
+  }
+
+  /// Pull to refresh: sends anything queued and fetches the latest orders, then reloads.
+  Future<void> syncAndReload() async {
+    await ref.read(syncCoordinatorProvider).syncNow();
+    ref.invalidateSelf();
+    await future;
   }
 
   Future<void> refresh() async {

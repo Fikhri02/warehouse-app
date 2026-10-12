@@ -31,6 +31,9 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
     super.dispose();
   }
 
+  Future<void> _syncAndReload() =>
+      ref.read(purchaseOrdersNotifierProvider.notifier).syncAndReload();
+
   @override
   Widget build(BuildContext context) {
     final ordersState = ref.watch(purchaseOrdersNotifierProvider);
@@ -90,12 +93,18 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
                   child: TabBarView(
                     controller: _tabs,
                     children: [
-                      _PendingTab(
-                        inProgress: inProgress,
-                        pending: pending,
-                        ref: ref,
+                      RefreshIndicator(
+                        onRefresh: _syncAndReload,
+                        child: _PendingTab(
+                          inProgress: inProgress,
+                          pending: pending,
+                          ref: ref,
+                        ),
                       ),
-                      _CompletedTab(completed: completed, ref: ref),
+                      RefreshIndicator(
+                        onRefresh: _syncAndReload,
+                        child: _CompletedTab(completed: completed, ref: ref),
+                      ),
                     ],
                   ),
                 ),
@@ -122,15 +131,23 @@ class _PendingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (inProgress.isEmpty && pending.isEmpty) {
-      return const Center(
-        child: Text(
-          'No pending purchase orders',
-          style: TextStyle(color: AppColors.subtitle),
-        ),
+      // Scrollable, so pulling down still fetches new orders.
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 160),
+          Center(
+            child: Text(
+              'No pending purchase orders',
+              style: TextStyle(color: AppColors.subtitle),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
       children: [
         if (inProgress.isNotEmpty) ...[
@@ -158,15 +175,23 @@ class _CompletedTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (completed.isEmpty) {
-      return const Center(
-        child: Text(
-          'No completed purchase orders',
-          style: TextStyle(color: AppColors.subtitle),
-        ),
+      // Scrollable, so pulling down still fetches new orders.
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 160),
+          Center(
+            child: Text(
+              'No completed purchase orders',
+              style: TextStyle(color: AppColors.subtitle),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
       children: [
         const _SectionLabel('Received'),
