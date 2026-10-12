@@ -7,6 +7,7 @@ import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
+import 'package:warehouse_app/data/sync/sync_provider.dart';
 import 'package:warehouse_app/features/delivery_orders/providers/delivery_orders_provider.dart';
 
 class DeliveryOrderDetailScreen extends ConsumerWidget {
@@ -149,6 +150,13 @@ class _ActionBar extends ConsumerWidget {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
       return;
     }
+    _reload(ref);
+    // Send it now, then show what the server made of it: a refused change falls back to the server's status.
+    await ref.read(syncCoordinatorProvider).syncNow();
+    _reload(ref);
+  }
+
+  void _reload(WidgetRef ref) {
     ref.invalidate(deliveryOrdersProvider(true));
     ref.invalidate(deliveryOrdersProvider(false));
     ref.invalidate(deliveryOrderDetailProvider(order.id));

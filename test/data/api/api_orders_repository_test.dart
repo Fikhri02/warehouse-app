@@ -92,7 +92,7 @@ void main() {
     final save = jsonDecode(queued[0].payload) as Map<String, dynamic>;
     final body = save['body'] as Map<String, dynamic>;
     expect(save['kind'], 'Delivery');
-    expect(body['number'], matches(RegExp(r'^DO-\d{6}-9F3C$')));
+    expect(body['number'], matches(RegExp(r'^DO-\d{6}-9F3C0000$')));
     expect(body..remove('number'), {
       'destination': 'Outlet Cheras',
       'deliveryDate': '2026-10-14',
@@ -158,6 +158,40 @@ void main() {
     session = member(UserRole.supervisor);
     await repo.updateOrderStatus(kind: OrderKind.delivery, id: 'do-2', status: OrderStatus.submitted);
     expect((await repo.getDeliveryOrderById('do-2'))!.status, OrderStatus.submitted);
+  });
+
+  test('a worker cannot lift approval from an order that needs it', () async {
+    await db.serverMirrorDao.upsertOrder(order('do-4', 'Draft').copyWith(requiresApproval: const Value(true)), [
+      RemoteOrderLinesCompanion.insert(id: 'l4', orderId: 'do-4', itemId: beras, locationId: 'bin-1', quantity: 1),
+    ]);
+    final draft = (await repo.getDeliveryOrderById('do-4'))!;
+
+    await expectLater(
+      repo.saveDeliveryOrder(draft.copyWith(requiresApproval: false, status: OrderStatus.submitted)),
+      throwsA(isA<StateError>()),
+    );
+    expect(await db.syncQueueDao.getPendingItems(), isEmpty);
+  });
+
+  test('a status change names its order and the save it follows', () async {
+    await repo.saveDeliveryOrder(DeliveryOrder(
+      id: newId,
+      orderNumber: 'DO-261012-9F3C0000',
+      destination: 'Outlet Cheras',
+      deliveryDate: DateTime(2026, 10, 14),
+      status: OrderStatus.submitted,
+      requiresApproval: false,
+      createdBy: '',
+      createdAt: DateTime.now(),
+      items: const [OrderItem(itemId: beras, itemName: 'Beras Wangi 10kg', itemSku: 'WT-0001', quantity: 2, locationId: 'bin-1', locationCode: 'A-01-01')],
+    ));
+    await repo.updateOrderStatus(kind: OrderKind.delivery, id: 'do-1', status: OrderStatus.packed);
+
+    final queued = await db.syncQueueDao.getPendingItems();
+    final afterSave = jsonDecode(queued[1].payload) as Map<String, dynamic>;
+    final onItsOwn = jsonDecode(queued[2].payload) as Map<String, dynamic>;
+    expect((afterSave['number'], afterSave['afterSave']), ('DO-261012-9F3C0000', queued[0].id));
+    expect((onItsOwn['number'], onItsOwn.containsKey('afterSave')), ('DO-SA1-001', false));
   });
 
   test('a line without a bin is not queued', () async {

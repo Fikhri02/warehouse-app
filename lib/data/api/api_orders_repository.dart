@@ -78,7 +78,7 @@ class ApiOrdersRepository implements OrdersRepository {
     if (current.status == OrderStatus.pendingApproval && status == OrderStatus.submitted && session.role != UserRole.supervisor) {
       throw StateError('Only a supervisor can approve this order.');
     }
-    await _queueStatus(kind, id, warehouseId, status);
+    await _queueStatus(kind, id, warehouseId, status, current.number);
     _onQueued();
   }
 
@@ -116,21 +116,32 @@ class ApiOrdersRepository implements OrdersRepository {
     if (warehouseId == null) throw StateError('No warehouse chosen.');
     final current = _find(await _orders(kind), id);
     if (current != null && current.status != OrderStatus.draft) throw StateError('Only a draft order can be changed.');
-    await _db.syncQueueDao.enqueue(
+    if (current != null && current.requiresApproval && body['requiresApproval'] == false && _session()?.role != UserRole.supervisor) {
+      throw StateError('Only a supervisor can take approval off this order.');
+    }
+    final save = await _db.syncQueueDao.enqueue(
       operationType: SyncOps.orderSave,
       referenceId: id,
       warehouseId: warehouseId,
       payload: jsonEncode({'kind': kind.serverName, 'body': body}),
     );
-    if (target != OrderStatus.draft) await _queueStatus(kind, id, warehouseId, target);
+    if (target != OrderStatus.draft) await _queueStatus(kind, id, warehouseId, target, body['number'] as String, afterSave: save);
     _onQueued();
   }
 
-  Future<void> _queueStatus(OrderKind kind, String id, String warehouseId, OrderStatus status) => _db.syncQueueDao.enqueue(
+  /// [afterSave] is the save queued with this change: if the server refuses that save, this change is held too.
+  Future<void> _queueStatus(OrderKind kind, String id, String warehouseId, OrderStatus status, String number, {int? afterSave}) =>
+      _db.syncQueueDao.enqueue(
         operationType: SyncOps.orderStatus,
         referenceId: id,
         warehouseId: warehouseId,
-        payload: jsonEncode({'kind': kind.serverName, 'status': status.serverName, 'changedAt': DateTime.now().toUtc().toIso8601String()}),
+        payload: jsonEncode({
+          'kind': kind.serverName,
+          'status': status.serverName,
+          'changedAt': DateTime.now().toUtc().toIso8601String(),
+          'number': number,
+          if (afterSave != null) 'afterSave': afterSave,
+        }),
       );
 
   List<Map<String, Object?>> _lines(List<OrderItem> items) {
@@ -249,10 +260,10 @@ class ApiOrdersRepository implements OrdersRepository {
 
   static String _day(DateTime d) => '${d.year}-${_two(d.month)}-${_two(d.day)}';
 
-  /// DO-yyMMdd-XXXX: the date and the start of the order's own id, so two phones don't pick the same number.
+  /// DO-yyMMdd-XXXXXXXX: the date and the start of the order's own id (32 random bits), so phones don't pick the same number.
   static String _number(String prefix, String id) {
     final d = DateTime.now();
-    return '$prefix-${_two(d.year % 100)}${_two(d.month)}${_two(d.day)}-${id.substring(0, 4).toUpperCase()}';
+    return '$prefix-${_two(d.year % 100)}${_two(d.month)}${_two(d.day)}-${id.replaceAll('-', '').substring(0, 8).toUpperCase()}';
   }
 
   static DeliveryOrder _delivery(_Order o) => DeliveryOrder(

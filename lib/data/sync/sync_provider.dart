@@ -98,9 +98,23 @@ final syncIssuesProvider = StreamProvider<List<SyncIssue>>((ref) {
               SyncOps.orderStatus => 'Status change not accepted',
               _ => 'Change not accepted',
             },
-            message: item.lastError == null
-                ? 'WareTrack refused this change.'
-                : ApiException.fromJson(jsonDecode(item.lastError!) as Map<String, dynamic>).message,
+            message: _naming(
+              item,
+              item.lastError == null
+                  ? 'WareTrack refused this change.'
+                  : ApiException.fromJson(jsonDecode(item.lastError!) as Map<String, dynamic>).message,
+            ),
           ),
       ]);
 });
+
+/// Puts the order's number (and where it goes) in front of the reason, so the person knows which order to redo.
+String _naming(SyncQueueData item, String message) {
+  if (item.operationType != SyncOps.orderSave && item.operationType != SyncOps.orderStatus) return message;
+  final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+  final body = payload['body'] as Map<String, dynamic>?;
+  final number = (body?['number'] ?? payload['number']) as String?;
+  if (number == null) return message;
+  final to = (body?['destination'] ?? body?['customerName']) as String?;
+  return to == null ? '$number: $message' : '$number ($to): $message';
+}

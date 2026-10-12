@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:warehouse_app/data/api/api_exception.dart';
 import 'package:warehouse_app/data/local/app_database.dart';
 
@@ -40,7 +42,7 @@ class SyncService {
       final dependency = _dependsOn[item.operationType];
       if (dependency != null) {
         // Sending it would only fail with "not found"; say why instead.
-        final parent = await dao.previousCommand(dependency.$1, item.referenceId, before: item.id);
+        final parent = await _parentOf(item, dependency.$1);
         if (parent != null && (parent.status == 'conflicted' || parent.status == 'failed')) {
           await dao.markFailed(item.id, ApiException(status: 0, title: dependency.$2));
           continue;
@@ -68,5 +70,14 @@ class SyncService {
       }
     }
     return FlushOutcome.done;
+  }
+
+  /// The command [item] depends on. An order's status change depends only on the save it was queued with, so an old
+  /// refused edit doesn't hold status changes to an order the server has.
+  Future<SyncQueueData?> _parentOf(SyncQueueData item, String parentOp) async {
+    final dao = _db.syncQueueDao;
+    if (item.operationType != SyncOps.orderStatus) return dao.previousCommand(parentOp, item.referenceId, before: item.id);
+    final afterSave = (jsonDecode(item.payload) as Map<String, dynamic>)['afterSave'] as int?;
+    return afterSave == null ? null : dao.commandById(afterSave);
   }
 }

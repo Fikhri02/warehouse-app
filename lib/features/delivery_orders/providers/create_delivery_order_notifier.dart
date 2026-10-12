@@ -116,6 +116,7 @@ class CreateDeliveryOrderNotifier extends Notifier<CreateDeliveryOrderState> {
       errors['destination'] = 'Destination must be at most 200 characters';
     }
     if (state.deliveryDate == null) errors['deliveryDate'] = 'Delivery date is required';
+    if (state.notes.trim().length > 1000) errors['notes'] = 'Notes must be at most 1000 characters';
     state = state.copyWith(errors: errors);
     return errors.isEmpty;
   }

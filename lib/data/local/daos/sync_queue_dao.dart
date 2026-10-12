@@ -101,6 +101,8 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase> with _$SyncQueueDaoMixi
         ..orderBy([(q) => OrderingTerm.desc(q.id)]))
       .watch();
 
+  Future<SyncQueueData?> commandById(int id) => (select(syncQueue)..where((q) => q.id.equals(id))).getSingleOrNull();
+
   /// The newest [operationType] command for [referenceId] queued before command [before].
   Future<SyncQueueData?> previousCommand(String operationType, String referenceId, {required int before}) => (select(syncQueue)
         ..where((q) => q.operationType.equals(operationType) & q.referenceId.equals(referenceId) & q.id.isSmallerThanValue(before))

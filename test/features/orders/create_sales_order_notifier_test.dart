@@ -23,6 +23,16 @@ void main() {
     expect(container.read(createSalesOrderNotifierProvider).errors.keys, containsAll(['customerName', 'pickFrom']));
   });
 
+  test('sales notes longer than the server keeps are caught on the phone', () {
+    final notifier = container.read(createSalesOrderNotifierProvider.notifier)
+      ..setPickFrom(binA)
+      ..setCustomerName('Kedai Maju Jaya')
+      ..setNotes('x' * 1001);
+
+    expect(notifier.validateStep1(), isFalse);
+    expect(container.read(createSalesOrderNotifierProvider).errors['notes'], 'Notes must be at most 1000 characters');
+  });
+
   test('a sales order is saved with its lines picked from the chosen bin', () async {
     final notifier = container.read(createSalesOrderNotifierProvider.notifier)
       ..setPickFrom(binA)

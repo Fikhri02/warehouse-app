@@ -190,7 +190,7 @@ void main() {
     });
 
     Future<void> queueOrder(String id, {String kind = 'Delivery', String status = 'Submitted'}) async {
-      await db.syncQueueDao.enqueue(
+      final save = await db.syncQueueDao.enqueue(
         operationType: SyncOps.orderSave,
         referenceId: id,
         warehouseId: 'w1',
@@ -203,9 +203,32 @@ void main() {
         operationType: SyncOps.orderStatus,
         referenceId: id,
         warehouseId: 'w1',
-        payload: jsonEncode({'kind': kind, 'status': status, 'changedAt': '2026-10-12T02:00:00.000Z'}),
+        payload: jsonEncode({'kind': kind, 'status': status, 'changedAt': '2026-10-12T02:00:00.000Z', 'number': 'DO-1', 'afterSave': save}),
       );
     }
+
+    test('a status for an order the server already has is not held by an older refused save', () async {
+      await queueOrder('o1');
+      for (final command in await db.syncQueueDao.getPendingItems()) {
+        await db.syncQueueDao.markFailed(command.id, const ApiException(status: 409, title: 'Order already dispatched'));
+      }
+      // Later, after a pull shows the order In Transit, the person marks it Shipped.
+      await db.syncQueueDao.enqueue(
+        operationType: SyncOps.orderStatus,
+        referenceId: 'o1',
+        warehouseId: 'w1',
+        payload: jsonEncode({'kind': 'Delivery', 'status': 'Shipped', 'changedAt': '2026-10-12T03:00:00.000Z', 'number': 'DO-1'}),
+      );
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add('${r.method} ${r.url.path}');
+        return jsonResponse({'id': 'o1'});
+      });
+
+      await service.flushQueue();
+
+      expect(calls, ['POST /api/warehouses/w1/delivery-orders/o1/status']);
+    });
 
     test('an order is saved and then moved on, each at its own endpoint', () async {
       await queueOrder('o1');

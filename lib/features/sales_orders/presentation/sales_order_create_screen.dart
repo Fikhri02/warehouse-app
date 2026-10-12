@@ -248,9 +248,11 @@ class _BasicInfoStep extends ConsumerWidget {
           onChanged: (value) => ref
               .read(createSalesOrderNotifierProvider.notifier)
               .setNotes(value),
-          decoration: const InputDecoration(
+          maxLength: 1000,
+          decoration: InputDecoration(
             labelText: 'Notes',
             alignLabelWithHint: true,
+            errorText: state.errors['notes'],
           ),
         ),
       ],

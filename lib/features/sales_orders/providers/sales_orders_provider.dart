@@ -11,7 +11,7 @@ final salesOrdersProvider =
 });
 
 final salesOrderDetailProvider =
-    FutureProvider.family<SalesOrder?, String>((ref, id) {
+    FutureProvider.autoDispose.family<SalesOrder?, String>((ref, id) {
   // Another warehouse or another person: another list.
   ref.watch(authNotifierProvider.select((auth) => (auth.valueOrNull?.userId, auth.valueOrNull?.warehouseId)));
   return ref.watch(ordersRepositoryProvider).getSalesOrderById(id);

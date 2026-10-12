@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:warehouse_app/core/models/order.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/data/sample/sample_order_catalog.dart';
 import 'package:warehouse_app/data/sample/sample_order_locations.dart';
 
@@ -285,7 +286,11 @@ final ordersRepositoryProvider = Provider<OrdersRepository>((ref) {
   throw UnimplementedError('ordersRepositoryProvider not overridden');
 });
 
-final pickLocationsProvider = FutureProvider<List<OrderLocation>>((ref) => ref.watch(ordersRepositoryProvider).getPickLocations());
+/// Read again for each new order and whenever the warehouse changes, so a pull or a switch never leaves old bins behind.
+final pickLocationsProvider = FutureProvider.autoDispose<List<OrderLocation>>((ref) {
+  ref.watch(authNotifierProvider.select((auth) => auth.valueOrNull?.warehouseId));
+  return ref.watch(ordersRepositoryProvider).getPickLocations();
+});
 
 final orderCatalogSearchProvider = FutureProvider.autoDispose.family<List<CatalogItem>, String>(
   (ref, term) => ref.watch(ordersRepositoryProvider).searchItems(term),

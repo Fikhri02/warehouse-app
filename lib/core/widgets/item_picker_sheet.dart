@@ -74,9 +74,8 @@ class _ItemPickerSheetState extends ConsumerState<ItemPickerSheet> {
                 for (int index = 0; index < widget.items.length; index++) ...[
                   _SelectedItemRow(
                     item: widget.items[index],
-                    onChanged: (qty) =>
-                        _updateQty(widget.items[index].itemId, qty),
-                    onRemove: () => _removeItem(widget.items[index].itemId),
+                    onChanged: (qty) => _updateQty(index, qty),
+                    onRemove: () => _removeItem(index),
                   ),
                   if (index < widget.items.length - 1) const Divider(height: 1),
                 ],
@@ -144,20 +143,16 @@ class _ItemPickerSheetState extends ConsumerState<ItemPickerSheet> {
     widget.onChanged(current);
   }
 
-  void _updateQty(String itemId, int qty) {
+  // By position: an order may take the same item from two bins.
+  void _updateQty(int index, int qty) {
     widget.onChanged([
-      for (final item in widget.items)
-        if (item.itemId == itemId)
-          item.copyWith(quantity: qty.clamp(1, 999))
-        else
-          item,
+      for (int i = 0; i < widget.items.length; i++)
+        if (i == index) widget.items[i].copyWith(quantity: qty.clamp(1, 999)) else widget.items[i],
     ]);
   }
 
-  void _removeItem(String itemId) {
-    widget.onChanged(
-      widget.items.where((item) => item.itemId != itemId).toList(),
-    );
+  void _removeItem(int index) {
+    widget.onChanged([...widget.items]..removeAt(index));
   }
 }
 

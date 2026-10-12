@@ -26,6 +26,16 @@ void main() {
     expect(state().errors.keys, containsAll(['destination', 'pickFrom']));
   });
 
+  test('notes longer than the server keeps are caught on the phone', () {
+    notifier()
+      ..setPickFrom(binA)
+      ..setDestination('Outlet')
+      ..setNotes('x' * 1001);
+
+    expect(notifier().validateStep1(), isFalse);
+    expect(state().errors['notes'], 'Notes must be at most 1000 characters');
+  });
+
   test('items are picked from the chosen bin, and changing the bin moves every line', () {
     notifier()
       ..setPickFrom(binA)

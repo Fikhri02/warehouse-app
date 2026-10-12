@@ -117,6 +117,7 @@ class CreateSalesOrderNotifier extends Notifier<CreateSalesOrderState> {
       errors['customerName'] = 'Customer name must be at most 200 characters';
     }
     if (state.orderDate == null) errors['orderDate'] = 'Order date is required';
+    if (state.notes.trim().length > 1000) errors['notes'] = 'Notes must be at most 1000 characters';
     state = state.copyWith(errors: errors);
     return errors.isEmpty;
   }
