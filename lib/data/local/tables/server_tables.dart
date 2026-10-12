@@ -78,6 +78,10 @@ class SyncCursors extends Table {
   /// The kMirrorVersion this cursor was saved under; an older one means "read again from the start".
   IntColumn get mirrorVersion => integer().withDefault(const Constant(1))();
 
+  /// The last sync_queue id already sent when the latest complete pull began: what those commands did is in the
+  /// copy. A command sent after it may not be yet.
+  IntColumn get caughtUpThrough => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {warehouseId};
 }

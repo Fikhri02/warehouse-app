@@ -104,11 +104,12 @@ class ApiReceivingRepository implements ReceivingRepository {
     _onQueued();
   }
 
-  /// Quantities in receipts the server doesn't have yet, by order line.
+  /// Quantities in receipts the phone's copy of the orders doesn't show yet, by order line: those not sent, and those
+  /// sent after the latest complete pull began.
   Future<Map<String, int>> _waitingToSend(String warehouseId) async {
     final totals = <String, int>{};
-    for (final item in await _db.syncQueueDao.itemsFor(SyncOps.receiptCreate, warehouseId: warehouseId)) {
-      if (item.status != 'pending') continue;
+    final caughtUpThrough = await _db.serverMirrorDao.caughtUpThrough(warehouseId);
+    for (final item in await _db.syncQueueDao.notYetInCopy(SyncOps.receiptCreate, warehouseId: warehouseId, caughtUpThrough: caughtUpThrough)) {
       final payload = jsonDecode(item.payload) as Map<String, dynamic>;
       for (final line in (payload['lines'] as List).cast<Map<String, dynamic>>()) {
         final id = line['poLineId'] as String;

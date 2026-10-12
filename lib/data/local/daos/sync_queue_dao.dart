@@ -64,6 +64,26 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase> with _$SyncQueueDaoMixi
     return query.get();
   }
 
+  /// Commands whose effect the phone's copy of the server does not show yet: not sent, or sent after the latest
+  /// complete pull began ([caughtUpThrough], see SyncCursors).
+  Future<List<SyncQueueData>> notYetInCopy(String operationType, {required String warehouseId, required int caughtUpThrough}) =>
+      (select(syncQueue)
+            ..where((q) =>
+                q.operationType.equals(operationType) &
+                q.warehouseId.equals(warehouseId) &
+                (q.status.equals('pending') | (q.status.equals('synced') & q.id.isBiggerThanValue(caughtUpThrough)))))
+          .get();
+
+  /// The newest command the server has taken; 0 if none. Commands go oldest first, so every synced id below it went too.
+  Future<int> lastSyncedId() async {
+    final newest = syncQueue.id.max();
+    final row = await (selectOnly(syncQueue)
+          ..addColumns([newest])
+          ..where(syncQueue.status.equals('synced')))
+        .getSingle();
+    return row.read(newest) ?? 0;
+  }
+
   Future<int> countPending() async {
     final count = countAll(filter: syncQueue.status.equals('pending'));
     final query = selectOnly(syncQueue)..addColumns([count]);

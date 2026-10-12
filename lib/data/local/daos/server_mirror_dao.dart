@@ -44,6 +44,15 @@ class ServerMirrorDao extends DatabaseAccessor<AppDatabase> with _$ServerMirrorD
         SyncCursorsCompanion.insert(warehouseId: warehouseId, cursor: cursor, mirrorVersion: const Value(kMirrorVersion)),
       );
 
+  /// See SyncCursors.caughtUpThrough. 0 before the first complete pull.
+  Future<int> caughtUpThrough(String warehouseId) async {
+    final row = await (select(syncCursors)..where((c) => c.warehouseId.equals(warehouseId))).getSingleOrNull();
+    return row == null || row.mirrorVersion < kMirrorVersion ? 0 : row.caughtUpThrough;
+  }
+
+  Future<void> markCaughtUp(String warehouseId, {required int through}) =>
+      (update(syncCursors)..where((c) => c.warehouseId.equals(warehouseId))).write(SyncCursorsCompanion(caughtUpThrough: Value(through)));
+
   Future<CatalogItemRow?> itemByBarcode(String code) {
     final query = select(catalogItems).join([innerJoin(catalogBarcodes, catalogBarcodes.itemId.equalsExp(catalogItems.id))])
       ..where(catalogBarcodes.code.equals(code) & catalogItems.isActive.equals(true))

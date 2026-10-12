@@ -86,6 +86,31 @@ void main() {
     expect(kicks, 1);
   });
 
+  test('a receipt the server took still shows until the phone has pulled the order back', () async {
+    final order = (await repo.getPurchaseOrders()).single;
+    await repo.submitReceive(order.copyWithLines([order.lineItems.single.copyWith(received: 7)]), locationId: dock);
+    final receipt = (await db.syncQueueDao.getPendingItems()).single;
+    await db.syncQueueDao.markSynced(receipt.id);
+
+    expect((await repo.getPurchaseOrders()).single.lineItems.single.alreadyReceived, 7);
+  });
+
+  test('once a pull that began after the receipt went has finished, the order comes from the server alone', () async {
+    final order = (await repo.getPurchaseOrders()).single;
+    await repo.submitReceive(order.copyWithLines([order.lineItems.single.copyWith(received: 7)]), locationId: dock);
+    final receipt = (await db.syncQueueDao.getPendingItems()).single;
+    await db.syncQueueDao.markSynced(receipt.id);
+
+    await db.serverMirrorDao.upsertPurchaseOrder(
+      RemotePurchaseOrdersCompanion.insert(id: 'po-1', warehouseId: w, number: 'PO-SA1-001', supplier: 'Gula Prai Trading', status: 'Partial'),
+      [RemotePoLinesCompanion.insert(id: 'pl-1', purchaseOrderId: 'po-1', lineNo: 1, itemId: beras, ordered: 10, received: 7)],
+    );
+    await db.serverMirrorDao.saveCursor(w, 9);
+    await db.serverMirrorDao.markCaughtUp(w, through: receipt.id);
+
+    expect((await repo.getPurchaseOrders()).single.lineItems.single.alreadyReceived, 7);
+  });
+
   test('a_queued_receipt_shows_on_the_order_until_the_server_has_it', () async {
     final order = (await repo.getPurchaseOrders()).single;
     await repo.submitReceive(order.copyWithLines([order.lineItems.single.copyWith(received: 10)]), locationId: dock);

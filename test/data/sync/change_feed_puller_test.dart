@@ -163,6 +163,17 @@ void main() {
     expect((line.ordered, line.received), (10, 4));
   });
 
+  test('a pull that reaches the end remembers which sent commands it has seen the result of', () async {
+    final sent = await db.syncQueueDao.enqueue(operationType: 'receipt.create', referenceId: 'r1', warehouseId: w, payload: '{}');
+    await db.syncQueueDao.markSynced(sent);
+    final puller = await pullerServing([page([], next: 1, more: true), page([], next: 2)]);
+
+    expect(await db.serverMirrorDao.caughtUpThrough(w), 0);
+    await puller.pull(w);
+
+    expect(await db.serverMirrorDao.caughtUpThrough(w), sent);
+  });
+
   test('a_phone_on_an_older_mirror_reads_the_feed_again_from_the_start', () async {
     // What a 3a phone saved: cursor 40 under mirror version 1, which never stored purchase orders.
     await db.customStatement("INSERT INTO sync_cursors (warehouse_id, cursor, mirror_version) VALUES ('$w', 40, 1)");

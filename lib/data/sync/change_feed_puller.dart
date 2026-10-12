@@ -17,6 +17,8 @@ class ChangeFeedPuller {
   Future<int> pull(String warehouseId) async {
     var applied = 0;
     final generation = _client.tokens.generation;
+    // Whatever was sent before this pull began is in the server's answer by the time the pull reaches the end.
+    final sentBefore = await _db.syncQueueDao.lastSyncedId();
     var cursor = await _db.serverMirrorDao.cursorFor(warehouseId);
     while (true) {
       final page = await _client.get(
@@ -32,6 +34,7 @@ class ChangeFeedPuller {
           await _apply(change);
         }
         await _db.serverMirrorDao.saveCursor(warehouseId, next);
+        if (page['hasMore'] != true) await _db.serverMirrorDao.markCaughtUp(warehouseId, through: sentBefore);
       });
       applied += changes.length;
       cursor = next;

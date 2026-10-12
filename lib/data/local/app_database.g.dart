@@ -7210,8 +7210,17 @@ class $SyncCursorsTable extends SyncCursors
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(1));
+  static const VerificationMeta _caughtUpThroughMeta =
+      const VerificationMeta('caughtUpThrough');
   @override
-  List<GeneratedColumn> get $columns => [warehouseId, cursor, mirrorVersion];
+  late final GeneratedColumn<int> caughtUpThrough = GeneratedColumn<int>(
+      'caught_up_through', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [warehouseId, cursor, mirrorVersion, caughtUpThrough];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -7242,6 +7251,12 @@ class $SyncCursorsTable extends SyncCursors
           mirrorVersion.isAcceptableOrUnknown(
               data['mirror_version']!, _mirrorVersionMeta));
     }
+    if (data.containsKey('caught_up_through')) {
+      context.handle(
+          _caughtUpThroughMeta,
+          caughtUpThrough.isAcceptableOrUnknown(
+              data['caught_up_through']!, _caughtUpThroughMeta));
+    }
     return context;
   }
 
@@ -7257,6 +7272,8 @@ class $SyncCursorsTable extends SyncCursors
           .read(DriftSqlType.int, data['${effectivePrefix}cursor'])!,
       mirrorVersion: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}mirror_version'])!,
+      caughtUpThrough: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}caught_up_through'])!,
     );
   }
 
@@ -7272,16 +7289,22 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
 
   /// The kMirrorVersion this cursor was saved under; an older one means "read again from the start".
   final int mirrorVersion;
+
+  /// The last sync_queue id already sent when the latest complete pull began: what those commands did is in the
+  /// copy. A command sent after it may not be yet.
+  final int caughtUpThrough;
   const SyncCursorRow(
       {required this.warehouseId,
       required this.cursor,
-      required this.mirrorVersion});
+      required this.mirrorVersion,
+      required this.caughtUpThrough});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['warehouse_id'] = Variable<String>(warehouseId);
     map['cursor'] = Variable<int>(cursor);
     map['mirror_version'] = Variable<int>(mirrorVersion);
+    map['caught_up_through'] = Variable<int>(caughtUpThrough);
     return map;
   }
 
@@ -7290,6 +7313,7 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
       warehouseId: Value(warehouseId),
       cursor: Value(cursor),
       mirrorVersion: Value(mirrorVersion),
+      caughtUpThrough: Value(caughtUpThrough),
     );
   }
 
@@ -7300,6 +7324,7 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
       warehouseId: serializer.fromJson<String>(json['warehouseId']),
       cursor: serializer.fromJson<int>(json['cursor']),
       mirrorVersion: serializer.fromJson<int>(json['mirrorVersion']),
+      caughtUpThrough: serializer.fromJson<int>(json['caughtUpThrough']),
     );
   }
   @override
@@ -7309,15 +7334,20 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
       'warehouseId': serializer.toJson<String>(warehouseId),
       'cursor': serializer.toJson<int>(cursor),
       'mirrorVersion': serializer.toJson<int>(mirrorVersion),
+      'caughtUpThrough': serializer.toJson<int>(caughtUpThrough),
     };
   }
 
   SyncCursorRow copyWith(
-          {String? warehouseId, int? cursor, int? mirrorVersion}) =>
+          {String? warehouseId,
+          int? cursor,
+          int? mirrorVersion,
+          int? caughtUpThrough}) =>
       SyncCursorRow(
         warehouseId: warehouseId ?? this.warehouseId,
         cursor: cursor ?? this.cursor,
         mirrorVersion: mirrorVersion ?? this.mirrorVersion,
+        caughtUpThrough: caughtUpThrough ?? this.caughtUpThrough,
       );
   SyncCursorRow copyWithCompanion(SyncCursorsCompanion data) {
     return SyncCursorRow(
@@ -7327,6 +7357,9 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
       mirrorVersion: data.mirrorVersion.present
           ? data.mirrorVersion.value
           : this.mirrorVersion,
+      caughtUpThrough: data.caughtUpThrough.present
+          ? data.caughtUpThrough.value
+          : this.caughtUpThrough,
     );
   }
 
@@ -7335,37 +7368,43 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
     return (StringBuffer('SyncCursorRow(')
           ..write('warehouseId: $warehouseId, ')
           ..write('cursor: $cursor, ')
-          ..write('mirrorVersion: $mirrorVersion')
+          ..write('mirrorVersion: $mirrorVersion, ')
+          ..write('caughtUpThrough: $caughtUpThrough')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(warehouseId, cursor, mirrorVersion);
+  int get hashCode =>
+      Object.hash(warehouseId, cursor, mirrorVersion, caughtUpThrough);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SyncCursorRow &&
           other.warehouseId == this.warehouseId &&
           other.cursor == this.cursor &&
-          other.mirrorVersion == this.mirrorVersion);
+          other.mirrorVersion == this.mirrorVersion &&
+          other.caughtUpThrough == this.caughtUpThrough);
 }
 
 class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
   final Value<String> warehouseId;
   final Value<int> cursor;
   final Value<int> mirrorVersion;
+  final Value<int> caughtUpThrough;
   final Value<int> rowid;
   const SyncCursorsCompanion({
     this.warehouseId = const Value.absent(),
     this.cursor = const Value.absent(),
     this.mirrorVersion = const Value.absent(),
+    this.caughtUpThrough = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncCursorsCompanion.insert({
     required String warehouseId,
     required int cursor,
     this.mirrorVersion = const Value.absent(),
+    this.caughtUpThrough = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : warehouseId = Value(warehouseId),
         cursor = Value(cursor);
@@ -7373,12 +7412,14 @@ class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
     Expression<String>? warehouseId,
     Expression<int>? cursor,
     Expression<int>? mirrorVersion,
+    Expression<int>? caughtUpThrough,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (warehouseId != null) 'warehouse_id': warehouseId,
       if (cursor != null) 'cursor': cursor,
       if (mirrorVersion != null) 'mirror_version': mirrorVersion,
+      if (caughtUpThrough != null) 'caught_up_through': caughtUpThrough,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7387,11 +7428,13 @@ class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
       {Value<String>? warehouseId,
       Value<int>? cursor,
       Value<int>? mirrorVersion,
+      Value<int>? caughtUpThrough,
       Value<int>? rowid}) {
     return SyncCursorsCompanion(
       warehouseId: warehouseId ?? this.warehouseId,
       cursor: cursor ?? this.cursor,
       mirrorVersion: mirrorVersion ?? this.mirrorVersion,
+      caughtUpThrough: caughtUpThrough ?? this.caughtUpThrough,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7408,6 +7451,9 @@ class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
     if (mirrorVersion.present) {
       map['mirror_version'] = Variable<int>(mirrorVersion.value);
     }
+    if (caughtUpThrough.present) {
+      map['caught_up_through'] = Variable<int>(caughtUpThrough.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7420,6 +7466,7 @@ class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
           ..write('warehouseId: $warehouseId, ')
           ..write('cursor: $cursor, ')
           ..write('mirrorVersion: $mirrorVersion, ')
+          ..write('caughtUpThrough: $caughtUpThrough, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11904,6 +11951,7 @@ typedef $$SyncCursorsTableCreateCompanionBuilder = SyncCursorsCompanion
   required String warehouseId,
   required int cursor,
   Value<int> mirrorVersion,
+  Value<int> caughtUpThrough,
   Value<int> rowid,
 });
 typedef $$SyncCursorsTableUpdateCompanionBuilder = SyncCursorsCompanion
@@ -11911,6 +11959,7 @@ typedef $$SyncCursorsTableUpdateCompanionBuilder = SyncCursorsCompanion
   Value<String> warehouseId,
   Value<int> cursor,
   Value<int> mirrorVersion,
+  Value<int> caughtUpThrough,
   Value<int> rowid,
 });
 
@@ -11931,6 +11980,10 @@ class $$SyncCursorsTableFilterComposer
 
   ColumnFilters<int> get mirrorVersion => $composableBuilder(
       column: $table.mirrorVersion, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get caughtUpThrough => $composableBuilder(
+      column: $table.caughtUpThrough,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$SyncCursorsTableOrderingComposer
@@ -11951,6 +12004,10 @@ class $$SyncCursorsTableOrderingComposer
   ColumnOrderings<int> get mirrorVersion => $composableBuilder(
       column: $table.mirrorVersion,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get caughtUpThrough => $composableBuilder(
+      column: $table.caughtUpThrough,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$SyncCursorsTableAnnotationComposer
@@ -11970,6 +12027,9 @@ class $$SyncCursorsTableAnnotationComposer
 
   GeneratedColumn<int> get mirrorVersion => $composableBuilder(
       column: $table.mirrorVersion, builder: (column) => column);
+
+  GeneratedColumn<int> get caughtUpThrough => $composableBuilder(
+      column: $table.caughtUpThrough, builder: (column) => column);
 }
 
 class $$SyncCursorsTableTableManager extends RootTableManager<
@@ -12001,24 +12061,28 @@ class $$SyncCursorsTableTableManager extends RootTableManager<
             Value<String> warehouseId = const Value.absent(),
             Value<int> cursor = const Value.absent(),
             Value<int> mirrorVersion = const Value.absent(),
+            Value<int> caughtUpThrough = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SyncCursorsCompanion(
             warehouseId: warehouseId,
             cursor: cursor,
             mirrorVersion: mirrorVersion,
+            caughtUpThrough: caughtUpThrough,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String warehouseId,
             required int cursor,
             Value<int> mirrorVersion = const Value.absent(),
+            Value<int> caughtUpThrough = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SyncCursorsCompanion.insert(
             warehouseId: warehouseId,
             cursor: cursor,
             mirrorVersion: mirrorVersion,
+            caughtUpThrough: caughtUpThrough,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

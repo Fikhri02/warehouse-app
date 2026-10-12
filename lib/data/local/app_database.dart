@@ -115,7 +115,10 @@ class AppDatabase extends _$AppDatabase {
             await migrator.createTable(remotePoLines);
             // Existing cursors get mirror version 1, older than kMirrorVersion: the next pull starts from 0 and brings
             // the purchase orders a 3a phone skipped. Below 6, sync_cursors was just created with the column.
-            if (from >= 6) await migrator.addColumn(syncCursors, syncCursors.mirrorVersion);
+            if (from >= 6) {
+              await migrator.addColumn(syncCursors, syncCursors.mirrorVersion);
+              await migrator.addColumn(syncCursors, syncCursors.caughtUpThrough);
+            }
           }
         },
       );
