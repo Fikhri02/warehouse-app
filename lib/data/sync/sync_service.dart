@@ -18,6 +18,12 @@ class SyncService {
 
   final AppDatabase _db;
   final CommandSender? _sender;
+
+  /// Commands that only make sense if an earlier command for the same record went through, and what to say if it didn't.
+  static const _dependsOn = {
+    SyncOps.receiptSignature: (SyncOps.receiptCreate, 'Signature not sent: its receipt was not accepted.'),
+    SyncOps.orderStatus: (SyncOps.orderSave, 'Status not sent: the order was not saved.'),
+  };
   Future<FlushOutcome>? _running;
 
   Future<FlushOutcome> flushQueue() => _running ??= _flush().whenComplete(() => _running = null);
@@ -31,12 +37,12 @@ class SyncService {
         continue;
       }
       await dao.recordAttempt(item.id);
-      if (item.operationType == SyncOps.receiptSignature) {
-        // A signature belongs to a receipt. If the server refused the receipt, sending the signature would only fail
-        // with "receipt not found"; say why instead.
-        final receipt = await dao.commandFor(SyncOps.receiptCreate, item.referenceId);
-        if (receipt != null && (receipt.status == 'conflicted' || receipt.status == 'failed')) {
-          await dao.markFailed(item.id, const ApiException(status: 0, title: 'Signature not sent: its receipt was not accepted.'));
+      final dependency = _dependsOn[item.operationType];
+      if (dependency != null) {
+        // Sending it would only fail with "not found"; say why instead.
+        final parent = await dao.previousCommand(dependency.$1, item.referenceId, before: item.id);
+        if (parent != null && (parent.status == 'conflicted' || parent.status == 'failed')) {
+          await dao.markFailed(item.id, ApiException(status: 0, title: dependency.$2));
           continue;
         }
       }

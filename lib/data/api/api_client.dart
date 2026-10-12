@@ -38,6 +38,9 @@ class ApiClient {
           authenticated: authenticated);
 
   /// Exchanges the stored refresh token for new tokens. Concurrent callers share one request.
+  Future<dynamic> put(String path, {Object? body, String? idempotencyKey, Map<String, String>? headers}) =>
+      _send(() => _json('PUT', path, body: body, idempotencyKey: idempotencyKey)..headers.addAll(headers ?? const {}));
+
   Future<void> refresh() => _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
 
   Future<dynamic> _send(http.BaseRequest Function() build, {bool authenticated = true}) async {

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:warehouse_app/data/api/api_client.dart';
 import 'package:warehouse_app/data/local/app_database.dart';
 
-/// The commands the phone queues. 3b adds receiving, orders, tasks and alerts.
+/// The commands the phone queues. 3d adds tasks and alerts.
 class SyncOps {
   SyncOps._();
 
@@ -12,6 +12,8 @@ class SyncOps {
   static const countReject = 'count.reject';
   static const receiptCreate = 'receipt.create';
   static const receiptSignature = 'receipt.signature';
+  static const orderSave = 'order.save';
+  static const orderStatus = 'order.status';
 }
 
 /// Sends one queued command to its endpoint (spec §3 Commands) with the command's own Idempotency-Key.
@@ -55,8 +57,22 @@ class CommandSender {
           idempotencyKey: key,
           headers: clock,
         );
+      case SyncOps.orderSave:
+        final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+        await _client.put(_orderPath(item, payload), body: payload['body'], idempotencyKey: key, headers: clock);
+      case SyncOps.orderStatus:
+        final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+        await _client.post(
+          '${_orderPath(item, payload)}/status',
+          body: {'status': payload['status'], 'changedAt': payload['changedAt']},
+          idempotencyKey: key,
+          headers: clock,
+        );
       default:
         throw UnsupportedError('Nothing sends "${item.operationType}" to the server.');
     }
   }
+
+  String _orderPath(SyncQueueData item, Map<String, dynamic> payload) =>
+      '/warehouses/${item.warehouseId}/${payload['kind'] == 'Sales' ? 'sales' : 'delivery'}-orders/${item.referenceId}';
 }

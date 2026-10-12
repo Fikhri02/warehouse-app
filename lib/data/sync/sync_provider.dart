@@ -94,6 +94,8 @@ final syncIssuesProvider = StreamProvider<List<SyncIssue>>((ref) {
               SyncOps.countReject => 'Rejection not accepted',
               SyncOps.receiptCreate => 'Receipt not accepted',
               SyncOps.receiptSignature => 'Signature not sent',
+              SyncOps.orderSave => 'Order not saved',
+              SyncOps.orderStatus => 'Status change not accepted',
               _ => 'Change not accepted',
             },
             message: item.lastError == null

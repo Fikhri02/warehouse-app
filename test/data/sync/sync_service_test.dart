@@ -189,6 +189,88 @@ void main() {
       }
     });
 
+    Future<void> queueOrder(String id, {String kind = 'Delivery', String status = 'Submitted'}) async {
+      await db.syncQueueDao.enqueue(
+        operationType: SyncOps.orderSave,
+        referenceId: id,
+        warehouseId: 'w1',
+        payload: jsonEncode({
+          'kind': kind,
+          'body': {'number': 'DO-1', 'destination': 'Outlet', 'deliveryDate': '2026-10-13', 'requiresApproval': false, 'notes': null, 'lines': []},
+        }),
+      );
+      await db.syncQueueDao.enqueue(
+        operationType: SyncOps.orderStatus,
+        referenceId: id,
+        warehouseId: 'w1',
+        payload: jsonEncode({'kind': kind, 'status': status, 'changedAt': '2026-10-12T02:00:00.000Z'}),
+      );
+    }
+
+    test('an order is saved and then moved on, each at its own endpoint', () async {
+      await queueOrder('o1');
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add('${r.method} ${r.url.path}');
+        if (r.method == 'PUT') expect((jsonDecode(r.body) as Map)['destination'], 'Outlet');
+        if (r.method == 'POST') expect(jsonDecode(r.body), {'status': 'Submitted', 'changedAt': '2026-10-12T02:00:00.000Z'});
+        return jsonResponse({'id': 'o1'});
+      });
+
+      expect(await service.flushQueue(), FlushOutcome.done);
+
+      expect(calls, ['PUT /api/warehouses/w1/delivery-orders/o1', 'POST /api/warehouses/w1/delivery-orders/o1/status']);
+    });
+
+    test('a sales order goes to the sales endpoints', () async {
+      await queueOrder('o2', kind: 'Sales');
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add('${r.method} ${r.url.path}');
+        return jsonResponse({'id': 'o2'});
+      });
+
+      await service.flushQueue();
+
+      expect(calls, ['PUT /api/warehouses/w1/sales-orders/o2', 'POST /api/warehouses/w1/sales-orders/o2/status']);
+    });
+
+    test('a status change for an order the server refused says why', () async {
+      await queueOrder('o1');
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add(r.method);
+        return jsonResponse({'status': 422, 'title': 'One or more validation errors occurred.'}, 422);
+      });
+
+      await service.flushQueue();
+
+      expect(calls, ['PUT']);
+      final issues = await db.syncQueueDao.watchIssues().first;
+      expect(issues.map((i) => i.operationType), [SyncOps.orderStatus, SyncOps.orderSave]);
+      expect(ApiException.fromJson(jsonDecode(issues.first.lastError!) as Map<String, dynamic>).message, contains('the order was not saved'));
+    });
+
+    test('a status change goes once a later save of its order went through', () async {
+      await queueOrder('o1');
+      final firstSave = (await db.syncQueueDao.getPendingItems()).first;
+      await db.syncQueueDao.markFailed(firstSave.id, const ApiException(status: 422, title: 'Bad number'));
+      await queueOrder('o1'); // the person fixed the order: a second save, then the status change again
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add(r.method);
+        return jsonResponse({'id': 'o1'});
+      });
+
+      await service.flushQueue();
+
+      // The first status change looks at the save queued just before it (refused) and is held with a reason; the
+      // second save and its status change go.
+      expect(calls, ['PUT', 'POST']);
+      final issues = await db.syncQueueDao.watchIssues().first;
+      expect(issues.map((i) => i.operationType), [SyncOps.orderStatus, SyncOps.orderSave]);
+    });
+
     test('a_signature_whose_receipt_was_refused_says_why', () async {
       await queueReceipt('r1');
       final calls = <String>[];
