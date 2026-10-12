@@ -17,7 +17,7 @@ void main() {
     await db.customSelect('SELECT 1').get();
     for (final table in [
       'catalog_items', 'catalog_barcodes', 'warehouse_locations', 'remote_count_sessions', 'remote_count_lines',
-      'sync_cursors', 'remote_purchase_orders', 'remote_po_lines',
+      'sync_cursors', 'remote_purchase_orders', 'remote_po_lines', 'remote_orders', 'remote_order_lines',
     ]) {
       await db.customStatement('DROP TABLE $table');
     }
@@ -39,5 +39,22 @@ void main() {
     expect(await db.serverMirrorDao.cursorFor('w1'), 0);
     expect(await db.serverMirrorDao.purchaseOrders('w1'), isEmpty);
     expect(await db.customSelect('SELECT mirror_version FROM sync_cursors').get(), isEmpty);
+  });
+
+  test('a phone on schema 7 gains the order tables and pulls from the start', () async {
+    final file = File('${dir.path}/app7.db');
+    final old = AppDatabase.forTesting(NativeDatabase(file));
+    await old.serverMirrorDao.saveCursor('w1', 40);
+    await old.customStatement('DROP TABLE remote_orders');
+    await old.customStatement('DROP TABLE remote_order_lines');
+    await old.customStatement('UPDATE sync_cursors SET mirror_version = 2');
+    await old.customStatement('PRAGMA user_version = 7');
+    await old.close();
+
+    final db = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(db.close);
+
+    expect(await db.serverMirrorDao.orders('w1', kind: 'Delivery'), isEmpty);
+    expect(await db.serverMirrorDao.cursorFor('w1'), 0); // the 3b copy never kept orders: read the feed again
   });
 }

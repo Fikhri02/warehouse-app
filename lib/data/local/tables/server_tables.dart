@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 /// Bump when the app starts storing a change-feed entity it used to skip. Every phone then reads its feed again from
 /// the start, so the rows it skipped before arrive. 1 = 3a (catalogue, locations, counts); 2 = 3b (+ purchase orders).
-const kMirrorVersion = 2;
+const kMirrorVersion = 3;
 
 // Read-only copies of the server's data, filled from the change feed (spec §3). Row classes end in "Row" so
 // they never clash with the app's own models (CatalogItem in core/models/order.dart, Location, …).
@@ -107,6 +107,41 @@ class RemotePoLines extends Table {
   TextColumn get itemId => text()();
   RealColumn get ordered => real()();
   RealColumn get received => real()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Delivery and sales orders as the server has them. Kind is Delivery or Sales.
+@DataClassName('RemoteOrderRow')
+class RemoteOrders extends Table {
+  TextColumn get id => text()();
+  TextColumn get warehouseId => text()();
+  TextColumn get kind => text()();
+  TextColumn get number => text()();
+  TextColumn get destination => text().nullable()();
+  TextColumn get customerName => text().nullable()();
+  DateTimeColumn get orderDate => dateTime()();
+  TextColumn get status => text()(); // Draft · PendingApproval · Submitted · Packed · InTransit · Shipped
+  BoolColumn get requiresApproval => boolean()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get createdByName => text()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// JSON: [{status, changedByName, changedAt}], oldest first.
+  TextColumn get statusHistory => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('RemoteOrderLineRow')
+class RemoteOrderLines extends Table {
+  TextColumn get id => text()();
+  TextColumn get orderId => text()();
+  TextColumn get itemId => text()();
+  TextColumn get locationId => text()();
+  RealColumn get quantity => real()();
 
   @override
   Set<Column> get primaryKey => {id};

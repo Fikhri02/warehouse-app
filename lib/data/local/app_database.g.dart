@@ -8179,6 +8179,975 @@ class RemotePoLinesCompanion extends UpdateCompanion<RemotePoLineRow> {
   }
 }
 
+class $RemoteOrdersTable extends RemoteOrders
+    with TableInfo<$RemoteOrdersTable, RemoteOrderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteOrdersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+      'number', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _destinationMeta =
+      const VerificationMeta('destination');
+  @override
+  late final GeneratedColumn<String> destination = GeneratedColumn<String>(
+      'destination', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _customerNameMeta =
+      const VerificationMeta('customerName');
+  @override
+  late final GeneratedColumn<String> customerName = GeneratedColumn<String>(
+      'customer_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _orderDateMeta =
+      const VerificationMeta('orderDate');
+  @override
+  late final GeneratedColumn<DateTime> orderDate = GeneratedColumn<DateTime>(
+      'order_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _requiresApprovalMeta =
+      const VerificationMeta('requiresApproval');
+  @override
+  late final GeneratedColumn<bool> requiresApproval = GeneratedColumn<bool>(
+      'requires_approval', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("requires_approval" IN (0, 1))'));
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+      'notes', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdByNameMeta =
+      const VerificationMeta('createdByName');
+  @override
+  late final GeneratedColumn<String> createdByName = GeneratedColumn<String>(
+      'created_by_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _statusHistoryMeta =
+      const VerificationMeta('statusHistory');
+  @override
+  late final GeneratedColumn<String> statusHistory = GeneratedColumn<String>(
+      'status_history', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        warehouseId,
+        kind,
+        number,
+        destination,
+        customerName,
+        orderDate,
+        status,
+        requiresApproval,
+        notes,
+        createdByName,
+        createdAt,
+        statusHistory
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_orders';
+  @override
+  VerificationContext validateIntegrity(Insertable<RemoteOrderRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(_numberMeta,
+          number.isAcceptableOrUnknown(data['number']!, _numberMeta));
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('destination')) {
+      context.handle(
+          _destinationMeta,
+          destination.isAcceptableOrUnknown(
+              data['destination']!, _destinationMeta));
+    }
+    if (data.containsKey('customer_name')) {
+      context.handle(
+          _customerNameMeta,
+          customerName.isAcceptableOrUnknown(
+              data['customer_name']!, _customerNameMeta));
+    }
+    if (data.containsKey('order_date')) {
+      context.handle(_orderDateMeta,
+          orderDate.isAcceptableOrUnknown(data['order_date']!, _orderDateMeta));
+    } else if (isInserting) {
+      context.missing(_orderDateMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('requires_approval')) {
+      context.handle(
+          _requiresApprovalMeta,
+          requiresApproval.isAcceptableOrUnknown(
+              data['requires_approval']!, _requiresApprovalMeta));
+    } else if (isInserting) {
+      context.missing(_requiresApprovalMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+          _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
+    if (data.containsKey('created_by_name')) {
+      context.handle(
+          _createdByNameMeta,
+          createdByName.isAcceptableOrUnknown(
+              data['created_by_name']!, _createdByNameMeta));
+    } else if (isInserting) {
+      context.missing(_createdByNameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('status_history')) {
+      context.handle(
+          _statusHistoryMeta,
+          statusHistory.isAcceptableOrUnknown(
+              data['status_history']!, _statusHistoryMeta));
+    } else if (isInserting) {
+      context.missing(_statusHistoryMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemoteOrderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteOrderRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      number: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}number'])!,
+      destination: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}destination']),
+      customerName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}customer_name']),
+      orderDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}order_date'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      requiresApproval: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}requires_approval'])!,
+      notes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}notes']),
+      createdByName: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}created_by_name'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      statusHistory: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status_history'])!,
+    );
+  }
+
+  @override
+  $RemoteOrdersTable createAlias(String alias) {
+    return $RemoteOrdersTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteOrderRow extends DataClass implements Insertable<RemoteOrderRow> {
+  final String id;
+  final String warehouseId;
+  final String kind;
+  final String number;
+  final String? destination;
+  final String? customerName;
+  final DateTime orderDate;
+  final String status;
+  final bool requiresApproval;
+  final String? notes;
+  final String createdByName;
+  final DateTime createdAt;
+
+  /// JSON: [{status, changedByName, changedAt}], oldest first.
+  final String statusHistory;
+  const RemoteOrderRow(
+      {required this.id,
+      required this.warehouseId,
+      required this.kind,
+      required this.number,
+      this.destination,
+      this.customerName,
+      required this.orderDate,
+      required this.status,
+      required this.requiresApproval,
+      this.notes,
+      required this.createdByName,
+      required this.createdAt,
+      required this.statusHistory});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['kind'] = Variable<String>(kind);
+    map['number'] = Variable<String>(number);
+    if (!nullToAbsent || destination != null) {
+      map['destination'] = Variable<String>(destination);
+    }
+    if (!nullToAbsent || customerName != null) {
+      map['customer_name'] = Variable<String>(customerName);
+    }
+    map['order_date'] = Variable<DateTime>(orderDate);
+    map['status'] = Variable<String>(status);
+    map['requires_approval'] = Variable<bool>(requiresApproval);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_by_name'] = Variable<String>(createdByName);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['status_history'] = Variable<String>(statusHistory);
+    return map;
+  }
+
+  RemoteOrdersCompanion toCompanion(bool nullToAbsent) {
+    return RemoteOrdersCompanion(
+      id: Value(id),
+      warehouseId: Value(warehouseId),
+      kind: Value(kind),
+      number: Value(number),
+      destination: destination == null && nullToAbsent
+          ? const Value.absent()
+          : Value(destination),
+      customerName: customerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerName),
+      orderDate: Value(orderDate),
+      status: Value(status),
+      requiresApproval: Value(requiresApproval),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      createdByName: Value(createdByName),
+      createdAt: Value(createdAt),
+      statusHistory: Value(statusHistory),
+    );
+  }
+
+  factory RemoteOrderRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteOrderRow(
+      id: serializer.fromJson<String>(json['id']),
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      number: serializer.fromJson<String>(json['number']),
+      destination: serializer.fromJson<String?>(json['destination']),
+      customerName: serializer.fromJson<String?>(json['customerName']),
+      orderDate: serializer.fromJson<DateTime>(json['orderDate']),
+      status: serializer.fromJson<String>(json['status']),
+      requiresApproval: serializer.fromJson<bool>(json['requiresApproval']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdByName: serializer.fromJson<String>(json['createdByName']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      statusHistory: serializer.fromJson<String>(json['statusHistory']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'kind': serializer.toJson<String>(kind),
+      'number': serializer.toJson<String>(number),
+      'destination': serializer.toJson<String?>(destination),
+      'customerName': serializer.toJson<String?>(customerName),
+      'orderDate': serializer.toJson<DateTime>(orderDate),
+      'status': serializer.toJson<String>(status),
+      'requiresApproval': serializer.toJson<bool>(requiresApproval),
+      'notes': serializer.toJson<String?>(notes),
+      'createdByName': serializer.toJson<String>(createdByName),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'statusHistory': serializer.toJson<String>(statusHistory),
+    };
+  }
+
+  RemoteOrderRow copyWith(
+          {String? id,
+          String? warehouseId,
+          String? kind,
+          String? number,
+          Value<String?> destination = const Value.absent(),
+          Value<String?> customerName = const Value.absent(),
+          DateTime? orderDate,
+          String? status,
+          bool? requiresApproval,
+          Value<String?> notes = const Value.absent(),
+          String? createdByName,
+          DateTime? createdAt,
+          String? statusHistory}) =>
+      RemoteOrderRow(
+        id: id ?? this.id,
+        warehouseId: warehouseId ?? this.warehouseId,
+        kind: kind ?? this.kind,
+        number: number ?? this.number,
+        destination: destination.present ? destination.value : this.destination,
+        customerName:
+            customerName.present ? customerName.value : this.customerName,
+        orderDate: orderDate ?? this.orderDate,
+        status: status ?? this.status,
+        requiresApproval: requiresApproval ?? this.requiresApproval,
+        notes: notes.present ? notes.value : this.notes,
+        createdByName: createdByName ?? this.createdByName,
+        createdAt: createdAt ?? this.createdAt,
+        statusHistory: statusHistory ?? this.statusHistory,
+      );
+  RemoteOrderRow copyWithCompanion(RemoteOrdersCompanion data) {
+    return RemoteOrderRow(
+      id: data.id.present ? data.id.value : this.id,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      number: data.number.present ? data.number.value : this.number,
+      destination:
+          data.destination.present ? data.destination.value : this.destination,
+      customerName: data.customerName.present
+          ? data.customerName.value
+          : this.customerName,
+      orderDate: data.orderDate.present ? data.orderDate.value : this.orderDate,
+      status: data.status.present ? data.status.value : this.status,
+      requiresApproval: data.requiresApproval.present
+          ? data.requiresApproval.value
+          : this.requiresApproval,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdByName: data.createdByName.present
+          ? data.createdByName.value
+          : this.createdByName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      statusHistory: data.statusHistory.present
+          ? data.statusHistory.value
+          : this.statusHistory,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteOrderRow(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('kind: $kind, ')
+          ..write('number: $number, ')
+          ..write('destination: $destination, ')
+          ..write('customerName: $customerName, ')
+          ..write('orderDate: $orderDate, ')
+          ..write('status: $status, ')
+          ..write('requiresApproval: $requiresApproval, ')
+          ..write('notes: $notes, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('statusHistory: $statusHistory')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      warehouseId,
+      kind,
+      number,
+      destination,
+      customerName,
+      orderDate,
+      status,
+      requiresApproval,
+      notes,
+      createdByName,
+      createdAt,
+      statusHistory);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteOrderRow &&
+          other.id == this.id &&
+          other.warehouseId == this.warehouseId &&
+          other.kind == this.kind &&
+          other.number == this.number &&
+          other.destination == this.destination &&
+          other.customerName == this.customerName &&
+          other.orderDate == this.orderDate &&
+          other.status == this.status &&
+          other.requiresApproval == this.requiresApproval &&
+          other.notes == this.notes &&
+          other.createdByName == this.createdByName &&
+          other.createdAt == this.createdAt &&
+          other.statusHistory == this.statusHistory);
+}
+
+class RemoteOrdersCompanion extends UpdateCompanion<RemoteOrderRow> {
+  final Value<String> id;
+  final Value<String> warehouseId;
+  final Value<String> kind;
+  final Value<String> number;
+  final Value<String?> destination;
+  final Value<String?> customerName;
+  final Value<DateTime> orderDate;
+  final Value<String> status;
+  final Value<bool> requiresApproval;
+  final Value<String?> notes;
+  final Value<String> createdByName;
+  final Value<DateTime> createdAt;
+  final Value<String> statusHistory;
+  final Value<int> rowid;
+  const RemoteOrdersCompanion({
+    this.id = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.number = const Value.absent(),
+    this.destination = const Value.absent(),
+    this.customerName = const Value.absent(),
+    this.orderDate = const Value.absent(),
+    this.status = const Value.absent(),
+    this.requiresApproval = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.statusHistory = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteOrdersCompanion.insert({
+    required String id,
+    required String warehouseId,
+    required String kind,
+    required String number,
+    this.destination = const Value.absent(),
+    this.customerName = const Value.absent(),
+    required DateTime orderDate,
+    required String status,
+    required bool requiresApproval,
+    this.notes = const Value.absent(),
+    required String createdByName,
+    required DateTime createdAt,
+    required String statusHistory,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        warehouseId = Value(warehouseId),
+        kind = Value(kind),
+        number = Value(number),
+        orderDate = Value(orderDate),
+        status = Value(status),
+        requiresApproval = Value(requiresApproval),
+        createdByName = Value(createdByName),
+        createdAt = Value(createdAt),
+        statusHistory = Value(statusHistory);
+  static Insertable<RemoteOrderRow> custom({
+    Expression<String>? id,
+    Expression<String>? warehouseId,
+    Expression<String>? kind,
+    Expression<String>? number,
+    Expression<String>? destination,
+    Expression<String>? customerName,
+    Expression<DateTime>? orderDate,
+    Expression<String>? status,
+    Expression<bool>? requiresApproval,
+    Expression<String>? notes,
+    Expression<String>? createdByName,
+    Expression<DateTime>? createdAt,
+    Expression<String>? statusHistory,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (kind != null) 'kind': kind,
+      if (number != null) 'number': number,
+      if (destination != null) 'destination': destination,
+      if (customerName != null) 'customer_name': customerName,
+      if (orderDate != null) 'order_date': orderDate,
+      if (status != null) 'status': status,
+      if (requiresApproval != null) 'requires_approval': requiresApproval,
+      if (notes != null) 'notes': notes,
+      if (createdByName != null) 'created_by_name': createdByName,
+      if (createdAt != null) 'created_at': createdAt,
+      if (statusHistory != null) 'status_history': statusHistory,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteOrdersCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? warehouseId,
+      Value<String>? kind,
+      Value<String>? number,
+      Value<String?>? destination,
+      Value<String?>? customerName,
+      Value<DateTime>? orderDate,
+      Value<String>? status,
+      Value<bool>? requiresApproval,
+      Value<String?>? notes,
+      Value<String>? createdByName,
+      Value<DateTime>? createdAt,
+      Value<String>? statusHistory,
+      Value<int>? rowid}) {
+    return RemoteOrdersCompanion(
+      id: id ?? this.id,
+      warehouseId: warehouseId ?? this.warehouseId,
+      kind: kind ?? this.kind,
+      number: number ?? this.number,
+      destination: destination ?? this.destination,
+      customerName: customerName ?? this.customerName,
+      orderDate: orderDate ?? this.orderDate,
+      status: status ?? this.status,
+      requiresApproval: requiresApproval ?? this.requiresApproval,
+      notes: notes ?? this.notes,
+      createdByName: createdByName ?? this.createdByName,
+      createdAt: createdAt ?? this.createdAt,
+      statusHistory: statusHistory ?? this.statusHistory,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (destination.present) {
+      map['destination'] = Variable<String>(destination.value);
+    }
+    if (customerName.present) {
+      map['customer_name'] = Variable<String>(customerName.value);
+    }
+    if (orderDate.present) {
+      map['order_date'] = Variable<DateTime>(orderDate.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (requiresApproval.present) {
+      map['requires_approval'] = Variable<bool>(requiresApproval.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdByName.present) {
+      map['created_by_name'] = Variable<String>(createdByName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (statusHistory.present) {
+      map['status_history'] = Variable<String>(statusHistory.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteOrdersCompanion(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('kind: $kind, ')
+          ..write('number: $number, ')
+          ..write('destination: $destination, ')
+          ..write('customerName: $customerName, ')
+          ..write('orderDate: $orderDate, ')
+          ..write('status: $status, ')
+          ..write('requiresApproval: $requiresApproval, ')
+          ..write('notes: $notes, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('statusHistory: $statusHistory, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemoteOrderLinesTable extends RemoteOrderLines
+    with TableInfo<$RemoteOrderLinesTable, RemoteOrderLineRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteOrderLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _orderIdMeta =
+      const VerificationMeta('orderId');
+  @override
+  late final GeneratedColumn<String> orderId = GeneratedColumn<String>(
+      'order_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+      'item_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _locationIdMeta =
+      const VerificationMeta('locationId');
+  @override
+  late final GeneratedColumn<String> locationId = GeneratedColumn<String>(
+      'location_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _quantityMeta =
+      const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
+      'quantity', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, orderId, itemId, locationId, quantity];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_order_lines';
+  @override
+  VerificationContext validateIntegrity(Insertable<RemoteOrderLineRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('order_id')) {
+      context.handle(_orderIdMeta,
+          orderId.isAcceptableOrUnknown(data['order_id']!, _orderIdMeta));
+    } else if (isInserting) {
+      context.missing(_orderIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('location_id')) {
+      context.handle(
+          _locationIdMeta,
+          locationId.isAcceptableOrUnknown(
+              data['location_id']!, _locationIdMeta));
+    } else if (isInserting) {
+      context.missing(_locationIdMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta,
+          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemoteOrderLineRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteOrderLineRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      orderId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}order_id'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}item_id'])!,
+      locationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location_id'])!,
+      quantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
+    );
+  }
+
+  @override
+  $RemoteOrderLinesTable createAlias(String alias) {
+    return $RemoteOrderLinesTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteOrderLineRow extends DataClass
+    implements Insertable<RemoteOrderLineRow> {
+  final String id;
+  final String orderId;
+  final String itemId;
+  final String locationId;
+  final double quantity;
+  const RemoteOrderLineRow(
+      {required this.id,
+      required this.orderId,
+      required this.itemId,
+      required this.locationId,
+      required this.quantity});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['order_id'] = Variable<String>(orderId);
+    map['item_id'] = Variable<String>(itemId);
+    map['location_id'] = Variable<String>(locationId);
+    map['quantity'] = Variable<double>(quantity);
+    return map;
+  }
+
+  RemoteOrderLinesCompanion toCompanion(bool nullToAbsent) {
+    return RemoteOrderLinesCompanion(
+      id: Value(id),
+      orderId: Value(orderId),
+      itemId: Value(itemId),
+      locationId: Value(locationId),
+      quantity: Value(quantity),
+    );
+  }
+
+  factory RemoteOrderLineRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteOrderLineRow(
+      id: serializer.fromJson<String>(json['id']),
+      orderId: serializer.fromJson<String>(json['orderId']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      locationId: serializer.fromJson<String>(json['locationId']),
+      quantity: serializer.fromJson<double>(json['quantity']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'orderId': serializer.toJson<String>(orderId),
+      'itemId': serializer.toJson<String>(itemId),
+      'locationId': serializer.toJson<String>(locationId),
+      'quantity': serializer.toJson<double>(quantity),
+    };
+  }
+
+  RemoteOrderLineRow copyWith(
+          {String? id,
+          String? orderId,
+          String? itemId,
+          String? locationId,
+          double? quantity}) =>
+      RemoteOrderLineRow(
+        id: id ?? this.id,
+        orderId: orderId ?? this.orderId,
+        itemId: itemId ?? this.itemId,
+        locationId: locationId ?? this.locationId,
+        quantity: quantity ?? this.quantity,
+      );
+  RemoteOrderLineRow copyWithCompanion(RemoteOrderLinesCompanion data) {
+    return RemoteOrderLineRow(
+      id: data.id.present ? data.id.value : this.id,
+      orderId: data.orderId.present ? data.orderId.value : this.orderId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      locationId:
+          data.locationId.present ? data.locationId.value : this.locationId,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteOrderLineRow(')
+          ..write('id: $id, ')
+          ..write('orderId: $orderId, ')
+          ..write('itemId: $itemId, ')
+          ..write('locationId: $locationId, ')
+          ..write('quantity: $quantity')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, orderId, itemId, locationId, quantity);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteOrderLineRow &&
+          other.id == this.id &&
+          other.orderId == this.orderId &&
+          other.itemId == this.itemId &&
+          other.locationId == this.locationId &&
+          other.quantity == this.quantity);
+}
+
+class RemoteOrderLinesCompanion extends UpdateCompanion<RemoteOrderLineRow> {
+  final Value<String> id;
+  final Value<String> orderId;
+  final Value<String> itemId;
+  final Value<String> locationId;
+  final Value<double> quantity;
+  final Value<int> rowid;
+  const RemoteOrderLinesCompanion({
+    this.id = const Value.absent(),
+    this.orderId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.locationId = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteOrderLinesCompanion.insert({
+    required String id,
+    required String orderId,
+    required String itemId,
+    required String locationId,
+    required double quantity,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        orderId = Value(orderId),
+        itemId = Value(itemId),
+        locationId = Value(locationId),
+        quantity = Value(quantity);
+  static Insertable<RemoteOrderLineRow> custom({
+    Expression<String>? id,
+    Expression<String>? orderId,
+    Expression<String>? itemId,
+    Expression<String>? locationId,
+    Expression<double>? quantity,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (orderId != null) 'order_id': orderId,
+      if (itemId != null) 'item_id': itemId,
+      if (locationId != null) 'location_id': locationId,
+      if (quantity != null) 'quantity': quantity,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteOrderLinesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? orderId,
+      Value<String>? itemId,
+      Value<String>? locationId,
+      Value<double>? quantity,
+      Value<int>? rowid}) {
+    return RemoteOrderLinesCompanion(
+      id: id ?? this.id,
+      orderId: orderId ?? this.orderId,
+      itemId: itemId ?? this.itemId,
+      locationId: locationId ?? this.locationId,
+      quantity: quantity ?? this.quantity,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (orderId.present) {
+      map['order_id'] = Variable<String>(orderId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (locationId.present) {
+      map['location_id'] = Variable<String>(locationId.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<double>(quantity.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteOrderLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('orderId: $orderId, ')
+          ..write('itemId: $itemId, ')
+          ..write('locationId: $locationId, ')
+          ..write('quantity: $quantity, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8213,6 +9182,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RemotePurchaseOrdersTable remotePurchaseOrders =
       $RemotePurchaseOrdersTable(this);
   late final $RemotePoLinesTable remotePoLines = $RemotePoLinesTable(this);
+  late final $RemoteOrdersTable remoteOrders = $RemoteOrdersTable(this);
+  late final $RemoteOrderLinesTable remoteOrderLines =
+      $RemoteOrderLinesTable(this);
   late final AlertsDao alertsDao = AlertsDao(this as AppDatabase);
   late final TasksDao tasksDao = TasksDao(this as AppDatabase);
   late final CountSessionDao countSessionDao =
@@ -8247,7 +9219,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         remoteCountLines,
         syncCursors,
         remotePurchaseOrders,
-        remotePoLines
+        remotePoLines,
+        remoteOrders,
+        remoteOrderLines
       ];
 }
 
@@ -12492,6 +13466,478 @@ typedef $$RemotePoLinesTableProcessedTableManager = ProcessedTableManager<
     ),
     RemotePoLineRow,
     PrefetchHooks Function()>;
+typedef $$RemoteOrdersTableCreateCompanionBuilder = RemoteOrdersCompanion
+    Function({
+  required String id,
+  required String warehouseId,
+  required String kind,
+  required String number,
+  Value<String?> destination,
+  Value<String?> customerName,
+  required DateTime orderDate,
+  required String status,
+  required bool requiresApproval,
+  Value<String?> notes,
+  required String createdByName,
+  required DateTime createdAt,
+  required String statusHistory,
+  Value<int> rowid,
+});
+typedef $$RemoteOrdersTableUpdateCompanionBuilder = RemoteOrdersCompanion
+    Function({
+  Value<String> id,
+  Value<String> warehouseId,
+  Value<String> kind,
+  Value<String> number,
+  Value<String?> destination,
+  Value<String?> customerName,
+  Value<DateTime> orderDate,
+  Value<String> status,
+  Value<bool> requiresApproval,
+  Value<String?> notes,
+  Value<String> createdByName,
+  Value<DateTime> createdAt,
+  Value<String> statusHistory,
+  Value<int> rowid,
+});
+
+class $$RemoteOrdersTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteOrdersTable> {
+  $$RemoteOrdersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get number => $composableBuilder(
+      column: $table.number, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get destination => $composableBuilder(
+      column: $table.destination, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get customerName => $composableBuilder(
+      column: $table.customerName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get orderDate => $composableBuilder(
+      column: $table.orderDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get requiresApproval => $composableBuilder(
+      column: $table.requiresApproval,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes => $composableBuilder(
+      column: $table.notes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByName => $composableBuilder(
+      column: $table.createdByName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get statusHistory => $composableBuilder(
+      column: $table.statusHistory, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteOrdersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteOrdersTable> {
+  $$RemoteOrdersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get number => $composableBuilder(
+      column: $table.number, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get destination => $composableBuilder(
+      column: $table.destination, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get customerName => $composableBuilder(
+      column: $table.customerName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get orderDate => $composableBuilder(
+      column: $table.orderDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get requiresApproval => $composableBuilder(
+      column: $table.requiresApproval,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+      column: $table.notes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByName => $composableBuilder(
+      column: $table.createdByName,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get statusHistory => $composableBuilder(
+      column: $table.statusHistory,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteOrdersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteOrdersTable> {
+  $$RemoteOrdersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get destination => $composableBuilder(
+      column: $table.destination, builder: (column) => column);
+
+  GeneratedColumn<String> get customerName => $composableBuilder(
+      column: $table.customerName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get orderDate =>
+      $composableBuilder(column: $table.orderDate, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get requiresApproval => $composableBuilder(
+      column: $table.requiresApproval, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByName => $composableBuilder(
+      column: $table.createdByName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get statusHistory => $composableBuilder(
+      column: $table.statusHistory, builder: (column) => column);
+}
+
+class $$RemoteOrdersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteOrdersTable,
+    RemoteOrderRow,
+    $$RemoteOrdersTableFilterComposer,
+    $$RemoteOrdersTableOrderingComposer,
+    $$RemoteOrdersTableAnnotationComposer,
+    $$RemoteOrdersTableCreateCompanionBuilder,
+    $$RemoteOrdersTableUpdateCompanionBuilder,
+    (
+      RemoteOrderRow,
+      BaseReferences<_$AppDatabase, $RemoteOrdersTable, RemoteOrderRow>
+    ),
+    RemoteOrderRow,
+    PrefetchHooks Function()> {
+  $$RemoteOrdersTableTableManager(_$AppDatabase db, $RemoteOrdersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteOrdersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteOrdersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteOrdersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> warehouseId = const Value.absent(),
+            Value<String> kind = const Value.absent(),
+            Value<String> number = const Value.absent(),
+            Value<String?> destination = const Value.absent(),
+            Value<String?> customerName = const Value.absent(),
+            Value<DateTime> orderDate = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<bool> requiresApproval = const Value.absent(),
+            Value<String?> notes = const Value.absent(),
+            Value<String> createdByName = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<String> statusHistory = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteOrdersCompanion(
+            id: id,
+            warehouseId: warehouseId,
+            kind: kind,
+            number: number,
+            destination: destination,
+            customerName: customerName,
+            orderDate: orderDate,
+            status: status,
+            requiresApproval: requiresApproval,
+            notes: notes,
+            createdByName: createdByName,
+            createdAt: createdAt,
+            statusHistory: statusHistory,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String warehouseId,
+            required String kind,
+            required String number,
+            Value<String?> destination = const Value.absent(),
+            Value<String?> customerName = const Value.absent(),
+            required DateTime orderDate,
+            required String status,
+            required bool requiresApproval,
+            Value<String?> notes = const Value.absent(),
+            required String createdByName,
+            required DateTime createdAt,
+            required String statusHistory,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteOrdersCompanion.insert(
+            id: id,
+            warehouseId: warehouseId,
+            kind: kind,
+            number: number,
+            destination: destination,
+            customerName: customerName,
+            orderDate: orderDate,
+            status: status,
+            requiresApproval: requiresApproval,
+            notes: notes,
+            createdByName: createdByName,
+            createdAt: createdAt,
+            statusHistory: statusHistory,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteOrdersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemoteOrdersTable,
+    RemoteOrderRow,
+    $$RemoteOrdersTableFilterComposer,
+    $$RemoteOrdersTableOrderingComposer,
+    $$RemoteOrdersTableAnnotationComposer,
+    $$RemoteOrdersTableCreateCompanionBuilder,
+    $$RemoteOrdersTableUpdateCompanionBuilder,
+    (
+      RemoteOrderRow,
+      BaseReferences<_$AppDatabase, $RemoteOrdersTable, RemoteOrderRow>
+    ),
+    RemoteOrderRow,
+    PrefetchHooks Function()>;
+typedef $$RemoteOrderLinesTableCreateCompanionBuilder
+    = RemoteOrderLinesCompanion Function({
+  required String id,
+  required String orderId,
+  required String itemId,
+  required String locationId,
+  required double quantity,
+  Value<int> rowid,
+});
+typedef $$RemoteOrderLinesTableUpdateCompanionBuilder
+    = RemoteOrderLinesCompanion Function({
+  Value<String> id,
+  Value<String> orderId,
+  Value<String> itemId,
+  Value<String> locationId,
+  Value<double> quantity,
+  Value<int> rowid,
+});
+
+class $$RemoteOrderLinesTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteOrderLinesTable> {
+  $$RemoteOrderLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get orderId => $composableBuilder(
+      column: $table.orderId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteOrderLinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteOrderLinesTable> {
+  $$RemoteOrderLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get orderId => $composableBuilder(
+      column: $table.orderId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteOrderLinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteOrderLinesTable> {
+  $$RemoteOrderLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get orderId =>
+      $composableBuilder(column: $table.orderId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => column);
+
+  GeneratedColumn<double> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+}
+
+class $$RemoteOrderLinesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteOrderLinesTable,
+    RemoteOrderLineRow,
+    $$RemoteOrderLinesTableFilterComposer,
+    $$RemoteOrderLinesTableOrderingComposer,
+    $$RemoteOrderLinesTableAnnotationComposer,
+    $$RemoteOrderLinesTableCreateCompanionBuilder,
+    $$RemoteOrderLinesTableUpdateCompanionBuilder,
+    (
+      RemoteOrderLineRow,
+      BaseReferences<_$AppDatabase, $RemoteOrderLinesTable, RemoteOrderLineRow>
+    ),
+    RemoteOrderLineRow,
+    PrefetchHooks Function()> {
+  $$RemoteOrderLinesTableTableManager(
+      _$AppDatabase db, $RemoteOrderLinesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteOrderLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteOrderLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteOrderLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> orderId = const Value.absent(),
+            Value<String> itemId = const Value.absent(),
+            Value<String> locationId = const Value.absent(),
+            Value<double> quantity = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteOrderLinesCompanion(
+            id: id,
+            orderId: orderId,
+            itemId: itemId,
+            locationId: locationId,
+            quantity: quantity,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String orderId,
+            required String itemId,
+            required String locationId,
+            required double quantity,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteOrderLinesCompanion.insert(
+            id: id,
+            orderId: orderId,
+            itemId: itemId,
+            locationId: locationId,
+            quantity: quantity,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteOrderLinesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemoteOrderLinesTable,
+    RemoteOrderLineRow,
+    $$RemoteOrderLinesTableFilterComposer,
+    $$RemoteOrderLinesTableOrderingComposer,
+    $$RemoteOrderLinesTableAnnotationComposer,
+    $$RemoteOrderLinesTableCreateCompanionBuilder,
+    $$RemoteOrderLinesTableUpdateCompanionBuilder,
+    (
+      RemoteOrderLineRow,
+      BaseReferences<_$AppDatabase, $RemoteOrderLinesTable, RemoteOrderLineRow>
+    ),
+    RemoteOrderLineRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12539,4 +13985,8 @@ class $AppDatabaseManager {
       $$RemotePurchaseOrdersTableTableManager(_db, _db.remotePurchaseOrders);
   $$RemotePoLinesTableTableManager get remotePoLines =>
       $$RemotePoLinesTableTableManager(_db, _db.remotePoLines);
+  $$RemoteOrdersTableTableManager get remoteOrders =>
+      $$RemoteOrdersTableTableManager(_db, _db.remoteOrders);
+  $$RemoteOrderLinesTableTableManager get remoteOrderLines =>
+      $$RemoteOrderLinesTableTableManager(_db, _db.remoteOrderLines);
 }

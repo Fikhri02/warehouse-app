@@ -22,6 +22,15 @@ Map<String, dynamic> change(String entity, String id, int seq, [Map<String, dyna
 Map<String, dynamic> page(List<Map<String, dynamic>> changes, {required int next, bool more = false}) =>
     {'nextCursor': next, 'hasMore': more, 'changes': changes};
 
+Map<String, dynamic> orderJson(String id, String kind, {String? destination, String? customerName}) => {
+      'id': id, 'warehouseId': w, 'kind': kind, 'number': '${kind == 'Delivery' ? 'DO' : 'SO'}-1',
+      'destination': destination, 'customerName': customerName, 'date': '2026-10-13', 'status': 'Draft',
+      'requiresApproval': false, 'notes': null, 'createdByUserId': 'u1', 'createdAt': '2026-10-12T01:00:00Z',
+      'lines': [{'id': '$id-l1', 'itemId': item, 'locationId': bin, 'quantity': 4}],
+      'statusHistory': [{'status': 'Draft', 'changedByUserId': 'u1', 'changedAt': '2026-10-12T01:00:00Z', 'changedByName': 'Arjun Nair'}],
+      'createdByName': 'Arjun Nair',
+    };
+
 void main() {
   late AppDatabase db;
   late List<String> cursorsAsked;
@@ -182,5 +191,40 @@ void main() {
 
     expect(cursorsAsked, ['0']);
     expect(await db.serverMirrorDao.cursorFor(w), 40); // saved again under the current version
+  });
+
+  test('delivery and sales orders arrive with their lines and who moved them', () async {
+    final puller = await pullerServing([
+      page([
+        change('deliveryOrder', 'do-1', 1, orderJson('do-1', 'Delivery', destination: 'Outlet Damansara')),
+        change('salesOrder', 'so-1', 2, orderJson('so-1', 'Sales', customerName: 'Kedai Maju Jaya')),
+      ], next: 2),
+    ]);
+
+    await puller.pull(w);
+
+    final delivery = (await db.serverMirrorDao.orders(w, kind: 'Delivery')).single;
+    expect((delivery.number, delivery.destination, delivery.createdByName), ('DO-1', 'Outlet Damansara', 'Arjun Nair'));
+    expect(jsonDecode(delivery.statusHistory), [
+      {'status': 'Draft', 'changedByName': 'Arjun Nair', 'changedAt': '2026-10-12T01:00:00Z'},
+    ]);
+    expect((await db.serverMirrorDao.orderLinesFor('do-1')).single.quantity, 4);
+    expect((await db.serverMirrorDao.orders(w, kind: 'Sales')).single.customerName, 'Kedai Maju Jaya');
+  });
+
+  test('a deleted order leaves the copy, and signing out clears orders too', () async {
+    final puller = await pullerServing([
+      page([change('deliveryOrder', 'do-1', 1, orderJson('do-1', 'Delivery', destination: 'Outlet'))], next: 1),
+      page([change('deliveryOrder', 'do-2', 2, orderJson('do-2', 'Delivery', destination: 'Outlet')), change('deliveryOrder', 'do-1', 3)], next: 3),
+    ]);
+    await puller.pull(w);
+    await puller.pull(w);
+    expect((await db.serverMirrorDao.orders(w, kind: 'Delivery')).map((o) => o.id), ['do-2']);
+    expect(await db.serverMirrorDao.orderLinesFor('do-1'), isEmpty);
+
+    await db.clearServerData();
+
+    expect(await db.serverMirrorDao.orders(w, kind: 'Delivery'), isEmpty);
+    expect(await db.serverMirrorDao.orderLinesFor('do-2'), isEmpty);
   });
 }

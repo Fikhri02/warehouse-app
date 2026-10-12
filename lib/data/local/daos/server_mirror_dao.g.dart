@@ -16,4 +16,7 @@ mixin _$ServerMirrorDaoMixin on DatabaseAccessor<AppDatabase> {
   $RemotePurchaseOrdersTable get remotePurchaseOrders =>
       attachedDatabase.remotePurchaseOrders;
   $RemotePoLinesTable get remotePoLines => attachedDatabase.remotePoLines;
+  $RemoteOrdersTable get remoteOrders => attachedDatabase.remoteOrders;
+  $RemoteOrderLinesTable get remoteOrderLines =>
+      attachedDatabase.remoteOrderLines;
 }

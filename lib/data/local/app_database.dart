@@ -42,6 +42,8 @@ part 'app_database.g.dart';
     SyncCursors,
     RemotePurchaseOrders,
     RemotePoLines,
+    RemoteOrders,
+    RemoteOrderLines,
   ],
   daos: [
     AlertsDao,
@@ -59,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,6 +122,11 @@ class AppDatabase extends _$AppDatabase {
               await migrator.addColumn(syncCursors, syncCursors.caughtUpThrough);
             }
           }
+          if (from < 8) {
+            // kMirrorVersion 3 makes the next pull start from 0 and bring the orders a 3b phone skipped.
+            await migrator.createTable(remoteOrders);
+            await migrator.createTable(remoteOrderLines);
+          }
         },
       );
 
@@ -137,6 +144,8 @@ class AppDatabase extends _$AppDatabase {
           countSessions,
           remotePurchaseOrders,
           remotePoLines,
+          remoteOrders,
+          remoteOrderLines,
         ]) {
           await delete(table).go();
         }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:warehouse_app/data/api/api_client.dart';
 import 'package:warehouse_app/data/api/api_exception.dart';
@@ -116,8 +118,41 @@ class ChangeFeedPuller {
               ),
           ],
         );
+      case 'deliveryOrder':
+      case 'salesOrder':
+        if (data == null) return dao.deleteOrder(id);
+        return dao.upsertOrder(
+          RemoteOrdersCompanion.insert(
+            id: id,
+            warehouseId: data['warehouseId'] as String,
+            kind: data['kind'] as String,
+            number: data['number'] as String,
+            destination: Value(data['destination'] as String?),
+            customerName: Value(data['customerName'] as String?),
+            orderDate: DateTime.parse(data['date'] as String),
+            status: data['status'] as String,
+            requiresApproval: data['requiresApproval'] as bool,
+            notes: Value(data['notes'] as String?),
+            createdByName: data['createdByName'] as String,
+            createdAt: DateTime.parse(data['createdAt'] as String),
+            statusHistory: jsonEncode([
+              for (final h in (data['statusHistory'] as List).cast<Map<String, dynamic>>())
+                {'status': h['status'], 'changedByName': h['changedByName'], 'changedAt': h['changedAt']},
+            ]),
+          ),
+          [
+            for (final line in (data['lines'] as List).cast<Map<String, dynamic>>())
+              RemoteOrderLinesCompanion.insert(
+                id: line['id'] as String,
+                orderId: id,
+                itemId: line['itemId'] as String,
+                locationId: line['locationId'] as String,
+                quantity: (line['quantity'] as num).toDouble(),
+              ),
+          ],
+        );
       default:
-        // Orders, tasks and alerts come in 3c and 3d, each bumping kMirrorVersion so they are pulled from the start.
+        // Tasks and alerts come in 3d, bumping kMirrorVersion so they are pulled from the start.
         return;
     }
   }

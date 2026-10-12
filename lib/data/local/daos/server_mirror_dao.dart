@@ -4,7 +4,7 @@ import 'package:warehouse_app/data/local/tables/server_tables.dart';
 
 part 'server_mirror_dao.g.dart';
 
-@DriftAccessor(tables: [CatalogItems, CatalogBarcodes, WarehouseLocations, RemoteCountSessions, RemoteCountLines, SyncCursors, RemotePurchaseOrders, RemotePoLines])
+@DriftAccessor(tables: [CatalogItems, CatalogBarcodes, WarehouseLocations, RemoteCountSessions, RemoteCountLines, SyncCursors, RemotePurchaseOrders, RemotePoLines, RemoteOrders, RemoteOrderLines])
 class ServerMirrorDao extends DatabaseAccessor<AppDatabase> with _$ServerMirrorDaoMixin {
   ServerMirrorDao(super.db);
 
@@ -120,4 +120,26 @@ class ServerMirrorDao extends DatabaseAccessor<AppDatabase> with _$ServerMirrorD
 
   Future<List<String>> barcodesFor(String itemId) async =>
       [for (final b in await (select(catalogBarcodes)..where((b) => b.itemId.equals(itemId))).get()) b.code];
+
+  Future<void> upsertOrder(RemoteOrdersCompanion order, List<RemoteOrderLinesCompanion> lines) async {
+    await into(remoteOrders).insertOnConflictUpdate(order);
+    await (delete(remoteOrderLines)..where((l) => l.orderId.equals(order.id.value))).go();
+    for (final line in lines) {
+      await into(remoteOrderLines).insertOnConflictUpdate(line);
+    }
+  }
+
+  Future<void> deleteOrder(String id) async {
+    await (delete(remoteOrderLines)..where((l) => l.orderId.equals(id))).go();
+    await (delete(remoteOrders)..where((o) => o.id.equals(id))).go();
+  }
+
+  /// [kind] is Delivery or Sales. Newest first.
+  Future<List<RemoteOrderRow>> orders(String warehouseId, {required String kind}) => (select(remoteOrders)
+        ..where((o) => o.warehouseId.equals(warehouseId) & o.kind.equals(kind))
+        ..orderBy([(o) => OrderingTerm.desc(o.createdAt)]))
+      .get();
+
+  Future<List<RemoteOrderLineRow>> orderLinesFor(String orderId) =>
+      (select(remoteOrderLines)..where((l) => l.orderId.equals(orderId))).get();
 }
