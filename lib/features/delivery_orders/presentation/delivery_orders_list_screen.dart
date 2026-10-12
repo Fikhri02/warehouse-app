@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:warehouse_app/data/sync/sync_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
@@ -63,7 +64,10 @@ class _OrdersTab extends ConsumerWidget {
     final brightness = Theme.of(context).brightness;
 
     return RefreshIndicator(
-      onRefresh: () => ref.refresh(deliveryOrdersProvider(active).future),
+      onRefresh: () async {
+        await ref.read(syncCoordinatorProvider).syncNow();
+        return ref.refresh(deliveryOrdersProvider(active).future);
+      },
       child: orders.when(
         loading: () => ListView(
           physics: const AlwaysScrollableScrollPhysics(),

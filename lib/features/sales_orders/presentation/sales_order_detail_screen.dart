@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/models/order.dart';
+import 'package:warehouse_app/core/models/user_session.dart';
+import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
@@ -93,6 +95,7 @@ class _ActionBar extends ConsumerWidget {
     if (order.status == OrderStatus.shipped) {
       return const SizedBox.shrink();
     }
+    final isSupervisor = ref.watch(authNotifierProvider.select((a) => a.valueOrNull?.role)) == UserRole.supervisor;
 
     Widget child;
     if (order.status == OrderStatus.draft) {
@@ -101,27 +104,32 @@ class _ActionBar extends ConsumerWidget {
         child: const Text('Edit Order'),
       );
     } else if (order.status == OrderStatus.pendingApproval) {
-      child = Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => _updateStatus(ref, OrderStatus.draft),
-              style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
-              child: const Text('Reject'),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _updateStatus(ref, OrderStatus.submitted),
-              child: const Text('Approve'),
-            ),
-          ),
-        ],
-      );
+      child = !isSupervisor
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('Waiting for a supervisor to approve', textAlign: TextAlign.center),
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _updateStatus(context, ref, OrderStatus.draft),
+                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
+                    child: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _updateStatus(context, ref, OrderStatus.submitted),
+                    child: const Text('Approve'),
+                  ),
+                ),
+              ],
+            );
     } else {
       child = ElevatedButton(
-        onPressed: () => _updateStatus(ref, order.status.nextStatus!),
+        onPressed: () => _updateStatus(context, ref, order.status.nextStatus!),
         child: Text(order.status.nextActionLabel!),
       );
     }
@@ -135,12 +143,13 @@ class _ActionBar extends ConsumerWidget {
     );
   }
 
-  Future<void> _updateStatus(WidgetRef ref, OrderStatus status) async {
-    await ref.read(ordersRepositoryProvider).updateOrderStatus(
-          kind: OrderKind.sales,
-          id: order.id,
-          status: status,
-        );
+  Future<void> _updateStatus(BuildContext context, WidgetRef ref, OrderStatus status) async {
+    try {
+      await ref.read(ordersRepositoryProvider).updateOrderStatus(kind: OrderKind.sales, id: order.id, status: status);
+    } on StateError catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
     ref.invalidate(salesOrdersProvider(true));
     ref.invalidate(salesOrdersProvider(false));
     ref.invalidate(salesOrderDetailProvider(order.id));
