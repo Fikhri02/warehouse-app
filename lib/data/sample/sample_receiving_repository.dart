@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:warehouse_app/core/models/count_records.dart';
 import 'package:warehouse_app/core/models/purchase_order.dart';
 import 'package:warehouse_app/data/repositories/receiving_repository.dart';
 
@@ -115,7 +118,10 @@ class SampleReceivingRepository implements ReceivingRepository {
   }
 
   @override
-  Future<void> submitReceive(PurchaseOrder order) async {
+  Future<List<CountLocation>> getPutAwayLocations() async => const [];
+
+  @override
+  Future<void> submitReceive(PurchaseOrder order, {Uint8List? signature, String? locationId}) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final idx = _orders.indexWhere((o) => o.id == order.id);
     if (idx != -1) {

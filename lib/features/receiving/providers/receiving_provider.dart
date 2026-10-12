@@ -36,7 +36,7 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
 
   bool scanItem(String barcode) {
     if (state == null) return false;
-    final idx = state!.lineItems.indexWhere((i) => i.itemCode == barcode);
+    final idx = state!.lineItems.indexWhere((i) => i.matches(barcode));
     if (idx == -1) return false;
     final item = state!.lineItems[idx];
     state = _withUpdatedItem(
@@ -51,7 +51,7 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
 
   void confirmItem({required String itemCode, required int received}) {
     if (state == null) return;
-    final idx = state!.lineItems.indexWhere((i) => i.itemCode == itemCode);
+    final idx = state!.lineItems.indexWhere((i) => i.matches(itemCode));
     if (idx == -1) return;
     state = _withUpdatedItem(
       idx,
@@ -67,7 +67,7 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
     required String reason,
   }) {
     if (state == null) return;
-    final idx = state!.lineItems.indexWhere((i) => i.itemCode == itemCode);
+    final idx = state!.lineItems.indexWhere((i) => i.matches(itemCode));
     if (idx == -1) return;
     state = _withUpdatedItem(
       idx,
@@ -91,6 +91,7 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
     if (state == null) return;
     state = PurchaseOrder(
       id: state!.id,
+      number: state!.number,
       supplier: state!.supplier,
       status: state!.status,
       dueDate: state!.dueDate,
@@ -108,9 +109,9 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
     );
   }
 
-  Future<void> submitReceive({Uint8List? signature}) async {
+  Future<void> submitReceive({Uint8List? signature, String? locationId}) async {
     if (state == null) return;
-    await ref.read(receivingRepositoryProvider).submitReceive(state!);
+    await ref.read(receivingRepositoryProvider).submitReceive(state!, signature: signature, locationId: locationId);
     await ref.read(purchaseOrdersNotifierProvider.notifier).refresh();
     state = null;
   }
@@ -120,6 +121,7 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
     newItems[idx] = updated;
     return PurchaseOrder(
       id: state!.id,
+      number: state!.number,
       supplier: state!.supplier,
       status: state!.status,
       dueDate: state!.dueDate,

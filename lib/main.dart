@@ -12,6 +12,7 @@ import 'package:warehouse_app/core/theme/app_theme.dart';
 import 'package:warehouse_app/data/api/api_auth_repository.dart';
 import 'package:warehouse_app/data/api/api_client.dart';
 import 'package:warehouse_app/data/api/api_providers.dart';
+import 'package:warehouse_app/data/api/api_receiving_repository.dart';
 import 'package:warehouse_app/data/api/api_stock_count_repository.dart';
 import 'package:warehouse_app/data/api/key_value_store.dart';
 import 'package:warehouse_app/data/api/token_store.dart';
@@ -61,7 +62,15 @@ Future<void> main() async {
         lockedSessionProvider.overrideWith((_) => locked ? initialSession : null),
         authRepositoryProvider.overrideWith((_) => authRepository),
         ordersRepositoryProvider.overrideWith((_) => SampleOrdersRepository()),
-        receivingRepositoryProvider.overrideWith((_) => SampleReceivingRepository()),
+        receivingRepositoryProvider.overrideWith(
+          (ref) => client == null
+              ? SampleReceivingRepository()
+              : ApiReceivingRepository(
+                  db: database,
+                  session: () => ref.read(authNotifierProvider).valueOrNull,
+                  onQueued: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()),
+                ),
+        ),
         stockCountRepositoryProvider.overrideWith(
           (ref) => client == null
               ? SampleStockCountRepository()

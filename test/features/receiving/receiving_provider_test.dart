@@ -136,6 +136,23 @@ void main() {
 
       expect(found, isFalse);
     });
+
+    test('a barcode of an order line counts for that line', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(activeReceiveNotifierProvider.notifier);
+      notifier.startReceive(const PurchaseOrder(
+        id: 'po-1',
+        number: 'PO-SA1-001',
+        supplier: 'Gula Prai Trading',
+        status: PoStatus.inProgress,
+        lineItems: [PoLineItem(itemCode: 'WT-0001', itemName: 'Beras Wangi 10kg', expected: 10, barcodes: ['9556001000011'])],
+      ));
+
+      expect(notifier.scanItem('9556001000011'), isTrue);
+      expect(container.read(activeReceiveNotifierProvider)!.lineItems.single.received, 1);
+      expect(container.read(activeReceiveNotifierProvider)!.displayNumber, 'PO-SA1-001');
+    });
   });
 
   group('ActiveReceiveNotifier.flagItemWithReason', () {
