@@ -174,8 +174,9 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
     );
     if (result == null || !mounted) return;
 
-    final found =
-        ref.read(activeReceiveNotifierProvider.notifier).scanItem(result.code);
+    final found = ref
+        .read(activeReceiveNotifierProvider.notifier)
+        .receiveManually(itemCode: result.code, qty: result.qty);
     if (!found) {
       if (ref.read(useApiProvider)) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That item is not on this order.')));
@@ -185,11 +186,6 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
             itemCode: result.code,
             itemName: result.code,
             qty: result.qty,
-          );
-    } else {
-      ref.read(activeReceiveNotifierProvider.notifier).confirmItem(
-            itemCode: result.code,
-            received: result.qty,
           );
     }
     _triggerScanHaptics();

@@ -73,6 +73,20 @@ class ActiveReceiveNotifier extends Notifier<PurchaseOrder?> {
     );
   }
 
+  /// A code and quantity typed in when a label won't scan: [qty] is what arrives now, on top of what earlier
+  /// deliveries brought. False when the code is not on this order.
+  bool receiveManually({required String itemCode, required int qty}) {
+    if (state == null) return false;
+    final idx = state!.lineItems.indexWhere((i) => i.matches(itemCode));
+    if (idx == -1) return false;
+    final item = state!.lineItems[idx];
+    state = _withUpdatedItem(
+      idx,
+      item.copyWith(received: item.alreadyReceived + qty, lineStatus: PoLineItemStatus.confirmed),
+    );
+    return true;
+  }
+
   void flagItemWithReason({
     required String itemCode,
     required String reason,

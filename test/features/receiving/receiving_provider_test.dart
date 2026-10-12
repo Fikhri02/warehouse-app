@@ -34,6 +34,29 @@ void main() {
 
   tearDown(() => container.dispose());
 
+  test('a quantity typed in is what arrives now, on top of what an earlier delivery brought', () {
+    final notifier = container.read(activeReceiveNotifierProvider.notifier);
+    notifier.startReceive(const PurchaseOrder(
+      id: 'po-1',
+      supplier: 'Acme',
+      status: PoStatus.inProgress,
+      lineItems: [PoLineItem(itemCode: 'WT-0001', itemName: 'Beras', expected: 10, received: 4, alreadyReceived: 4)],
+    ));
+
+    expect(notifier.receiveManually(itemCode: 'WT-0001', qty: 3), isTrue);
+
+    final line = container.read(activeReceiveNotifierProvider)!.lineItems.single;
+    expect((line.received, line.receivingNow, line.lineStatus), (7, 3, PoLineItemStatus.confirmed));
+  });
+
+  test('a code typed in that is not on the order is reported, not added', () {
+    final notifier = container.read(activeReceiveNotifierProvider.notifier);
+    notifier.startReceive(const PurchaseOrder(id: 'po-1', supplier: 'Acme', status: PoStatus.inProgress, lineItems: []));
+
+    expect(notifier.receiveManually(itemCode: 'NOPE', qty: 3), isFalse);
+    expect(container.read(activeReceiveNotifierProvider)!.lineItems, isEmpty);
+  });
+
   group('PurchaseOrdersNotifier', () {
     test('pulling the list down sends and fetches first, then reloads', () async {
       final sync = MockSyncCoordinator();
