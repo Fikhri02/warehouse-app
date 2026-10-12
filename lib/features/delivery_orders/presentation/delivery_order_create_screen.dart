@@ -4,8 +4,8 @@ import 'package:warehouse_app/core/models/order.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/core/widgets/item_picker_sheet.dart';
+import 'package:warehouse_app/data/repositories/orders_repository.dart';
 import 'package:warehouse_app/features/delivery_orders/providers/create_delivery_order_notifier.dart';
-import 'package:warehouse_app/features/delivery_orders/providers/delivery_orders_provider.dart';
 
 class DeliveryOrderCreateScreen extends ConsumerStatefulWidget {
   final DeliveryOrder? editingOrder;
@@ -41,7 +41,7 @@ class _DeliveryOrderCreateScreenState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(createDeliveryOrderNotifierProvider);
-    final locations = ref.watch(locationsProvider);
+    final locations = ref.watch(pickLocationsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -198,42 +198,21 @@ class _BasicInfoStep extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _RequiredLabel('From'),
+            const _RequiredLabel('Pick From'),
             const SizedBox(height: 6),
             DropdownButtonFormField<OrderLocation>(
-              initialValue: state.fromLocation,
-              items: data
-                  .map(
-                    (location) => DropdownMenuItem(
-                      value: location,
-                      child: Text(location.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => ref
-                  .read(createDeliveryOrderNotifierProvider.notifier)
-                  .setFromLocation(value),
-              decoration:
-                  InputDecoration(errorText: state.errors['fromLocation']),
+              initialValue: data.contains(state.pickFrom) ? state.pickFrom : null,
+              items: [for (final bin in data) DropdownMenuItem(value: bin, child: Text(bin.name))],
+              onChanged: (value) => ref.read(createDeliveryOrderNotifierProvider.notifier).setPickFrom(value),
+              decoration: InputDecoration(errorText: state.errors['pickFrom']),
             ),
             const SizedBox(height: 16),
-            const _RequiredLabel('To'),
+            const _RequiredLabel('Destination'),
             const SizedBox(height: 6),
-            DropdownButtonFormField<OrderLocation>(
-              initialValue: state.toLocation,
-              items: data
-                  .map(
-                    (location) => DropdownMenuItem(
-                      value: location,
-                      child: Text(location.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => ref
-                  .read(createDeliveryOrderNotifierProvider.notifier)
-                  .setToLocation(value),
-              decoration:
-                  InputDecoration(errorText: state.errors['toLocation']),
+            TextFormField(
+              initialValue: state.destination,
+              onChanged: (value) => ref.read(createDeliveryOrderNotifierProvider.notifier).setDestination(value),
+              decoration: InputDecoration(hintText: 'Outlet, store or address', errorText: state.errors['destination']),
             ),
             const SizedBox(height: 16),
             const _RequiredLabel('Delivery Date'),
@@ -331,8 +310,8 @@ class _ReviewStep extends StatelessWidget {
               children: [
                 const Text('Order Summary', style: AppTextStyles.title),
                 const SizedBox(height: 12),
-                _ReviewRow('From', state.fromLocation?.name ?? '-'),
-                _ReviewRow('To', state.toLocation?.name ?? '-'),
+                _ReviewRow('Pick From', state.pickFrom?.name ?? '-'),
+                _ReviewRow('Destination', state.destination.trim().isEmpty ? '-' : state.destination.trim()),
                 _ReviewRow('Date', _formatDate(state.deliveryDate)),
                 _ReviewRow(
                   'Approval',

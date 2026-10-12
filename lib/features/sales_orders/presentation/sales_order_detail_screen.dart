@@ -9,7 +9,7 @@ import 'package:warehouse_app/data/repositories/orders_repository.dart';
 import 'package:warehouse_app/features/sales_orders/providers/sales_orders_provider.dart';
 
 class SalesOrderDetailScreen extends ConsumerWidget {
-  final int id;
+  final String id;
 
   const SalesOrderDetailScreen({
     super.key,
@@ -137,10 +137,9 @@ class _ActionBar extends ConsumerWidget {
 
   Future<void> _updateStatus(WidgetRef ref, OrderStatus status) async {
     await ref.read(ordersRepositoryProvider).updateOrderStatus(
-          orderType: 'sales',
+          kind: OrderKind.sales,
           id: order.id,
           status: status,
-          changedBy: 'Hasan',
         );
     ref.invalidate(salesOrdersProvider(true));
     ref.invalidate(salesOrdersProvider(false));
@@ -253,7 +252,9 @@ class _ItemsCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          items[index].itemSku,
+                          items[index].locationCode == null
+                              ? items[index].itemSku
+                              : '${items[index].itemSku} · ${items[index].locationCode}',
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.textSecondary(brightness),
                           ),

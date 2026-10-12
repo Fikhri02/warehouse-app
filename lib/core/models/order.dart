@@ -111,6 +111,28 @@ enum OrderStatus {
         return null;
     }
   }
+
+  /// The server's name for this status (spec §3).
+  String get serverName => switch (this) {
+        OrderStatus.draft => 'Draft',
+        OrderStatus.pendingApproval => 'PendingApproval',
+        OrderStatus.submitted => 'Submitted',
+        OrderStatus.packed => 'Packed',
+        OrderStatus.inTransit => 'InTransit',
+        OrderStatus.shipped => 'Shipped',
+      };
+
+  static OrderStatus fromServer(String value) => OrderStatus.values.firstWhere(
+        (s) => s.serverName == value,
+        orElse: () => throw ArgumentError('Unsupported order status: $value'),
+      );
+}
+
+enum OrderKind {
+  delivery,
+  sales;
+
+  String get serverName => this == OrderKind.delivery ? 'Delivery' : 'Sales';
 }
 
 class OrderLocation {
@@ -123,6 +145,12 @@ class OrderLocation {
     required this.name,
     required this.type,
   });
+
+  @override
+  bool operator ==(Object other) => other is OrderLocation && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class CatalogItem {
@@ -143,11 +171,17 @@ class OrderItem {
   final String itemSku;
   final int quantity;
 
+  /// The bin the goods are picked from, and its code.
+  final String? locationId;
+  final String? locationCode;
+
   const OrderItem({
     required this.itemId,
     required this.itemName,
     required this.itemSku,
     this.quantity = 1,
+    this.locationId,
+    this.locationCode,
   });
 
   OrderItem copyWith({
@@ -155,12 +189,16 @@ class OrderItem {
     String? itemName,
     String? itemSku,
     int? quantity,
+    String? locationId,
+    String? locationCode,
   }) {
     return OrderItem(
       itemId: itemId ?? this.itemId,
       itemName: itemName ?? this.itemName,
       itemSku: itemSku ?? this.itemSku,
       quantity: quantity ?? this.quantity,
+      locationId: locationId ?? this.locationId,
+      locationCode: locationCode ?? this.locationCode,
     );
   }
 }
@@ -180,10 +218,9 @@ class OrderStatusHistory {
 }
 
 class DeliveryOrder {
-  final int id;
+  final String id;
   final String orderNumber;
-  final OrderLocation fromLocation;
-  final OrderLocation toLocation;
+  final String destination;
   final DateTime deliveryDate;
   final OrderStatus status;
   final bool requiresApproval;
@@ -196,8 +233,7 @@ class DeliveryOrder {
   const DeliveryOrder({
     required this.id,
     required this.orderNumber,
-    required this.fromLocation,
-    required this.toLocation,
+    required this.destination,
     required this.deliveryDate,
     required this.status,
     required this.requiresApproval,
@@ -209,10 +245,9 @@ class DeliveryOrder {
   });
 
   DeliveryOrder copyWith({
-    int? id,
+    String? id,
     String? orderNumber,
-    OrderLocation? fromLocation,
-    OrderLocation? toLocation,
+    String? destination,
     DateTime? deliveryDate,
     OrderStatus? status,
     bool? requiresApproval,
@@ -225,8 +260,7 @@ class DeliveryOrder {
     return DeliveryOrder(
       id: id ?? this.id,
       orderNumber: orderNumber ?? this.orderNumber,
-      fromLocation: fromLocation ?? this.fromLocation,
-      toLocation: toLocation ?? this.toLocation,
+      destination: destination ?? this.destination,
       deliveryDate: deliveryDate ?? this.deliveryDate,
       status: status ?? this.status,
       requiresApproval: requiresApproval ?? this.requiresApproval,
@@ -240,7 +274,7 @@ class DeliveryOrder {
 }
 
 class SalesOrder {
-  final int id;
+  final String id;
   final String orderNumber;
   final String customerName;
   final DateTime orderDate;
@@ -267,7 +301,7 @@ class SalesOrder {
   });
 
   SalesOrder copyWith({
-    int? id,
+    String? id,
     String? orderNumber,
     String? customerName,
     DateTime? orderDate,

@@ -11,10 +11,6 @@ final deliveryOrdersProvider =
 });
 
 final deliveryOrderDetailProvider =
-    FutureProvider.family<DeliveryOrder?, int>((ref, id) {
+    FutureProvider.family<DeliveryOrder?, String>((ref, id) {
   return ref.watch(ordersRepositoryProvider).getDeliveryOrderById(id);
-});
-
-final locationsProvider = FutureProvider<List<OrderLocation>>((ref) {
-  return ref.watch(ordersRepositoryProvider).getLocations();
 });

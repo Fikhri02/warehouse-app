@@ -8,6 +8,6 @@ final salesOrdersProvider =
 });
 
 final salesOrderDetailProvider =
-    FutureProvider.family<SalesOrder?, int>((ref, id) {
+    FutureProvider.family<SalesOrder?, String>((ref, id) {
   return ref.watch(ordersRepositoryProvider).getSalesOrderById(id);
 });

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:warehouse_app/core/models/order.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/core/widgets/qty_adjuster.dart';
-import 'package:warehouse_app/data/sample/sample_order_catalog.dart';
+import 'package:warehouse_app/data/repositories/orders_repository.dart';
 
-class ItemPickerSheet extends StatefulWidget {
+class ItemPickerSheet extends ConsumerStatefulWidget {
   final List<OrderItem> items;
   final ValueChanged<List<OrderItem>> onChanged;
 
@@ -16,10 +17,10 @@ class ItemPickerSheet extends StatefulWidget {
   });
 
   @override
-  State<ItemPickerSheet> createState() => _ItemPickerSheetState();
+  ConsumerState<ItemPickerSheet> createState() => _ItemPickerSheetState();
 }
 
-class _ItemPickerSheetState extends State<ItemPickerSheet> {
+class _ItemPickerSheetState extends ConsumerState<ItemPickerSheet> {
   final TextEditingController _scanController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   String _search = '';
@@ -34,12 +35,7 @@ class _ItemPickerSheetState extends State<ItemPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final filteredCatalog = sampleOrderCatalog.where((item) {
-      if (_search.isEmpty) return true;
-      final query = _search.toLowerCase();
-      return item.name.toLowerCase().contains(query) ||
-          item.sku.toLowerCase().contains(query);
-    }).toList();
+    final catalog = ref.watch(orderCatalogSearchProvider(_search));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,37 +94,35 @@ class _ItemPickerSheetState extends State<ItemPickerSheet> {
           ),
         ),
         const SizedBox(height: 12),
-        Card(
-          child: Column(
-            children: [
-              for (int index = 0; index < filteredCatalog.length; index++) ...[
-                _CatalogRow(
-                  item: filteredCatalog[index],
-                  onAdd: () => _addCatalogItem(filteredCatalog[index]),
-                ),
-                if (index < filteredCatalog.length - 1)
-                  const Divider(height: 1),
+        catalog.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (error, _) => Text('Could not load items: $error'),
+          data: (items) => Card(
+            child: Column(
+              children: [
+                for (int index = 0; index < items.length; index++) ...[
+                  _CatalogRow(item: items[index], onAdd: () => _addCatalogItem(items[index])),
+                  if (index < items.length - 1) const Divider(height: 1),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  void _handleScanSubmit(String value) {
+  Future<void> _handleScanSubmit(String value) async {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return;
-    final matched =
-        sampleOrderCatalog.where((item) => item.sku == trimmed).toList();
     _scanController.clear();
-    if (matched.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item not found in catalog')),
-      );
+    final item = await ref.read(ordersRepositoryProvider).findItem(trimmed);
+    if (!mounted) return;
+    if (item == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item not found in catalog')));
       return;
     }
-    _addCatalogItem(matched.first);
+    _addCatalogItem(item);
   }
 
   void _addCatalogItem(CatalogItem item) {
@@ -199,7 +193,7 @@ class _SelectedItemRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  item.itemSku,
+                  item.locationCode == null ? item.itemSku : '${item.itemSku} · ${item.locationCode}',
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textSecondary(brightness),
                   ),

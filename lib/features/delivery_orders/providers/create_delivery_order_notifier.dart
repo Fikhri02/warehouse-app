@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:warehouse_app/core/models/order.dart';
 import 'package:warehouse_app/features/delivery_orders/providers/delivery_orders_provider.dart';
 
 class CreateDeliveryOrderState {
-  final int? editingOrderId;
-  final OrderLocation? fromLocation;
-  final OrderLocation? toLocation;
+  final String? editingOrderId;
+  final String? editingOrderNumber;
+
+  /// The bin new lines are picked from.
+  final OrderLocation? pickFrom;
+  final String destination;
   final DateTime? deliveryDate;
   final bool requiresApproval;
   final String notes;
@@ -15,8 +19,9 @@ class CreateDeliveryOrderState {
 
   const CreateDeliveryOrderState({
     this.editingOrderId,
-    this.fromLocation,
-    this.toLocation,
+    this.editingOrderNumber,
+    this.pickFrom,
+    this.destination = '',
     this.deliveryDate,
     this.requiresApproval = false,
     this.notes = '',
@@ -26,9 +31,8 @@ class CreateDeliveryOrderState {
   });
 
   CreateDeliveryOrderState copyWith({
-    Object? editingOrderId = _sentinel,
-    Object? fromLocation = _sentinel,
-    Object? toLocation = _sentinel,
+    Object? pickFrom = _sentinel,
+    String? destination,
     Object? deliveryDate = _sentinel,
     bool? requiresApproval,
     String? notes,
@@ -37,18 +41,11 @@ class CreateDeliveryOrderState {
     bool? isSubmitting,
   }) {
     return CreateDeliveryOrderState(
-      editingOrderId: editingOrderId == _sentinel
-          ? this.editingOrderId
-          : editingOrderId as int?,
-      fromLocation: fromLocation == _sentinel
-          ? this.fromLocation
-          : fromLocation as OrderLocation?,
-      toLocation: toLocation == _sentinel
-          ? this.toLocation
-          : toLocation as OrderLocation?,
-      deliveryDate: deliveryDate == _sentinel
-          ? this.deliveryDate
-          : deliveryDate as DateTime?,
+      editingOrderId: editingOrderId,
+      editingOrderNumber: editingOrderNumber,
+      pickFrom: pickFrom == _sentinel ? this.pickFrom : pickFrom as OrderLocation?,
+      destination: destination ?? this.destination,
+      deliveryDate: deliveryDate == _sentinel ? this.deliveryDate : deliveryDate as DateTime?,
       requiresApproval: requiresApproval ?? this.requiresApproval,
       notes: notes ?? this.notes,
       items: items ?? this.items,
@@ -60,15 +57,15 @@ class CreateDeliveryOrderState {
 
 class CreateDeliveryOrderNotifier extends Notifier<CreateDeliveryOrderState> {
   @override
-  CreateDeliveryOrderState build() {
-    return CreateDeliveryOrderState(deliveryDate: DateTime.now());
-  }
+  CreateDeliveryOrderState build() => CreateDeliveryOrderState(deliveryDate: DateTime.now());
 
   void loadFromOrder(DeliveryOrder order) {
+    final first = order.items.where((i) => i.locationId != null).firstOrNull;
     state = CreateDeliveryOrderState(
       editingOrderId: order.id,
-      fromLocation: order.fromLocation,
-      toLocation: order.toLocation,
+      editingOrderNumber: order.orderNumber,
+      pickFrom: first == null ? null : OrderLocation(id: first.locationId!, name: first.locationCode ?? '', type: 'Bin'),
+      destination: order.destination,
       deliveryDate: order.deliveryDate,
       requiresApproval: order.requiresApproval,
       notes: order.notes ?? '',
@@ -76,102 +73,49 @@ class CreateDeliveryOrderNotifier extends Notifier<CreateDeliveryOrderState> {
     );
   }
 
-  void setFromLocation(OrderLocation? value) {
+  /// Every line is picked from [value] from now on.
+  void setPickFrom(OrderLocation? value) {
     state = state.copyWith(
-      fromLocation: value,
-      errors: {...state.errors}..remove('fromLocation'),
+      pickFrom: value,
+      items: value == null ? null : [for (final item in state.items) item.copyWith(locationId: value.id, locationCode: value.name)],
+      errors: {...state.errors}..remove('pickFrom'),
     );
   }
 
-  void setToLocation(OrderLocation? value) {
-    state = state.copyWith(
-      toLocation: value,
-      errors: {...state.errors}..remove('toLocation'),
-    );
+  void setDestination(String value) {
+    state = state.copyWith(destination: value, errors: {...state.errors}..remove('destination'));
   }
 
   void setDate(DateTime? value) {
-    state = state.copyWith(
-      deliveryDate: value,
-      errors: {...state.errors}..remove('deliveryDate'),
-    );
+    state = state.copyWith(deliveryDate: value, errors: {...state.errors}..remove('deliveryDate'));
   }
 
-  void toggleApproval(bool value) {
-    state = state.copyWith(requiresApproval: value);
-  }
+  void toggleApproval(bool value) => state = state.copyWith(requiresApproval: value);
 
-  void setNotes(String value) {
-    state = state.copyWith(notes: value);
-  }
+  void setNotes(String value) => state = state.copyWith(notes: value);
 
-  void addItem(CatalogItem item) {
-    final existingIndex =
-        state.items.indexWhere((element) => element.itemId == item.id);
-    if (existingIndex != -1) {
-      final updated = [...state.items];
-      updated[existingIndex] = updated[existingIndex]
-          .copyWith(quantity: updated[existingIndex].quantity + 1);
-      state = state.copyWith(
-          items: updated, errors: {...state.errors}..remove('items'));
-      return;
-    }
-
-    state = state.copyWith(
-      items: [
-        ...state.items,
-        OrderItem(
-          itemId: item.id,
-          itemName: item.name,
-          itemSku: item.sku,
-          quantity: 1,
-        ),
-      ],
-      errors: {...state.errors}..remove('items'),
-    );
-  }
-
-  void removeItem(String itemId) {
-    state = state.copyWith(
-      items: state.items.where((item) => item.itemId != itemId).toList(),
-    );
-  }
-
-  void updateQty(String itemId, int qty) {
-    state = state.copyWith(
-      items: [
-        for (final item in state.items)
-          if (item.itemId == itemId)
-            item.copyWith(quantity: qty.clamp(1, 999))
-          else
-            item,
-      ],
-    );
-  }
-
+  /// Lines without a bin are picked from Pick From.
   void setItems(List<OrderItem> items) {
+    final bin = state.pickFrom;
     state = state.copyWith(
-      items: items,
+      items: [
+        for (final item in items)
+          if (item.locationId == null && bin != null) item.copyWith(locationId: bin.id, locationCode: bin.name) else item,
+      ],
       errors: {...state.errors}..remove('items'),
     );
   }
 
   bool validateStep1() {
     final errors = <String, String>{};
-    if (state.fromLocation == null) {
-      errors['fromLocation'] = 'From location is required';
+    if (state.pickFrom == null) errors['pickFrom'] = 'Choose the bin to pick from';
+    final destination = state.destination.trim();
+    if (destination.isEmpty) {
+      errors['destination'] = 'Destination is required';
+    } else if (destination.length > 200) {
+      errors['destination'] = 'Destination must be at most 200 characters';
     }
-    if (state.toLocation == null) {
-      errors['toLocation'] = 'To location is required';
-    }
-    if (state.deliveryDate == null) {
-      errors['deliveryDate'] = 'Delivery date is required';
-    }
-    if (state.fromLocation != null &&
-        state.toLocation != null &&
-        state.fromLocation!.id == state.toLocation!.id) {
-      errors['toLocation'] = 'From and To locations must be different';
-    }
+    if (state.deliveryDate == null) errors['deliveryDate'] = 'Delivery date is required';
     state = state.copyWith(errors: errors);
     return errors.isEmpty;
   }
@@ -191,30 +135,19 @@ class CreateDeliveryOrderNotifier extends Notifier<CreateDeliveryOrderState> {
     final repository = ref.read(ordersRepositoryProvider);
     state = state.copyWith(isSubmitting: true);
     try {
-      final now = DateTime.now();
-      final status = asDraft
-          ? OrderStatus.draft
-          : (state.requiresApproval
-              ? OrderStatus.pendingApproval
-              : OrderStatus.submitted);
-      final order = DeliveryOrder(
-        id: state.editingOrderId ?? 0,
-        orderNumber: '',
-        fromLocation: state.fromLocation!,
-        toLocation: state.toLocation!,
-        deliveryDate: state.deliveryDate ?? now,
+      final status = asDraft ? OrderStatus.draft : (state.requiresApproval ? OrderStatus.pendingApproval : OrderStatus.submitted);
+      final saved = await repository.saveDeliveryOrder(DeliveryOrder(
+        id: state.editingOrderId ?? const Uuid().v4(),
+        orderNumber: state.editingOrderNumber ?? '',
+        destination: state.destination.trim(),
+        deliveryDate: state.deliveryDate ?? DateTime.now(),
         status: status,
         requiresApproval: state.requiresApproval,
         notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
-        createdBy: 'Hasan',
-        createdAt: now,
+        createdBy: '',
+        createdAt: DateTime.now(),
         items: state.items,
-        statusHistory: const [],
-      );
-      final saved = await repository.createDeliveryOrder(
-        order,
-        existingOrderId: state.editingOrderId,
-      );
+      ));
       ref.invalidate(deliveryOrdersProvider(true));
       ref.invalidate(deliveryOrdersProvider(false));
       ref.invalidate(deliveryOrderDetailProvider(saved.id));
@@ -225,8 +158,7 @@ class CreateDeliveryOrderNotifier extends Notifier<CreateDeliveryOrderState> {
   }
 }
 
-final createDeliveryOrderNotifierProvider =
-    NotifierProvider<CreateDeliveryOrderNotifier, CreateDeliveryOrderState>(
+final createDeliveryOrderNotifierProvider = NotifierProvider<CreateDeliveryOrderNotifier, CreateDeliveryOrderState>(
   CreateDeliveryOrderNotifier.new,
 );
 

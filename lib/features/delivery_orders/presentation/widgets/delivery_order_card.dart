@@ -49,7 +49,7 @@ class DeliveryOrderCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${order.fromLocation.name} → ${order.toLocation.name}',
+                    order.destination,
                     style: AppTextStyles.body.copyWith(
                       color: AppColors.textPrimary(brightness),
                     ),

@@ -8,7 +8,7 @@ import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/features/delivery_orders/providers/delivery_orders_provider.dart';
 
 class DeliveryOrderDetailScreen extends ConsumerWidget {
-  final int id;
+  final String id;
 
   const DeliveryOrderDetailScreen({
     super.key,
@@ -49,10 +49,7 @@ class DeliveryOrderDetailScreen extends ConsumerWidget {
                 _InfoCard(
                   title: 'Order Info',
                   rows: [
-                    (
-                      'Route',
-                      '${order.fromLocation.name} → ${order.toLocation.name}'
-                    ),
+                    ('Destination', order.destination),
                     ('Delivery Date', _formatDate(order.deliveryDate)),
                     ('Created By', order.createdBy),
                     (
@@ -139,10 +136,9 @@ class _ActionBar extends ConsumerWidget {
 
   Future<void> _updateStatus(WidgetRef ref, OrderStatus status) async {
     await ref.read(ordersRepositoryProvider).updateOrderStatus(
-          orderType: 'delivery',
+          kind: OrderKind.delivery,
           id: order.id,
           status: status,
-          changedBy: 'Hasan',
         );
     ref.invalidate(deliveryOrdersProvider(true));
     ref.invalidate(deliveryOrdersProvider(false));
@@ -255,7 +251,9 @@ class _ItemsCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          items[index].itemSku,
+                          items[index].locationCode == null
+                              ? items[index].itemSku
+                              : '${items[index].itemSku} · ${items[index].locationCode}',
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.textSecondary(brightness),
                           ),

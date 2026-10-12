@@ -219,7 +219,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.deliveryOrderDetail,
         builder: (_, state) =>
-            DeliveryOrderDetailScreen(id: state.extra as int),
+            DeliveryOrderDetailScreen(id: state.extra as String),
       ),
       GoRoute(
         path: AppRoutes.salesOrders,
@@ -233,7 +233,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.salesOrderDetail,
-        builder: (_, state) => SalesOrderDetailScreen(id: state.extra as int),
+        builder: (_, state) => SalesOrderDetailScreen(id: state.extra as String),
       ),
       GoRoute(
         path: AppRoutes.tasks,

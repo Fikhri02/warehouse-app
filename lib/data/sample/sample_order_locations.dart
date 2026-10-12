@@ -1,11 +1,9 @@
 import 'package:warehouse_app/core/models/order.dart';
 
+/// Bins to pick from in Sample mode.
 const sampleOrderLocations = <OrderLocation>[
-  OrderLocation(id: '1', name: 'Main Warehouse', type: 'warehouse'),
-  OrderLocation(id: '2', name: 'Secondary Warehouse', type: 'warehouse'),
-  OrderLocation(id: '3', name: 'Outlet Damansara', type: 'outlet'),
-  OrderLocation(id: '4', name: 'Outlet Subang', type: 'outlet'),
-  OrderLocation(id: '5', name: 'Outlet Cheras', type: 'outlet'),
-  OrderLocation(id: '6', name: 'Outlet Ampang', type: 'outlet'),
-  OrderLocation(id: '7', name: 'Outlet PJ', type: 'outlet'),
+  OrderLocation(id: 'bin-a0101', name: 'A-01-01', type: 'Bin'),
+  OrderLocation(id: 'bin-a0102', name: 'A-01-02', type: 'Bin'),
+  OrderLocation(id: 'bin-b0101', name: 'B-01-01', type: 'Bin'),
+  OrderLocation(id: 'dock-1', name: 'DOCK-1', type: 'Dock'),
 ];

@@ -4,6 +4,7 @@ import 'package:warehouse_app/core/models/order.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/core/widgets/item_picker_sheet.dart';
+import 'package:warehouse_app/data/repositories/orders_repository.dart';
 import 'package:warehouse_app/features/sales_orders/providers/create_sales_order_notifier.dart';
 
 class SalesOrderCreateScreen extends ConsumerStatefulWidget {
@@ -179,9 +180,23 @@ class _BasicInfoStep extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bins = ref.watch(pickLocationsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const _RequiredLabel('Pick From'),
+        const SizedBox(height: 6),
+        bins.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (error, _) => Text('Failed to load bins: $error'),
+          data: (data) => DropdownButtonFormField<OrderLocation>(
+            initialValue: data.contains(state.pickFrom) ? state.pickFrom : null,
+            items: [for (final bin in data) DropdownMenuItem(value: bin, child: Text(bin.name))],
+            onChanged: (value) => ref.read(createSalesOrderNotifierProvider.notifier).setPickFrom(value),
+            decoration: InputDecoration(errorText: state.errors['pickFrom']),
+          ),
+        ),
+        const SizedBox(height: 16),
         const _RequiredLabel('Customer Name'),
         const SizedBox(height: 6),
         TextFormField(
@@ -289,6 +304,7 @@ class _ReviewStep extends StatelessWidget {
                 const Text('Order Summary', style: AppTextStyles.title),
                 const SizedBox(height: 12),
                 _ReviewRow('Customer', state.customerName),
+                _ReviewRow('Pick From', state.pickFrom?.name ?? '-'),
                 _ReviewRow('Order Date', _formatDate(state.orderDate)),
                 _ReviewRow(
                   'Approval',

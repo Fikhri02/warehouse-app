@@ -1,10 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:warehouse_app/core/models/order.dart';
 import 'package:warehouse_app/data/repositories/orders_repository.dart';
 import 'package:warehouse_app/features/sales_orders/providers/sales_orders_provider.dart';
 
 class CreateSalesOrderState {
-  final int? editingOrderId;
+  final String? editingOrderId;
+  final String? editingOrderNumber;
+
+  /// The bin new lines are picked from.
+  final OrderLocation? pickFrom;
   final String customerName;
   final DateTime? orderDate;
   final bool requiresApproval;
@@ -15,6 +20,8 @@ class CreateSalesOrderState {
 
   const CreateSalesOrderState({
     this.editingOrderId,
+    this.editingOrderNumber,
+    this.pickFrom,
     this.customerName = '',
     this.orderDate,
     this.requiresApproval = false,
@@ -25,7 +32,7 @@ class CreateSalesOrderState {
   });
 
   CreateSalesOrderState copyWith({
-    Object? editingOrderId = _sentinel,
+    Object? pickFrom = _sentinel,
     String? customerName,
     Object? orderDate = _sentinel,
     bool? requiresApproval,
@@ -35,12 +42,11 @@ class CreateSalesOrderState {
     bool? isSubmitting,
   }) {
     return CreateSalesOrderState(
-      editingOrderId: editingOrderId == _sentinel
-          ? this.editingOrderId
-          : editingOrderId as int?,
+      editingOrderId: editingOrderId,
+      editingOrderNumber: editingOrderNumber,
+      pickFrom: pickFrom == _sentinel ? this.pickFrom : pickFrom as OrderLocation?,
       customerName: customerName ?? this.customerName,
-      orderDate:
-          orderDate == _sentinel ? this.orderDate : orderDate as DateTime?,
+      orderDate: orderDate == _sentinel ? this.orderDate : orderDate as DateTime?,
       requiresApproval: requiresApproval ?? this.requiresApproval,
       notes: notes ?? this.notes,
       items: items ?? this.items,
@@ -52,13 +58,14 @@ class CreateSalesOrderState {
 
 class CreateSalesOrderNotifier extends Notifier<CreateSalesOrderState> {
   @override
-  CreateSalesOrderState build() {
-    return CreateSalesOrderState(orderDate: DateTime.now());
-  }
+  CreateSalesOrderState build() => CreateSalesOrderState(orderDate: DateTime.now());
 
   void loadFromOrder(SalesOrder order) {
+    final first = order.items.where((i) => i.locationId != null).firstOrNull;
     state = CreateSalesOrderState(
       editingOrderId: order.id,
+      editingOrderNumber: order.orderNumber,
+      pickFrom: first == null ? null : OrderLocation(id: first.locationId!, name: first.locationCode ?? '', type: 'Bin'),
       customerName: order.customerName,
       orderDate: order.orderDate,
       requiresApproval: order.requiresApproval,
@@ -67,87 +74,49 @@ class CreateSalesOrderNotifier extends Notifier<CreateSalesOrderState> {
     );
   }
 
-  void setCustomerName(String value) {
+  /// Every line is picked from [value] from now on.
+  void setPickFrom(OrderLocation? value) {
     state = state.copyWith(
-      customerName: value,
-      errors: {...state.errors}..remove('customerName'),
+      pickFrom: value,
+      items: value == null ? null : [for (final item in state.items) item.copyWith(locationId: value.id, locationCode: value.name)],
+      errors: {...state.errors}..remove('pickFrom'),
     );
+  }
+
+  void setCustomerName(String value) {
+    state = state.copyWith(customerName: value, errors: {...state.errors}..remove('customerName'));
   }
 
   void setDate(DateTime? value) {
-    state = state.copyWith(
-      orderDate: value,
-      errors: {...state.errors}..remove('orderDate'),
-    );
+    state = state.copyWith(orderDate: value, errors: {...state.errors}..remove('orderDate'));
   }
 
-  void toggleApproval(bool value) {
-    state = state.copyWith(requiresApproval: value);
-  }
+  void toggleApproval(bool value) => state = state.copyWith(requiresApproval: value);
 
-  void setNotes(String value) {
-    state = state.copyWith(notes: value);
-  }
+  void setNotes(String value) => state = state.copyWith(notes: value);
 
-  void addItem(CatalogItem item) {
-    final existingIndex =
-        state.items.indexWhere((element) => element.itemId == item.id);
-    if (existingIndex != -1) {
-      final updated = [...state.items];
-      updated[existingIndex] = updated[existingIndex]
-          .copyWith(quantity: updated[existingIndex].quantity + 1);
-      state = state.copyWith(
-          items: updated, errors: {...state.errors}..remove('items'));
-      return;
-    }
-
-    state = state.copyWith(
-      items: [
-        ...state.items,
-        OrderItem(
-          itemId: item.id,
-          itemName: item.name,
-          itemSku: item.sku,
-          quantity: 1,
-        ),
-      ],
-      errors: {...state.errors}..remove('items'),
-    );
-  }
-
-  void removeItem(String itemId) {
-    state = state.copyWith(
-      items: state.items.where((item) => item.itemId != itemId).toList(),
-    );
-  }
-
-  void updateQty(String itemId, int qty) {
-    state = state.copyWith(
-      items: [
-        for (final item in state.items)
-          if (item.itemId == itemId)
-            item.copyWith(quantity: qty.clamp(1, 999))
-          else
-            item,
-      ],
-    );
-  }
-
+  /// Lines without a bin are picked from Pick From.
   void setItems(List<OrderItem> items) {
+    final bin = state.pickFrom;
     state = state.copyWith(
-      items: items,
+      items: [
+        for (final item in items)
+          if (item.locationId == null && bin != null) item.copyWith(locationId: bin.id, locationCode: bin.name) else item,
+      ],
       errors: {...state.errors}..remove('items'),
     );
   }
 
   bool validateStep1() {
     final errors = <String, String>{};
-    if (state.customerName.trim().isEmpty) {
+    if (state.pickFrom == null) errors['pickFrom'] = 'Choose the bin to pick from';
+    final customer = state.customerName.trim();
+    if (customer.isEmpty) {
       errors['customerName'] = 'Customer name is required';
+    } else if (customer.length > 200) {
+      errors['customerName'] = 'Customer name must be at most 200 characters';
     }
-    if (state.orderDate == null) {
-      errors['orderDate'] = 'Order date is required';
-    }
+    if (state.orderDate == null) errors['orderDate'] = 'Order date is required';
     state = state.copyWith(errors: errors);
     return errors.isEmpty;
   }
@@ -167,29 +136,19 @@ class CreateSalesOrderNotifier extends Notifier<CreateSalesOrderState> {
     final repository = ref.read(ordersRepositoryProvider);
     state = state.copyWith(isSubmitting: true);
     try {
-      final now = DateTime.now();
-      final status = asDraft
-          ? OrderStatus.draft
-          : (state.requiresApproval
-              ? OrderStatus.pendingApproval
-              : OrderStatus.submitted);
-      final order = SalesOrder(
-        id: state.editingOrderId ?? 0,
-        orderNumber: '',
+      final status = asDraft ? OrderStatus.draft : (state.requiresApproval ? OrderStatus.pendingApproval : OrderStatus.submitted);
+      final saved = await repository.saveSalesOrder(SalesOrder(
+        id: state.editingOrderId ?? const Uuid().v4(),
+        orderNumber: state.editingOrderNumber ?? '',
         customerName: state.customerName.trim(),
-        orderDate: state.orderDate ?? now,
+        orderDate: state.orderDate ?? DateTime.now(),
         status: status,
         requiresApproval: state.requiresApproval,
         notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
-        createdBy: 'Hasan',
-        createdAt: now,
+        createdBy: '',
+        createdAt: DateTime.now(),
         items: state.items,
-        statusHistory: const [],
-      );
-      final saved = await repository.createSalesOrder(
-        order,
-        existingOrderId: state.editingOrderId,
-      );
+      ));
       ref.invalidate(salesOrdersProvider(true));
       ref.invalidate(salesOrdersProvider(false));
       ref.invalidate(salesOrderDetailProvider(saved.id));
@@ -200,8 +159,7 @@ class CreateSalesOrderNotifier extends Notifier<CreateSalesOrderState> {
   }
 }
 
-final createSalesOrderNotifierProvider =
-    NotifierProvider<CreateSalesOrderNotifier, CreateSalesOrderState>(
+final createSalesOrderNotifierProvider = NotifierProvider<CreateSalesOrderNotifier, CreateSalesOrderState>(
   CreateSalesOrderNotifier.new,
 );
 
