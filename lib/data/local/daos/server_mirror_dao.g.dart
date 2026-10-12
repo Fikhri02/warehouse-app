@@ -13,4 +13,7 @@ mixin _$ServerMirrorDaoMixin on DatabaseAccessor<AppDatabase> {
   $RemoteCountLinesTable get remoteCountLines =>
       attachedDatabase.remoteCountLines;
   $SyncCursorsTable get syncCursors => attachedDatabase.syncCursors;
+  $RemotePurchaseOrdersTable get remotePurchaseOrders =>
+      attachedDatabase.remotePurchaseOrders;
+  $RemotePoLinesTable get remotePoLines => attachedDatabase.remotePoLines;
 }

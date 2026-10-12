@@ -59,7 +59,7 @@ void main() {
           'submittedAt': '2026-10-11T00:12:00Z', 'reviewedByUserId': null, 'reviewedAt': null, 'rejectReason': null,
           'lines': [{'id': 'l1', 'itemId': item, 'locationId': bin, 'counted': 8, 'systemAtSubmit': 10, 'adjustment': null}],
         }),
-        change('purchaseOrder', 'po-1', 5, {'id': 'po-1'}), // stored from 3b on
+        change('purchaseOrder', 'po-1', 5, {'id': 'po-1', 'warehouseId': w, 'number': 'PO-1', 'supplier': 'S', 'expectedDate': null, 'status': 'Open', 'lines': []}),
       ], next: 5),
     ]);
 
@@ -141,5 +141,35 @@ void main() {
 
     expect(await db.serverMirrorDao.locationsFor(w), isEmpty);
     expect(await db.serverMirrorDao.cursorFor(w), 0);
+  });
+
+  test('purchase orders arrive with their lines, and closed ones are left out', () async {
+    await (await pullerServing([
+      page([
+        change('purchaseOrder', 'po-1', 1, {
+          'id': 'po-1', 'warehouseId': w, 'number': 'PO-SA1-001', 'supplier': 'Gula Prai Trading', 'expectedDate': '2026-10-14', 'status': 'Partial',
+          'lines': [{'id': 'pl-1', 'lineNo': 1, 'itemId': item, 'ordered': 10, 'received': 4}],
+        }),
+        change('purchaseOrder', 'po-2', 2, {
+          'id': 'po-2', 'warehouseId': w, 'number': 'PO-SA1-002', 'supplier': 'Old', 'expectedDate': null, 'status': 'Closed', 'lines': [],
+        }),
+      ], next: 2),
+    ])).pull(w);
+
+    final orders = await db.serverMirrorDao.purchaseOrders(w);
+    expect(orders.map((o) => o.number), ['PO-SA1-001']);
+    expect(orders.single.expectedDate, DateTime(2026, 10, 14));
+    final line = (await db.serverMirrorDao.poLinesFor('po-1')).single;
+    expect((line.ordered, line.received), (10, 4));
+  });
+
+  test('a_phone_on_an_older_mirror_reads_the_feed_again_from_the_start', () async {
+    // What a 3a phone saved: cursor 40 under mirror version 1, which never stored purchase orders.
+    await db.customStatement("INSERT INTO sync_cursors (warehouse_id, cursor, mirror_version) VALUES ('$w', 40, 1)");
+
+    await (await pullerServing([page([], next: 40)])).pull(w);
+
+    expect(cursorsAsked, ['0']);
+    expect(await db.serverMirrorDao.cursorFor(w), 40); // saved again under the current version
   });
 }

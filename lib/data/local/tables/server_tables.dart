@@ -1,5 +1,9 @@
 import 'package:drift/drift.dart';
 
+/// Bump when the app starts storing a change-feed entity it used to skip. Every phone then reads its feed again from
+/// the start, so the rows it skipped before arrive. 1 = 3a (catalogue, locations, counts); 2 = 3b (+ purchase orders).
+const kMirrorVersion = 2;
+
 // Read-only copies of the server's data, filled from the change feed (spec §3). Row classes end in "Row" so
 // they never clash with the app's own models (CatalogItem in core/models/order.dart, Location, …).
 
@@ -71,6 +75,35 @@ class SyncCursors extends Table {
   TextColumn get warehouseId => text()();
   IntColumn get cursor => integer()();
 
+  /// The kMirrorVersion this cursor was saved under; an older one means "read again from the start".
+  IntColumn get mirrorVersion => integer().withDefault(const Constant(1))();
+
   @override
   Set<Column> get primaryKey => {warehouseId};
+}
+
+@DataClassName('RemotePurchaseOrderRow')
+class RemotePurchaseOrders extends Table {
+  TextColumn get id => text()();
+  TextColumn get warehouseId => text()();
+  TextColumn get number => text()();
+  TextColumn get supplier => text()();
+  DateTimeColumn get expectedDate => dateTime().nullable()();
+  TextColumn get status => text()(); // Open · Partial · Received · Closed
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('RemotePoLineRow')
+class RemotePoLines extends Table {
+  TextColumn get id => text()();
+  TextColumn get purchaseOrderId => text()();
+  IntColumn get lineNo => integer()();
+  TextColumn get itemId => text()();
+  RealColumn get ordered => real()();
+  RealColumn get received => real()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }

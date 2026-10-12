@@ -40,6 +40,8 @@ part 'app_database.g.dart';
     RemoteCountSessions,
     RemoteCountLines,
     SyncCursors,
+    RemotePurchaseOrders,
+    RemotePoLines,
   ],
   daos: [
     AlertsDao,
@@ -57,7 +59,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -108,6 +110,13 @@ class AppDatabase extends _$AppDatabase {
             // Rows the old service already marked done must not be sent again.
             await customStatement("UPDATE sync_queue SET status = 'synced' WHERE synced = 1");
           }
+          if (from < 7) {
+            await migrator.createTable(remotePurchaseOrders);
+            await migrator.createTable(remotePoLines);
+            // Existing cursors get mirror version 1, older than kMirrorVersion: the next pull starts from 0 and brings
+            // the purchase orders a 3a phone skipped.
+            await migrator.addColumn(syncCursors, syncCursors.mirrorVersion);
+          }
         },
       );
 
@@ -123,6 +132,8 @@ class AppDatabase extends _$AppDatabase {
           syncQueue,
           countItems,
           countSessions,
+          remotePurchaseOrders,
+          remotePoLines,
         ]) {
           await delete(table).go();
         }

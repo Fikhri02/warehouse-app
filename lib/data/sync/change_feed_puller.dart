@@ -90,9 +90,31 @@ class ChangeFeedPuller {
               ),
           ],
         );
+      case 'purchaseOrder':
+        if (data == null) return dao.deletePurchaseOrder(id);
+        return dao.upsertPurchaseOrder(
+          RemotePurchaseOrdersCompanion.insert(
+            id: id,
+            warehouseId: data['warehouseId'] as String,
+            number: data['number'] as String,
+            supplier: data['supplier'] as String,
+            expectedDate: Value(data['expectedDate'] == null ? null : DateTime.parse(data['expectedDate'] as String)),
+            status: data['status'] as String,
+          ),
+          [
+            for (final line in (data['lines'] as List).cast<Map<String, dynamic>>())
+              RemotePoLinesCompanion.insert(
+                id: line['id'] as String,
+                purchaseOrderId: id,
+                lineNo: (line['lineNo'] as num).toInt(),
+                itemId: line['itemId'] as String,
+                ordered: (line['ordered'] as num).toDouble(),
+                received: (line['received'] as num).toDouble(),
+              ),
+          ],
+        );
       default:
-        // Purchase orders, orders, tasks and alerts are stored from 3b. Its migration resets sync_cursors so they are
-        // pulled from the start.
+        // Orders, tasks and alerts come in 3c and 3d, each bumping kMirrorVersion so they are pulled from the start.
         return;
     }
   }

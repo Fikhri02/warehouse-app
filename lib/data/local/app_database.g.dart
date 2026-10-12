@@ -7202,8 +7202,16 @@ class $SyncCursorsTable extends SyncCursors
   late final GeneratedColumn<int> cursor = GeneratedColumn<int>(
       'cursor', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _mirrorVersionMeta =
+      const VerificationMeta('mirrorVersion');
   @override
-  List<GeneratedColumn> get $columns => [warehouseId, cursor];
+  late final GeneratedColumn<int> mirrorVersion = GeneratedColumn<int>(
+      'mirror_version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  @override
+  List<GeneratedColumn> get $columns => [warehouseId, cursor, mirrorVersion];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -7228,6 +7236,12 @@ class $SyncCursorsTable extends SyncCursors
     } else if (isInserting) {
       context.missing(_cursorMeta);
     }
+    if (data.containsKey('mirror_version')) {
+      context.handle(
+          _mirrorVersionMeta,
+          mirrorVersion.isAcceptableOrUnknown(
+              data['mirror_version']!, _mirrorVersionMeta));
+    }
     return context;
   }
 
@@ -7241,6 +7255,8 @@ class $SyncCursorsTable extends SyncCursors
           .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
       cursor: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}cursor'])!,
+      mirrorVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}mirror_version'])!,
     );
   }
 
@@ -7253,12 +7269,19 @@ class $SyncCursorsTable extends SyncCursors
 class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
   final String warehouseId;
   final int cursor;
-  const SyncCursorRow({required this.warehouseId, required this.cursor});
+
+  /// The kMirrorVersion this cursor was saved under; an older one means "read again from the start".
+  final int mirrorVersion;
+  const SyncCursorRow(
+      {required this.warehouseId,
+      required this.cursor,
+      required this.mirrorVersion});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['warehouse_id'] = Variable<String>(warehouseId);
     map['cursor'] = Variable<int>(cursor);
+    map['mirror_version'] = Variable<int>(mirrorVersion);
     return map;
   }
 
@@ -7266,6 +7289,7 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
     return SyncCursorsCompanion(
       warehouseId: Value(warehouseId),
       cursor: Value(cursor),
+      mirrorVersion: Value(mirrorVersion),
     );
   }
 
@@ -7275,6 +7299,7 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
     return SyncCursorRow(
       warehouseId: serializer.fromJson<String>(json['warehouseId']),
       cursor: serializer.fromJson<int>(json['cursor']),
+      mirrorVersion: serializer.fromJson<int>(json['mirrorVersion']),
     );
   }
   @override
@@ -7283,18 +7308,25 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
     return <String, dynamic>{
       'warehouseId': serializer.toJson<String>(warehouseId),
       'cursor': serializer.toJson<int>(cursor),
+      'mirrorVersion': serializer.toJson<int>(mirrorVersion),
     };
   }
 
-  SyncCursorRow copyWith({String? warehouseId, int? cursor}) => SyncCursorRow(
+  SyncCursorRow copyWith(
+          {String? warehouseId, int? cursor, int? mirrorVersion}) =>
+      SyncCursorRow(
         warehouseId: warehouseId ?? this.warehouseId,
         cursor: cursor ?? this.cursor,
+        mirrorVersion: mirrorVersion ?? this.mirrorVersion,
       );
   SyncCursorRow copyWithCompanion(SyncCursorsCompanion data) {
     return SyncCursorRow(
       warehouseId:
           data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
       cursor: data.cursor.present ? data.cursor.value : this.cursor,
+      mirrorVersion: data.mirrorVersion.present
+          ? data.mirrorVersion.value
+          : this.mirrorVersion,
     );
   }
 
@@ -7302,53 +7334,64 @@ class SyncCursorRow extends DataClass implements Insertable<SyncCursorRow> {
   String toString() {
     return (StringBuffer('SyncCursorRow(')
           ..write('warehouseId: $warehouseId, ')
-          ..write('cursor: $cursor')
+          ..write('cursor: $cursor, ')
+          ..write('mirrorVersion: $mirrorVersion')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(warehouseId, cursor);
+  int get hashCode => Object.hash(warehouseId, cursor, mirrorVersion);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SyncCursorRow &&
           other.warehouseId == this.warehouseId &&
-          other.cursor == this.cursor);
+          other.cursor == this.cursor &&
+          other.mirrorVersion == this.mirrorVersion);
 }
 
 class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
   final Value<String> warehouseId;
   final Value<int> cursor;
+  final Value<int> mirrorVersion;
   final Value<int> rowid;
   const SyncCursorsCompanion({
     this.warehouseId = const Value.absent(),
     this.cursor = const Value.absent(),
+    this.mirrorVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncCursorsCompanion.insert({
     required String warehouseId,
     required int cursor,
+    this.mirrorVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : warehouseId = Value(warehouseId),
         cursor = Value(cursor);
   static Insertable<SyncCursorRow> custom({
     Expression<String>? warehouseId,
     Expression<int>? cursor,
+    Expression<int>? mirrorVersion,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (warehouseId != null) 'warehouse_id': warehouseId,
       if (cursor != null) 'cursor': cursor,
+      if (mirrorVersion != null) 'mirror_version': mirrorVersion,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   SyncCursorsCompanion copyWith(
-      {Value<String>? warehouseId, Value<int>? cursor, Value<int>? rowid}) {
+      {Value<String>? warehouseId,
+      Value<int>? cursor,
+      Value<int>? mirrorVersion,
+      Value<int>? rowid}) {
     return SyncCursorsCompanion(
       warehouseId: warehouseId ?? this.warehouseId,
       cursor: cursor ?? this.cursor,
+      mirrorVersion: mirrorVersion ?? this.mirrorVersion,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7362,6 +7405,9 @@ class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
     if (cursor.present) {
       map['cursor'] = Variable<int>(cursor.value);
     }
+    if (mirrorVersion.present) {
+      map['mirror_version'] = Variable<int>(mirrorVersion.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7373,6 +7419,713 @@ class SyncCursorsCompanion extends UpdateCompanion<SyncCursorRow> {
     return (StringBuffer('SyncCursorsCompanion(')
           ..write('warehouseId: $warehouseId, ')
           ..write('cursor: $cursor, ')
+          ..write('mirrorVersion: $mirrorVersion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemotePurchaseOrdersTable extends RemotePurchaseOrders
+    with TableInfo<$RemotePurchaseOrdersTable, RemotePurchaseOrderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemotePurchaseOrdersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+      'number', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _supplierMeta =
+      const VerificationMeta('supplier');
+  @override
+  late final GeneratedColumn<String> supplier = GeneratedColumn<String>(
+      'supplier', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _expectedDateMeta =
+      const VerificationMeta('expectedDate');
+  @override
+  late final GeneratedColumn<DateTime> expectedDate = GeneratedColumn<DateTime>(
+      'expected_date', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, warehouseId, number, supplier, expectedDate, status];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_purchase_orders';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<RemotePurchaseOrderRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(_numberMeta,
+          number.isAcceptableOrUnknown(data['number']!, _numberMeta));
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('supplier')) {
+      context.handle(_supplierMeta,
+          supplier.isAcceptableOrUnknown(data['supplier']!, _supplierMeta));
+    } else if (isInserting) {
+      context.missing(_supplierMeta);
+    }
+    if (data.containsKey('expected_date')) {
+      context.handle(
+          _expectedDateMeta,
+          expectedDate.isAcceptableOrUnknown(
+              data['expected_date']!, _expectedDateMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemotePurchaseOrderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemotePurchaseOrderRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      number: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}number'])!,
+      supplier: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supplier'])!,
+      expectedDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}expected_date']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+    );
+  }
+
+  @override
+  $RemotePurchaseOrdersTable createAlias(String alias) {
+    return $RemotePurchaseOrdersTable(attachedDatabase, alias);
+  }
+}
+
+class RemotePurchaseOrderRow extends DataClass
+    implements Insertable<RemotePurchaseOrderRow> {
+  final String id;
+  final String warehouseId;
+  final String number;
+  final String supplier;
+  final DateTime? expectedDate;
+  final String status;
+  const RemotePurchaseOrderRow(
+      {required this.id,
+      required this.warehouseId,
+      required this.number,
+      required this.supplier,
+      this.expectedDate,
+      required this.status});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['number'] = Variable<String>(number);
+    map['supplier'] = Variable<String>(supplier);
+    if (!nullToAbsent || expectedDate != null) {
+      map['expected_date'] = Variable<DateTime>(expectedDate);
+    }
+    map['status'] = Variable<String>(status);
+    return map;
+  }
+
+  RemotePurchaseOrdersCompanion toCompanion(bool nullToAbsent) {
+    return RemotePurchaseOrdersCompanion(
+      id: Value(id),
+      warehouseId: Value(warehouseId),
+      number: Value(number),
+      supplier: Value(supplier),
+      expectedDate: expectedDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedDate),
+      status: Value(status),
+    );
+  }
+
+  factory RemotePurchaseOrderRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemotePurchaseOrderRow(
+      id: serializer.fromJson<String>(json['id']),
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      number: serializer.fromJson<String>(json['number']),
+      supplier: serializer.fromJson<String>(json['supplier']),
+      expectedDate: serializer.fromJson<DateTime?>(json['expectedDate']),
+      status: serializer.fromJson<String>(json['status']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'number': serializer.toJson<String>(number),
+      'supplier': serializer.toJson<String>(supplier),
+      'expectedDate': serializer.toJson<DateTime?>(expectedDate),
+      'status': serializer.toJson<String>(status),
+    };
+  }
+
+  RemotePurchaseOrderRow copyWith(
+          {String? id,
+          String? warehouseId,
+          String? number,
+          String? supplier,
+          Value<DateTime?> expectedDate = const Value.absent(),
+          String? status}) =>
+      RemotePurchaseOrderRow(
+        id: id ?? this.id,
+        warehouseId: warehouseId ?? this.warehouseId,
+        number: number ?? this.number,
+        supplier: supplier ?? this.supplier,
+        expectedDate:
+            expectedDate.present ? expectedDate.value : this.expectedDate,
+        status: status ?? this.status,
+      );
+  RemotePurchaseOrderRow copyWithCompanion(RemotePurchaseOrdersCompanion data) {
+    return RemotePurchaseOrderRow(
+      id: data.id.present ? data.id.value : this.id,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      number: data.number.present ? data.number.value : this.number,
+      supplier: data.supplier.present ? data.supplier.value : this.supplier,
+      expectedDate: data.expectedDate.present
+          ? data.expectedDate.value
+          : this.expectedDate,
+      status: data.status.present ? data.status.value : this.status,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemotePurchaseOrderRow(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('number: $number, ')
+          ..write('supplier: $supplier, ')
+          ..write('expectedDate: $expectedDate, ')
+          ..write('status: $status')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, warehouseId, number, supplier, expectedDate, status);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemotePurchaseOrderRow &&
+          other.id == this.id &&
+          other.warehouseId == this.warehouseId &&
+          other.number == this.number &&
+          other.supplier == this.supplier &&
+          other.expectedDate == this.expectedDate &&
+          other.status == this.status);
+}
+
+class RemotePurchaseOrdersCompanion
+    extends UpdateCompanion<RemotePurchaseOrderRow> {
+  final Value<String> id;
+  final Value<String> warehouseId;
+  final Value<String> number;
+  final Value<String> supplier;
+  final Value<DateTime?> expectedDate;
+  final Value<String> status;
+  final Value<int> rowid;
+  const RemotePurchaseOrdersCompanion({
+    this.id = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.number = const Value.absent(),
+    this.supplier = const Value.absent(),
+    this.expectedDate = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemotePurchaseOrdersCompanion.insert({
+    required String id,
+    required String warehouseId,
+    required String number,
+    required String supplier,
+    this.expectedDate = const Value.absent(),
+    required String status,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        warehouseId = Value(warehouseId),
+        number = Value(number),
+        supplier = Value(supplier),
+        status = Value(status);
+  static Insertable<RemotePurchaseOrderRow> custom({
+    Expression<String>? id,
+    Expression<String>? warehouseId,
+    Expression<String>? number,
+    Expression<String>? supplier,
+    Expression<DateTime>? expectedDate,
+    Expression<String>? status,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (number != null) 'number': number,
+      if (supplier != null) 'supplier': supplier,
+      if (expectedDate != null) 'expected_date': expectedDate,
+      if (status != null) 'status': status,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemotePurchaseOrdersCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? warehouseId,
+      Value<String>? number,
+      Value<String>? supplier,
+      Value<DateTime?>? expectedDate,
+      Value<String>? status,
+      Value<int>? rowid}) {
+    return RemotePurchaseOrdersCompanion(
+      id: id ?? this.id,
+      warehouseId: warehouseId ?? this.warehouseId,
+      number: number ?? this.number,
+      supplier: supplier ?? this.supplier,
+      expectedDate: expectedDate ?? this.expectedDate,
+      status: status ?? this.status,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (supplier.present) {
+      map['supplier'] = Variable<String>(supplier.value);
+    }
+    if (expectedDate.present) {
+      map['expected_date'] = Variable<DateTime>(expectedDate.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemotePurchaseOrdersCompanion(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('number: $number, ')
+          ..write('supplier: $supplier, ')
+          ..write('expectedDate: $expectedDate, ')
+          ..write('status: $status, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemotePoLinesTable extends RemotePoLines
+    with TableInfo<$RemotePoLinesTable, RemotePoLineRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemotePoLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _purchaseOrderIdMeta =
+      const VerificationMeta('purchaseOrderId');
+  @override
+  late final GeneratedColumn<String> purchaseOrderId = GeneratedColumn<String>(
+      'purchase_order_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _lineNoMeta = const VerificationMeta('lineNo');
+  @override
+  late final GeneratedColumn<int> lineNo = GeneratedColumn<int>(
+      'line_no', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+      'item_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _orderedMeta =
+      const VerificationMeta('ordered');
+  @override
+  late final GeneratedColumn<double> ordered = GeneratedColumn<double>(
+      'ordered', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _receivedMeta =
+      const VerificationMeta('received');
+  @override
+  late final GeneratedColumn<double> received = GeneratedColumn<double>(
+      'received', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, purchaseOrderId, lineNo, itemId, ordered, received];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_po_lines';
+  @override
+  VerificationContext validateIntegrity(Insertable<RemotePoLineRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('purchase_order_id')) {
+      context.handle(
+          _purchaseOrderIdMeta,
+          purchaseOrderId.isAcceptableOrUnknown(
+              data['purchase_order_id']!, _purchaseOrderIdMeta));
+    } else if (isInserting) {
+      context.missing(_purchaseOrderIdMeta);
+    }
+    if (data.containsKey('line_no')) {
+      context.handle(_lineNoMeta,
+          lineNo.isAcceptableOrUnknown(data['line_no']!, _lineNoMeta));
+    } else if (isInserting) {
+      context.missing(_lineNoMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('ordered')) {
+      context.handle(_orderedMeta,
+          ordered.isAcceptableOrUnknown(data['ordered']!, _orderedMeta));
+    } else if (isInserting) {
+      context.missing(_orderedMeta);
+    }
+    if (data.containsKey('received')) {
+      context.handle(_receivedMeta,
+          received.isAcceptableOrUnknown(data['received']!, _receivedMeta));
+    } else if (isInserting) {
+      context.missing(_receivedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemotePoLineRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemotePoLineRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      purchaseOrderId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}purchase_order_id'])!,
+      lineNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}line_no'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}item_id'])!,
+      ordered: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}ordered'])!,
+      received: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}received'])!,
+    );
+  }
+
+  @override
+  $RemotePoLinesTable createAlias(String alias) {
+    return $RemotePoLinesTable(attachedDatabase, alias);
+  }
+}
+
+class RemotePoLineRow extends DataClass implements Insertable<RemotePoLineRow> {
+  final String id;
+  final String purchaseOrderId;
+  final int lineNo;
+  final String itemId;
+  final double ordered;
+  final double received;
+  const RemotePoLineRow(
+      {required this.id,
+      required this.purchaseOrderId,
+      required this.lineNo,
+      required this.itemId,
+      required this.ordered,
+      required this.received});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['purchase_order_id'] = Variable<String>(purchaseOrderId);
+    map['line_no'] = Variable<int>(lineNo);
+    map['item_id'] = Variable<String>(itemId);
+    map['ordered'] = Variable<double>(ordered);
+    map['received'] = Variable<double>(received);
+    return map;
+  }
+
+  RemotePoLinesCompanion toCompanion(bool nullToAbsent) {
+    return RemotePoLinesCompanion(
+      id: Value(id),
+      purchaseOrderId: Value(purchaseOrderId),
+      lineNo: Value(lineNo),
+      itemId: Value(itemId),
+      ordered: Value(ordered),
+      received: Value(received),
+    );
+  }
+
+  factory RemotePoLineRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemotePoLineRow(
+      id: serializer.fromJson<String>(json['id']),
+      purchaseOrderId: serializer.fromJson<String>(json['purchaseOrderId']),
+      lineNo: serializer.fromJson<int>(json['lineNo']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      ordered: serializer.fromJson<double>(json['ordered']),
+      received: serializer.fromJson<double>(json['received']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'purchaseOrderId': serializer.toJson<String>(purchaseOrderId),
+      'lineNo': serializer.toJson<int>(lineNo),
+      'itemId': serializer.toJson<String>(itemId),
+      'ordered': serializer.toJson<double>(ordered),
+      'received': serializer.toJson<double>(received),
+    };
+  }
+
+  RemotePoLineRow copyWith(
+          {String? id,
+          String? purchaseOrderId,
+          int? lineNo,
+          String? itemId,
+          double? ordered,
+          double? received}) =>
+      RemotePoLineRow(
+        id: id ?? this.id,
+        purchaseOrderId: purchaseOrderId ?? this.purchaseOrderId,
+        lineNo: lineNo ?? this.lineNo,
+        itemId: itemId ?? this.itemId,
+        ordered: ordered ?? this.ordered,
+        received: received ?? this.received,
+      );
+  RemotePoLineRow copyWithCompanion(RemotePoLinesCompanion data) {
+    return RemotePoLineRow(
+      id: data.id.present ? data.id.value : this.id,
+      purchaseOrderId: data.purchaseOrderId.present
+          ? data.purchaseOrderId.value
+          : this.purchaseOrderId,
+      lineNo: data.lineNo.present ? data.lineNo.value : this.lineNo,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      ordered: data.ordered.present ? data.ordered.value : this.ordered,
+      received: data.received.present ? data.received.value : this.received,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemotePoLineRow(')
+          ..write('id: $id, ')
+          ..write('purchaseOrderId: $purchaseOrderId, ')
+          ..write('lineNo: $lineNo, ')
+          ..write('itemId: $itemId, ')
+          ..write('ordered: $ordered, ')
+          ..write('received: $received')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, purchaseOrderId, lineNo, itemId, ordered, received);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemotePoLineRow &&
+          other.id == this.id &&
+          other.purchaseOrderId == this.purchaseOrderId &&
+          other.lineNo == this.lineNo &&
+          other.itemId == this.itemId &&
+          other.ordered == this.ordered &&
+          other.received == this.received);
+}
+
+class RemotePoLinesCompanion extends UpdateCompanion<RemotePoLineRow> {
+  final Value<String> id;
+  final Value<String> purchaseOrderId;
+  final Value<int> lineNo;
+  final Value<String> itemId;
+  final Value<double> ordered;
+  final Value<double> received;
+  final Value<int> rowid;
+  const RemotePoLinesCompanion({
+    this.id = const Value.absent(),
+    this.purchaseOrderId = const Value.absent(),
+    this.lineNo = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.ordered = const Value.absent(),
+    this.received = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemotePoLinesCompanion.insert({
+    required String id,
+    required String purchaseOrderId,
+    required int lineNo,
+    required String itemId,
+    required double ordered,
+    required double received,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        purchaseOrderId = Value(purchaseOrderId),
+        lineNo = Value(lineNo),
+        itemId = Value(itemId),
+        ordered = Value(ordered),
+        received = Value(received);
+  static Insertable<RemotePoLineRow> custom({
+    Expression<String>? id,
+    Expression<String>? purchaseOrderId,
+    Expression<int>? lineNo,
+    Expression<String>? itemId,
+    Expression<double>? ordered,
+    Expression<double>? received,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (purchaseOrderId != null) 'purchase_order_id': purchaseOrderId,
+      if (lineNo != null) 'line_no': lineNo,
+      if (itemId != null) 'item_id': itemId,
+      if (ordered != null) 'ordered': ordered,
+      if (received != null) 'received': received,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemotePoLinesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? purchaseOrderId,
+      Value<int>? lineNo,
+      Value<String>? itemId,
+      Value<double>? ordered,
+      Value<double>? received,
+      Value<int>? rowid}) {
+    return RemotePoLinesCompanion(
+      id: id ?? this.id,
+      purchaseOrderId: purchaseOrderId ?? this.purchaseOrderId,
+      lineNo: lineNo ?? this.lineNo,
+      itemId: itemId ?? this.itemId,
+      ordered: ordered ?? this.ordered,
+      received: received ?? this.received,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (purchaseOrderId.present) {
+      map['purchase_order_id'] = Variable<String>(purchaseOrderId.value);
+    }
+    if (lineNo.present) {
+      map['line_no'] = Variable<int>(lineNo.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (ordered.present) {
+      map['ordered'] = Variable<double>(ordered.value);
+    }
+    if (received.present) {
+      map['received'] = Variable<double>(received.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemotePoLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('purchaseOrderId: $purchaseOrderId, ')
+          ..write('lineNo: $lineNo, ')
+          ..write('itemId: $itemId, ')
+          ..write('ordered: $ordered, ')
+          ..write('received: $received, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7410,6 +8163,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RemoteCountLinesTable remoteCountLines =
       $RemoteCountLinesTable(this);
   late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
+  late final $RemotePurchaseOrdersTable remotePurchaseOrders =
+      $RemotePurchaseOrdersTable(this);
+  late final $RemotePoLinesTable remotePoLines = $RemotePoLinesTable(this);
   late final AlertsDao alertsDao = AlertsDao(this as AppDatabase);
   late final TasksDao tasksDao = TasksDao(this as AppDatabase);
   late final CountSessionDao countSessionDao =
@@ -7442,7 +8198,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         warehouseLocations,
         remoteCountSessions,
         remoteCountLines,
-        syncCursors
+        syncCursors,
+        remotePurchaseOrders,
+        remotePoLines
       ];
 }
 
@@ -11145,12 +11903,14 @@ typedef $$SyncCursorsTableCreateCompanionBuilder = SyncCursorsCompanion
     Function({
   required String warehouseId,
   required int cursor,
+  Value<int> mirrorVersion,
   Value<int> rowid,
 });
 typedef $$SyncCursorsTableUpdateCompanionBuilder = SyncCursorsCompanion
     Function({
   Value<String> warehouseId,
   Value<int> cursor,
+  Value<int> mirrorVersion,
   Value<int> rowid,
 });
 
@@ -11168,6 +11928,9 @@ class $$SyncCursorsTableFilterComposer
 
   ColumnFilters<int> get cursor => $composableBuilder(
       column: $table.cursor, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get mirrorVersion => $composableBuilder(
+      column: $table.mirrorVersion, builder: (column) => ColumnFilters(column));
 }
 
 class $$SyncCursorsTableOrderingComposer
@@ -11184,6 +11947,10 @@ class $$SyncCursorsTableOrderingComposer
 
   ColumnOrderings<int> get cursor => $composableBuilder(
       column: $table.cursor, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get mirrorVersion => $composableBuilder(
+      column: $table.mirrorVersion,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$SyncCursorsTableAnnotationComposer
@@ -11200,6 +11967,9 @@ class $$SyncCursorsTableAnnotationComposer
 
   GeneratedColumn<int> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => column);
+
+  GeneratedColumn<int> get mirrorVersion => $composableBuilder(
+      column: $table.mirrorVersion, builder: (column) => column);
 }
 
 class $$SyncCursorsTableTableManager extends RootTableManager<
@@ -11230,21 +12000,25 @@ class $$SyncCursorsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<String> warehouseId = const Value.absent(),
             Value<int> cursor = const Value.absent(),
+            Value<int> mirrorVersion = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SyncCursorsCompanion(
             warehouseId: warehouseId,
             cursor: cursor,
+            mirrorVersion: mirrorVersion,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String warehouseId,
             required int cursor,
+            Value<int> mirrorVersion = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SyncCursorsCompanion.insert(
             warehouseId: warehouseId,
             cursor: cursor,
+            mirrorVersion: mirrorVersion,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -11268,6 +12042,391 @@ typedef $$SyncCursorsTableProcessedTableManager = ProcessedTableManager<
       BaseReferences<_$AppDatabase, $SyncCursorsTable, SyncCursorRow>
     ),
     SyncCursorRow,
+    PrefetchHooks Function()>;
+typedef $$RemotePurchaseOrdersTableCreateCompanionBuilder
+    = RemotePurchaseOrdersCompanion Function({
+  required String id,
+  required String warehouseId,
+  required String number,
+  required String supplier,
+  Value<DateTime?> expectedDate,
+  required String status,
+  Value<int> rowid,
+});
+typedef $$RemotePurchaseOrdersTableUpdateCompanionBuilder
+    = RemotePurchaseOrdersCompanion Function({
+  Value<String> id,
+  Value<String> warehouseId,
+  Value<String> number,
+  Value<String> supplier,
+  Value<DateTime?> expectedDate,
+  Value<String> status,
+  Value<int> rowid,
+});
+
+class $$RemotePurchaseOrdersTableFilterComposer
+    extends Composer<_$AppDatabase, $RemotePurchaseOrdersTable> {
+  $$RemotePurchaseOrdersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get number => $composableBuilder(
+      column: $table.number, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supplier => $composableBuilder(
+      column: $table.supplier, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get expectedDate => $composableBuilder(
+      column: $table.expectedDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemotePurchaseOrdersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemotePurchaseOrdersTable> {
+  $$RemotePurchaseOrdersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get number => $composableBuilder(
+      column: $table.number, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supplier => $composableBuilder(
+      column: $table.supplier, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get expectedDate => $composableBuilder(
+      column: $table.expectedDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemotePurchaseOrdersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemotePurchaseOrdersTable> {
+  $$RemotePurchaseOrdersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get supplier =>
+      $composableBuilder(column: $table.supplier, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expectedDate => $composableBuilder(
+      column: $table.expectedDate, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+}
+
+class $$RemotePurchaseOrdersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemotePurchaseOrdersTable,
+    RemotePurchaseOrderRow,
+    $$RemotePurchaseOrdersTableFilterComposer,
+    $$RemotePurchaseOrdersTableOrderingComposer,
+    $$RemotePurchaseOrdersTableAnnotationComposer,
+    $$RemotePurchaseOrdersTableCreateCompanionBuilder,
+    $$RemotePurchaseOrdersTableUpdateCompanionBuilder,
+    (
+      RemotePurchaseOrderRow,
+      BaseReferences<_$AppDatabase, $RemotePurchaseOrdersTable,
+          RemotePurchaseOrderRow>
+    ),
+    RemotePurchaseOrderRow,
+    PrefetchHooks Function()> {
+  $$RemotePurchaseOrdersTableTableManager(
+      _$AppDatabase db, $RemotePurchaseOrdersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemotePurchaseOrdersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemotePurchaseOrdersTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemotePurchaseOrdersTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> warehouseId = const Value.absent(),
+            Value<String> number = const Value.absent(),
+            Value<String> supplier = const Value.absent(),
+            Value<DateTime?> expectedDate = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemotePurchaseOrdersCompanion(
+            id: id,
+            warehouseId: warehouseId,
+            number: number,
+            supplier: supplier,
+            expectedDate: expectedDate,
+            status: status,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String warehouseId,
+            required String number,
+            required String supplier,
+            Value<DateTime?> expectedDate = const Value.absent(),
+            required String status,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemotePurchaseOrdersCompanion.insert(
+            id: id,
+            warehouseId: warehouseId,
+            number: number,
+            supplier: supplier,
+            expectedDate: expectedDate,
+            status: status,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemotePurchaseOrdersTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $RemotePurchaseOrdersTable,
+        RemotePurchaseOrderRow,
+        $$RemotePurchaseOrdersTableFilterComposer,
+        $$RemotePurchaseOrdersTableOrderingComposer,
+        $$RemotePurchaseOrdersTableAnnotationComposer,
+        $$RemotePurchaseOrdersTableCreateCompanionBuilder,
+        $$RemotePurchaseOrdersTableUpdateCompanionBuilder,
+        (
+          RemotePurchaseOrderRow,
+          BaseReferences<_$AppDatabase, $RemotePurchaseOrdersTable,
+              RemotePurchaseOrderRow>
+        ),
+        RemotePurchaseOrderRow,
+        PrefetchHooks Function()>;
+typedef $$RemotePoLinesTableCreateCompanionBuilder = RemotePoLinesCompanion
+    Function({
+  required String id,
+  required String purchaseOrderId,
+  required int lineNo,
+  required String itemId,
+  required double ordered,
+  required double received,
+  Value<int> rowid,
+});
+typedef $$RemotePoLinesTableUpdateCompanionBuilder = RemotePoLinesCompanion
+    Function({
+  Value<String> id,
+  Value<String> purchaseOrderId,
+  Value<int> lineNo,
+  Value<String> itemId,
+  Value<double> ordered,
+  Value<double> received,
+  Value<int> rowid,
+});
+
+class $$RemotePoLinesTableFilterComposer
+    extends Composer<_$AppDatabase, $RemotePoLinesTable> {
+  $$RemotePoLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get purchaseOrderId => $composableBuilder(
+      column: $table.purchaseOrderId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lineNo => $composableBuilder(
+      column: $table.lineNo, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get ordered => $composableBuilder(
+      column: $table.ordered, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get received => $composableBuilder(
+      column: $table.received, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemotePoLinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemotePoLinesTable> {
+  $$RemotePoLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get purchaseOrderId => $composableBuilder(
+      column: $table.purchaseOrderId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lineNo => $composableBuilder(
+      column: $table.lineNo, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get ordered => $composableBuilder(
+      column: $table.ordered, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get received => $composableBuilder(
+      column: $table.received, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemotePoLinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemotePoLinesTable> {
+  $$RemotePoLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get purchaseOrderId => $composableBuilder(
+      column: $table.purchaseOrderId, builder: (column) => column);
+
+  GeneratedColumn<int> get lineNo =>
+      $composableBuilder(column: $table.lineNo, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<double> get ordered =>
+      $composableBuilder(column: $table.ordered, builder: (column) => column);
+
+  GeneratedColumn<double> get received =>
+      $composableBuilder(column: $table.received, builder: (column) => column);
+}
+
+class $$RemotePoLinesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemotePoLinesTable,
+    RemotePoLineRow,
+    $$RemotePoLinesTableFilterComposer,
+    $$RemotePoLinesTableOrderingComposer,
+    $$RemotePoLinesTableAnnotationComposer,
+    $$RemotePoLinesTableCreateCompanionBuilder,
+    $$RemotePoLinesTableUpdateCompanionBuilder,
+    (
+      RemotePoLineRow,
+      BaseReferences<_$AppDatabase, $RemotePoLinesTable, RemotePoLineRow>
+    ),
+    RemotePoLineRow,
+    PrefetchHooks Function()> {
+  $$RemotePoLinesTableTableManager(_$AppDatabase db, $RemotePoLinesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemotePoLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemotePoLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemotePoLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> purchaseOrderId = const Value.absent(),
+            Value<int> lineNo = const Value.absent(),
+            Value<String> itemId = const Value.absent(),
+            Value<double> ordered = const Value.absent(),
+            Value<double> received = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemotePoLinesCompanion(
+            id: id,
+            purchaseOrderId: purchaseOrderId,
+            lineNo: lineNo,
+            itemId: itemId,
+            ordered: ordered,
+            received: received,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String purchaseOrderId,
+            required int lineNo,
+            required String itemId,
+            required double ordered,
+            required double received,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemotePoLinesCompanion.insert(
+            id: id,
+            purchaseOrderId: purchaseOrderId,
+            lineNo: lineNo,
+            itemId: itemId,
+            ordered: ordered,
+            received: received,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemotePoLinesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemotePoLinesTable,
+    RemotePoLineRow,
+    $$RemotePoLinesTableFilterComposer,
+    $$RemotePoLinesTableOrderingComposer,
+    $$RemotePoLinesTableAnnotationComposer,
+    $$RemotePoLinesTableCreateCompanionBuilder,
+    $$RemotePoLinesTableUpdateCompanionBuilder,
+    (
+      RemotePoLineRow,
+      BaseReferences<_$AppDatabase, $RemotePoLinesTable, RemotePoLineRow>
+    ),
+    RemotePoLineRow,
     PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
@@ -11312,4 +12471,8 @@ class $AppDatabaseManager {
       $$RemoteCountLinesTableTableManager(_db, _db.remoteCountLines);
   $$SyncCursorsTableTableManager get syncCursors =>
       $$SyncCursorsTableTableManager(_db, _db.syncCursors);
+  $$RemotePurchaseOrdersTableTableManager get remotePurchaseOrders =>
+      $$RemotePurchaseOrdersTableTableManager(_db, _db.remotePurchaseOrders);
+  $$RemotePoLinesTableTableManager get remotePoLines =>
+      $$RemotePoLinesTableTableManager(_db, _db.remotePoLines);
 }

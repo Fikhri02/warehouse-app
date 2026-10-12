@@ -89,7 +89,10 @@ void main() {
     expect(queued.operationType, SyncOps.countSubmit);
     expect(queued.referenceId, session.id);
     expect(queued.warehouseId, w);
-    expect(jsonDecode(queued.payload), {
+    final payload = jsonDecode(queued.payload) as Map<String, dynamic>;
+    final countedAt = DateTime.parse(payload.remove('countedAt') as String);
+    expect(DateTime.now().difference(countedAt).inMinutes, 0); // stamped when the count was finished
+    expect(payload, {
       'label': 'A-01-01', // no label given: the location names it for the reviewer
       'lines': [{'itemId': beras, 'locationId': bin, 'counted': 8}],
     });

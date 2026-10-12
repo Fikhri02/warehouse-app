@@ -83,6 +83,7 @@ class ApiStockCountRepository implements StockCountRepository {
       referenceId: _guid.hasMatch(session.id) ? session.id : const Uuid().v4(),
       warehouseId: warehouseId,
       payload: jsonEncode({
+        'countedAt': DateTime.now().toUtc().toIso8601String(), // finished now; it may reach the server much later
         'label': label == null || label.isEmpty ? session.location : label,
         'lines': [
           for (final entry in totals.entries) {'itemId': entry.key, 'locationId': locationId, 'counted': entry.value},
