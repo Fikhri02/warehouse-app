@@ -8,6 +8,46 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../providers/receiving_provider.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/models/count_records.dart';
+import '../../../core/providers/connectivity_provider.dart';
+import '../../../data/repositories/receiving_repository.dart';
+
+/// Where this receipt's goods are put away (server mode). Null: the default below.
+final putAwayLocationProvider = StateProvider.autoDispose<String?>((_) => null);
+
+/// Goods usually land at a dock first; without one, the first location.
+String? defaultPutAway(List<CountLocation> locations) {
+  for (final l in locations) {
+    if (l.kind == 'Dock') return l.id;
+  }
+  return locations.isEmpty ? null : locations.first.id;
+}
+
+class _PutAwayPicker extends ConsumerWidget {
+  const _PutAwayPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locations = ref.watch(putAwayLocationsProvider).valueOrNull ?? const <CountLocation>[];
+    if (locations.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(8),
+        child: Text('No locations on this phone yet. Pull down on the orders list to refresh.'),
+      );
+    }
+    final chosen = ref.watch(putAwayLocationProvider) ?? defaultPutAway(locations);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 6, 2, 6),
+      child: DropdownButtonFormField<String>(
+        initialValue: chosen,
+        decoration: const InputDecoration(labelText: 'Put away in'),
+        items: [for (final l in locations) DropdownMenuItem(value: l.id, child: Text('${l.code} · ${l.kind}'))],
+        onChanged: (value) => ref.read(putAwayLocationProvider.notifier).state = value,
+      ),
+    );
+  }
+}
 
 class ReceiveSummaryScreen extends ConsumerWidget {
   const ReceiveSummaryScreen({super.key});
@@ -45,23 +85,31 @@ class ReceiveSummaryScreen extends ConsumerWidget {
     }
 
     Future<void> onSignAndSubmit() async {
+      final useApi = ref.read(useApiProvider);
+      final locationId = useApi
+          ? ref.read(putAwayLocationProvider) ?? defaultPutAway(ref.read(putAwayLocationsProvider).valueOrNull ?? const [])
+          : null;
+      if (useApi && locationId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose where the goods are put away.')));
+        return;
+      }
       try {
-        final bytes =
-            await context.push<Uint8List?>(AppRoutes.receivingSignature);
+        final bytes = await context.push<Uint8List?>(AppRoutes.receivingSignature);
         if (!context.mounted) return;
-        await ref.read(activeReceiveNotifierProvider.notifier).submitReceive(
-              signature: bytes,
-            );
-        if (context.mounted) {
-          context.go(AppRoutes.receiving);
+        await ref.read(activeReceiveNotifierProvider.notifier).submitReceive(signature: bytes, locationId: locationId);
+        if (!context.mounted) return;
+        if (useApi) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(ref.read(isOnlineProvider) ? 'Receipt sent.' : "Receipt saved. It will be sent when you're back online."),
+          ));
         }
+        context.go(AppRoutes.receiving);
+      } on StateError catch (error) {
+        // Something the person can fix: more than is left, nothing new, no location.
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
       } catch (error) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to submit — please try again'),
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to submit — please try again')));
         }
         debugPrint('submitReceive failed: $error');
       }
@@ -104,6 +152,7 @@ class ReceiveSummaryScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (ref.watch(useApiProvider)) const _PutAwayPicker(),
                   _ItemsTable(order: order),
                 ],
               ),
@@ -164,7 +213,7 @@ class _PoInfoCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    order.id,
+                    order.displayNumber,
                     style: AppTextStyles.body.copyWith(
                       fontWeight: FontWeight.w700,
                       color: Colors.white,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/haptics.dart';
 import '../../../core/models/purchase_order.dart';
 import '../../../core/router/app_routes.dart';
@@ -55,6 +56,20 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
   }
 
   Future<void> _showUnknownItemDialog(String barcode) async {
+    if (ref.read(useApiProvider)) {
+      // The server only takes lines of the order: there is nothing to add an unknown item to.
+      final number = ref.read(activeReceiveNotifierProvider)?.displayNumber ?? 'this order';
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Not on This Order'),
+          content: Text("$barcode isn't on $number. Only items on the order can be received against it."),
+          actions: [FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+        ),
+      );
+      _processingBarcode = false;
+      return;
+    }
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -157,11 +172,15 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
       context: context,
       builder: (context) => const _ManualEntryDialog(),
     );
-    if (result == null) return;
+    if (result == null || !mounted) return;
 
     final found =
         ref.read(activeReceiveNotifierProvider.notifier).scanItem(result.code);
     if (!found) {
+      if (ref.read(useApiProvider)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That item is not on this order.')));
+        return;
+      }
       ref.read(activeReceiveNotifierProvider.notifier).addUnknownItem(
             itemCode: result.code,
             itemName: result.code,
@@ -177,6 +196,22 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
   }
 
   Future<void> _onProceed(PurchaseOrder order) async {
+    if (ref.read(useApiProvider) && order.extraItems.isNotEmpty) {
+      // The server refuses a receipt that takes a line past what was ordered.
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('More Than Ordered'),
+          content: Text([
+            for (final item in order.extraItems) '${item.itemName}: ordered ${item.expected}, receiving ${item.received}',
+            '',
+            'Reduce these to what was ordered. Extra goods need a new purchase order.',
+          ].join('\n')),
+          actions: [FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+        ),
+      );
+      return;
+    }
     final short = order.shortItems;
     final extra = order.extraItems;
 
@@ -239,7 +274,7 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              order.id,
+              order.displayNumber,
               style: AppTextStyles.body.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -368,7 +403,7 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
                                 return _ItemRow(
                                   index: index + 1,
                                   item: item,
-                                  onFlag: () => _showFlagDialog(item),
+                                  onFlag: ref.read(useApiProvider) ? null : () => _showFlagDialog(item),
                                 );
                               },
                             ),
@@ -507,7 +542,7 @@ class _TableHeader extends StatelessWidget {
 class _ItemRow extends StatelessWidget {
   final int index;
   final PoLineItem item;
-  final VoidCallback onFlag;
+  final VoidCallback? onFlag;
 
   const _ItemRow({
     required this.index,
@@ -613,7 +648,7 @@ class _ItemRow extends StatelessWidget {
           ),
           SizedBox(
             width: 20,
-            child: IconButton(
+            child: onFlag == null ? null : IconButton(
               padding: EdgeInsets.zero,
               icon: Icon(
                 Icons.flag_outlined,

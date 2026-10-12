@@ -57,7 +57,7 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
                 : orders
                     .where(
                       (order) =>
-                          order.id
+                          order.displayNumber
                               .toLowerCase()
                               .contains(_search.toLowerCase()) ||
                           order.supplier
@@ -270,7 +270,7 @@ class _PoCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      order.id,
+                      order.displayNumber,
                       style: AppTextStyles.body.copyWith(
                         fontWeight: FontWeight.w700,
                         color: Colors.white,

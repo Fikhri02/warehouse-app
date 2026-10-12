@@ -101,7 +101,7 @@ class _PoDetailsBodyState extends State<_PoDetailsBody> {
           children: [
             const Text('PO Details'),
             Text(
-              order.id,
+              order.displayNumber,
               style: AppTextStyles.caption.copyWith(color: Colors.white70),
             ),
           ],
@@ -128,7 +128,7 @@ class _PoDetailsBodyState extends State<_PoDetailsBody> {
                       children: [
                         Expanded(
                           child: Text(
-                            order.id,
+                            order.displayNumber,
                             style: AppTextStyles.body.copyWith(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
