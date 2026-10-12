@@ -31,6 +31,15 @@ class SyncService {
         continue;
       }
       await dao.recordAttempt(item.id);
+      if (item.operationType == SyncOps.receiptSignature) {
+        // A signature belongs to a receipt. If the server refused the receipt, sending the signature would only fail
+        // with "receipt not found"; say why instead.
+        final receipt = await dao.commandFor(SyncOps.receiptCreate, item.referenceId);
+        if (receipt != null && (receipt.status == 'conflicted' || receipt.status == 'failed')) {
+          await dao.markFailed(item.id, const ApiException(status: 0, title: 'Signature not sent: its receipt was not accepted.'));
+          continue;
+        }
+      }
       try {
         await sender.send(item);
         await dao.markSynced(item.id);

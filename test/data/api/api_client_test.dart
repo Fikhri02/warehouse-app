@@ -155,4 +155,23 @@ void main() {
 
     await expectLater(client.get('/a'), throwsA(isA<ApiOfflineException>()));
   });
+
+  test('a_file_retried_after_a_401_keeps_its_key_and_bytes', () async {
+    final sent = <String>[];
+    final client = ApiClient(
+      baseUrl: testBaseUrl,
+      tokens: await signedInTokens(),
+      httpClient: MockClient((r) async {
+        if (r.url.path.endsWith('/auth/refresh')) return jsonResponse(tokensJson('access-2', 'refresh-2'));
+        expect(r.headers['content-type'], startsWith('multipart/form-data'));
+        sent.add('${r.method} ${r.headers['Idempotency-Key']} ${r.bodyBytes.length > 100 && utf8.decode(r.bodyBytes, allowMalformed: true).contains('PNG')}');
+        return r.headers['Authorization'] == 'Bearer access-1' ? http.Response('', 401) : jsonResponse({'receiptId': 'r1', 'bytes': 120});
+      }),
+    );
+    final png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, ...List.filled(112, 7)];
+
+    await client.putFile('/warehouses/w1/receipts/r1/signature', field: 'signature', filename: 'signature.png', bytes: png, idempotencyKey: 'key-9');
+
+    expect(sent, ['PUT key-9 true', 'PUT key-9 true']);
+  });
 }

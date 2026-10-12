@@ -80,4 +80,11 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase> with _$SyncQueueDaoMixi
         ..where((q) => q.status.isIn(['conflicted', 'failed']))
         ..orderBy([(q) => OrderingTerm.desc(q.id)]))
       .watch();
+
+  /// The latest queued command of [operationType] for [referenceId], in any state.
+  Future<SyncQueueData?> commandFor(String operationType, String referenceId) => (select(syncQueue)
+        ..where((q) => q.operationType.equals(operationType) & q.referenceId.equals(referenceId))
+        ..orderBy([(q) => OrderingTerm.desc(q.id)])
+        ..limit(1))
+      .getSingleOrNull();
 }

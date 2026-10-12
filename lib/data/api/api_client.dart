@@ -31,28 +31,21 @@ class ApiClient {
 
   TokenStore get tokens => _tokens;
 
-  Future<dynamic> get(String path, {Map<String, String>? query}) => _send('GET', path, query: query);
+  Future<dynamic> get(String path, {Map<String, String>? query}) => _send(() => _json('GET', path, query: query));
 
   Future<dynamic> post(String path, {Object? body, String? idempotencyKey, bool authenticated = true}) =>
-      _send('POST', path, body: body, idempotencyKey: idempotencyKey, authenticated: authenticated);
+      _send(() => _json('POST', path, body: body, idempotencyKey: idempotencyKey), authenticated: authenticated);
 
   /// Exchanges the stored refresh token for new tokens. Concurrent callers share one request.
   Future<void> refresh() => _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
 
-  Future<dynamic> _send(
-    String method,
-    String path, {
-    Map<String, String>? query,
-    Object? body,
-    String? idempotencyKey,
-    bool authenticated = true,
-  }) async {
+  Future<dynamic> _send(http.BaseRequest Function() build, {bool authenticated = true}) async {
     if (authenticated && !_tokens.accessTokenFresh) await refresh();
-    var response = await _raw(method, path, query, body, idempotencyKey, authenticated);
+    var response = await _raw(build, authenticated);
     if (authenticated && response.statusCode == 401) {
       await refresh();
       // The same Idempotency-Key: the server runs the command once, or replays its stored answer.
-      response = await _raw(method, path, query, body, idempotencyKey, authenticated);
+      response = await _raw(build, authenticated);
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response.body.isEmpty ? null : _decode(response.body);
@@ -63,7 +56,7 @@ class ApiClient {
   Future<void> _refresh() async {
     final refreshToken = await _tokens.refreshToken;
     if (refreshToken == null) throw const SessionExpiredException();
-    final response = await _raw('POST', '/auth/refresh', null, {'refreshToken': refreshToken}, null, false);
+    final response = await _raw(() => _json('POST', '/auth/refresh', body: {'refreshToken': refreshToken}), false);
     if (response.statusCode == 200) {
       final json = _decode(response.body) as Map<String, dynamic>;
       await _tokens.save(AuthTokens.fromJson(json));
@@ -88,21 +81,30 @@ class ApiClient {
     }
   }
 
-  Future<http.Response> _raw(
-    String method,
-    String path,
-    Map<String, String>? query,
-    Object? body,
-    String? idempotencyKey,
-    bool authenticated,
-  ) async {
-    final uri = Uri.parse('$_base$path').replace(queryParameters: query);
-    final request = http.Request(method, uri)..headers['Accept'] = 'application/json';
+  /// One file as multipart/form-data (a receipt's signature). The server fingerprints the form's fields and file bytes,
+  /// not the multipart boundary, so a retry with the same key and the same bytes counts as the same request.
+  Future<dynamic> putFile(String path, {required String field, required String filename, required List<int> bytes, String? idempotencyKey}) =>
+      _send(() {
+        final request = http.MultipartRequest('PUT', _uri(path, null))
+          ..files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+        if (idempotencyKey != null) request.headers['Idempotency-Key'] = idempotencyKey;
+        return request;
+      });
+
+  Uri _uri(String path, Map<String, String>? query) => Uri.parse('$_base$path').replace(queryParameters: query);
+
+  http.Request _json(String method, String path, {Map<String, String>? query, Object? body, String? idempotencyKey}) {
+    final request = http.Request(method, _uri(path, query));
     if (body != null) {
       request.headers['Content-Type'] = 'application/json';
       request.body = jsonEncode(body);
     }
     if (idempotencyKey != null) request.headers['Idempotency-Key'] = idempotencyKey;
+    return request;
+  }
+
+  Future<http.Response> _raw(http.BaseRequest Function() build, bool authenticated) async {
+    final request = build()..headers['Accept'] = 'application/json';
     final token = _tokens.accessToken;
     if (authenticated && token != null) request.headers['Authorization'] = 'Bearer $token';
     try {

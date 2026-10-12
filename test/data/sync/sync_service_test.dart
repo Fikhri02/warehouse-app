@@ -126,5 +126,52 @@ void main() {
       expect(calls, 1);
       expect((await db.syncQueueDao.watchIssues().first).single.status, 'failed');
     });
+
+    Future<void> queueReceipt(String receiptId, {bool signed = true}) async {
+      await db.syncQueueDao.enqueue(
+        operationType: SyncOps.receiptCreate,
+        referenceId: receiptId,
+        warehouseId: 'w1',
+        payload: jsonEncode({'purchaseOrderId': 'po-1', 'lines': [{'poLineId': 'pl-1', 'locationId': 'bin-1', 'quantity': 4}]}),
+      );
+      if (signed) {
+        await db.syncQueueDao.enqueue(
+          operationType: SyncOps.receiptSignature,
+          referenceId: receiptId,
+          warehouseId: 'w1',
+          payload: jsonEncode({'png': base64Encode([0x89, 0x50, 0x4E, 0x47, 1, 2, 3])}),
+        );
+      }
+    }
+
+    test('a receipt and then its signature go to their own endpoints', () async {
+      await queueReceipt('r1');
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add('${r.method} ${r.url.path}');
+        if (r.method == 'POST') expect(jsonDecode(r.body), {'receiptId': 'r1', 'lines': [{'poLineId': 'pl-1', 'locationId': 'bin-1', 'quantity': 4}]});
+        return jsonResponse({'id': 'r1'});
+      });
+
+      expect(await service.flushQueue(), FlushOutcome.done);
+
+      expect(calls, ['POST /api/warehouses/w1/purchase-orders/po-1/receipts', 'PUT /api/warehouses/w1/receipts/r1/signature']);
+    });
+
+    test('a_signature_whose_receipt_was_refused_says_why', () async {
+      await queueReceipt('r1');
+      final calls = <String>[];
+      final service = await serviceAnswering((r) async {
+        calls.add(r.method);
+        return jsonResponse({'status': 409, 'code': 'po-closed', 'title': 'Purchase order is closed', 'detail': 'PO-SA1-001 is closed; nothing more can be received against it.'}, 409);
+      });
+
+      await service.flushQueue();
+
+      expect(calls, ['POST']); // the signature was never sent to a receipt that doesn't exist
+      final issues = await db.syncQueueDao.watchIssues().first;
+      expect(issues.map((i) => i.operationType), [SyncOps.receiptSignature, SyncOps.receiptCreate]);
+      expect(ApiException.fromJson(jsonDecode(issues.first.lastError!) as Map<String, dynamic>).message, contains('its receipt was not accepted'));
+    });
   });
 }
