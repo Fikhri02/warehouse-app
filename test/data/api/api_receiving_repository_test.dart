@@ -56,6 +56,18 @@ void main() {
     expect(line.matches('9556001000011'), isTrue);
   });
 
+  test('a receipt remembers when the goods arrived, for a phone that sends it later', () async {
+    final order = (await repo.getPurchaseOrders()).single;
+    final before = DateTime.now().toUtc();
+
+    await repo.submitReceive(order.copyWithLines([order.lineItems.single.copyWith(received: 5)]), locationId: dock);
+
+    final payload = jsonDecode((await db.syncQueueDao.getPendingItems()).single.payload) as Map<String, dynamic>;
+    final receivedAt = DateTime.parse(payload['receivedAt'] as String);
+    expect(receivedAt.isUtc, isTrue);
+    expect(receivedAt.isBefore(before.subtract(const Duration(seconds: 1))), isFalse);
+  });
+
   test('a receipt sends only what was added now, to the chosen location, then its signature', () async {
     final order = (await repo.getPurchaseOrders()).single;
     final receiving = order.copyWithLines([order.lineItems.single.copyWith(received: 7)]);
@@ -65,7 +77,8 @@ void main() {
     final queued = await db.syncQueueDao.getPendingItems();
     expect(queued.map((q) => q.operationType), [SyncOps.receiptCreate, SyncOps.receiptSignature]);
     expect(queued[0].referenceId, queued[1].referenceId);
-    expect(jsonDecode(queued[0].payload), {
+    final payload = jsonDecode(queued[0].payload) as Map<String, dynamic>;
+    expect(payload..remove('receivedAt'), {
       'purchaseOrderId': 'po-1',
       'lines': [{'poLineId': 'pl-1', 'locationId': dock, 'quantity': 3}],
     });

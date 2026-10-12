@@ -33,8 +33,9 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, String>? query}) => _send(() => _json('GET', path, query: query));
 
-  Future<dynamic> post(String path, {Object? body, String? idempotencyKey, bool authenticated = true}) =>
-      _send(() => _json('POST', path, body: body, idempotencyKey: idempotencyKey), authenticated: authenticated);
+  Future<dynamic> post(String path, {Object? body, String? idempotencyKey, Map<String, String>? headers, bool authenticated = true}) =>
+      _send(() => _json('POST', path, body: body, idempotencyKey: idempotencyKey)..headers.addAll(headers ?? const {}),
+          authenticated: authenticated);
 
   /// Exchanges the stored refresh token for new tokens. Concurrent callers share one request.
   Future<void> refresh() => _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
@@ -83,10 +84,12 @@ class ApiClient {
 
   /// One file as multipart/form-data (a receipt's signature). The server fingerprints the form's fields and file bytes,
   /// not the multipart boundary, so a retry with the same key and the same bytes counts as the same request.
-  Future<dynamic> putFile(String path, {required String field, required String filename, required List<int> bytes, String? idempotencyKey}) =>
+  Future<dynamic> putFile(String path,
+          {required String field, required String filename, required List<int> bytes, String? idempotencyKey, Map<String, String>? headers}) =>
       _send(() {
         final request = http.MultipartRequest('PUT', _uri(path, null))
-          ..files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+          ..files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename))
+          ..headers.addAll(headers ?? const {});
         if (idempotencyKey != null) request.headers['Idempotency-Key'] = idempotencyKey;
         return request;
       });

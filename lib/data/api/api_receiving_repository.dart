@@ -90,7 +90,7 @@ class ApiReceivingRepository implements ReceivingRepository {
       operationType: SyncOps.receiptCreate,
       referenceId: receiptId,
       warehouseId: warehouseId,
-      payload: jsonEncode({'purchaseOrderId': order.id, 'lines': lines}),
+      payload: jsonEncode({'purchaseOrderId': order.id, 'lines': lines, 'receivedAt': DateTime.now().toUtc().toIso8601String()}),
     );
     if (signature != null) {
       // The PNG travels in the command, so a retry sends exactly the same bytes under the same key.

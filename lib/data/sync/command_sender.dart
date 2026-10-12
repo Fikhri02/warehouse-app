@@ -23,19 +23,27 @@ class CommandSender {
   Future<void> send(SyncQueueData item) async {
     final session = '/warehouses/${item.warehouseId}/count-sessions/${item.referenceId}';
     final key = item.idempotencyKey;
+    // The phone's clock as it sends: the server shifts the times a command carries (counted at, received at) by how far
+    // this clock is off.
+    final clock = {'X-Client-Time': DateTime.now().toUtc().toIso8601String()};
     switch (item.operationType) {
       case SyncOps.countSubmit:
-        await _client.post('$session/submit', body: jsonDecode(item.payload), idempotencyKey: key);
+        await _client.post('$session/submit', body: jsonDecode(item.payload), idempotencyKey: key, headers: clock);
       case SyncOps.countApprove:
-        await _client.post('$session/approve', idempotencyKey: key);
+        await _client.post('$session/approve', idempotencyKey: key, headers: clock);
       case SyncOps.countReject:
-        await _client.post('$session/reject', body: jsonDecode(item.payload), idempotencyKey: key);
+        await _client.post('$session/reject', body: jsonDecode(item.payload), idempotencyKey: key, headers: clock);
       case SyncOps.receiptCreate:
         final payload = jsonDecode(item.payload) as Map<String, dynamic>;
         await _client.post(
           '/warehouses/${item.warehouseId}/purchase-orders/${payload['purchaseOrderId']}/receipts',
-          body: {'receiptId': item.referenceId, 'lines': payload['lines']},
+          body: {
+            'receiptId': item.referenceId,
+            'lines': payload['lines'],
+            if (payload['receivedAt'] != null) 'receivedAt': payload['receivedAt'],
+          },
           idempotencyKey: key,
+          headers: clock,
         );
       case SyncOps.receiptSignature:
         final payload = jsonDecode(item.payload) as Map<String, dynamic>;
@@ -45,6 +53,7 @@ class CommandSender {
           filename: 'signature.png',
           bytes: base64Decode(payload['png'] as String),
           idempotencyKey: key,
+          headers: clock,
         );
       default:
         throw UnsupportedError('Nothing sends "${item.operationType}" to the server.');

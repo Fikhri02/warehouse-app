@@ -132,7 +132,11 @@ void main() {
         operationType: SyncOps.receiptCreate,
         referenceId: receiptId,
         warehouseId: 'w1',
-        payload: jsonEncode({'purchaseOrderId': 'po-1', 'lines': [{'poLineId': 'pl-1', 'locationId': 'bin-1', 'quantity': 4}]}),
+        payload: jsonEncode({
+          'purchaseOrderId': 'po-1',
+          'lines': [{'poLineId': 'pl-1', 'locationId': 'bin-1', 'quantity': 4}],
+          'receivedAt': '2026-10-12T01:00:00.000Z',
+        }),
       );
       if (signed) {
         await db.syncQueueDao.enqueue(
@@ -149,13 +153,40 @@ void main() {
       final calls = <String>[];
       final service = await serviceAnswering((r) async {
         calls.add('${r.method} ${r.url.path}');
-        if (r.method == 'POST') expect(jsonDecode(r.body), {'receiptId': 'r1', 'lines': [{'poLineId': 'pl-1', 'locationId': 'bin-1', 'quantity': 4}]});
+        if (r.method == 'POST') {
+          expect(jsonDecode(r.body), {
+            'receiptId': 'r1',
+            'lines': [{'poLineId': 'pl-1', 'locationId': 'bin-1', 'quantity': 4}],
+            'receivedAt': '2026-10-12T01:00:00.000Z',
+          });
+        }
         return jsonResponse({'id': 'r1'});
       });
 
       expect(await service.flushQueue(), FlushOutcome.done);
 
       expect(calls, ['POST /api/warehouses/w1/purchase-orders/po-1/receipts', 'PUT /api/warehouses/w1/receipts/r1/signature']);
+    });
+
+    test('every command carries the phone clock, so the server can correct a phone set to the wrong time', () async {
+      await queueCount('s1');
+      await queueReceipt('r1');
+      final sent = <String?>[];
+      final service = await serviceAnswering((r) async {
+        sent.add(r.headers['X-Client-Time']);
+        return jsonResponse({'id': 'x'});
+      });
+      final before = DateTime.now().toUtc().subtract(const Duration(seconds: 1));
+
+      await service.flushQueue();
+
+      expect(sent, hasLength(3));
+      for (final value in sent) {
+        expect(value, isNotNull);
+        final time = DateTime.parse(value!);
+        expect(time.isUtc, isTrue);
+        expect(time.isAfter(before), isTrue);
+      }
     });
 
     test('a_signature_whose_receipt_was_refused_says_why', () async {
