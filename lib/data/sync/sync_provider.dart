@@ -24,10 +24,14 @@ final changeFeedPullerProvider = Provider<ChangeFeedPuller?>((ref) {
   return ChangeFeedPuller(client: ref.watch(apiClientProvider), db: ref.watch(appDatabaseProvider));
 });
 
+/// Goes up by one after every complete pull, so lists showing the copy reload (a new alert, a task assigned meanwhile).
+final pulledProvider = StateProvider<int>((_) => 0);
+
 final syncCoordinatorProvider = Provider<SyncCoordinator>((ref) => SyncCoordinator(
       outbox: ref.watch(syncServiceProvider),
       puller: ref.watch(changeFeedPullerProvider),
       warehouseId: () => ref.read(authNotifierProvider).valueOrNull?.warehouseId,
+      onPulled: () => ref.read(pulledProvider.notifier).state++,
     ));
 
 /// Tries again while changes wait. A dead zone or a busy server often brings no connectivity event, so a paused

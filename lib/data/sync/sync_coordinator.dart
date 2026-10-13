@@ -6,14 +6,22 @@ import 'sync_service.dart';
 /// Sends the outbox, then pulls what changed. Runs one at a time; asking during a run asks for one more run
 /// afterwards, so nothing queued meanwhile waits for the next trigger.
 class SyncCoordinator {
-  SyncCoordinator({required SyncService outbox, required ChangeFeedPuller? puller, required String? Function() warehouseId})
-      : _outbox = outbox,
+  SyncCoordinator({
+    required SyncService outbox,
+    required ChangeFeedPuller? puller,
+    required String? Function() warehouseId,
+    void Function()? onPulled,
+  })  : _outbox = outbox,
         _puller = puller,
-        _warehouseId = warehouseId;
+        _warehouseId = warehouseId,
+        _onPulled = onPulled;
 
   final SyncService _outbox;
   final ChangeFeedPuller? _puller;
   final String? Function() _warehouseId;
+
+  /// Called after every pull that reached the end of the feed.
+  final void Function()? _onPulled;
   Future<void>? _running;
   bool _again = false;
 
@@ -40,6 +48,7 @@ class SyncCoordinator {
     if (outcome == FlushOutcome.offline || outcome == FlushOutcome.sessionExpired) return;
     try {
       await puller.pull(warehouseId);
+      _onPulled?.call();
     } on ApiOfflineException {
       // Next reconnect.
     } on ApiException {

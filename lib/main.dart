@@ -9,12 +9,14 @@ import 'package:warehouse_app/core/models/user_session.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_router.dart';
 import 'package:warehouse_app/core/theme/app_theme.dart';
+import 'package:warehouse_app/data/api/api_alerts_repository.dart';
 import 'package:warehouse_app/data/api/api_auth_repository.dart';
 import 'package:warehouse_app/data/api/api_client.dart';
 import 'package:warehouse_app/data/api/api_providers.dart';
 import 'package:warehouse_app/data/api/api_orders_repository.dart';
 import 'package:warehouse_app/data/api/api_receiving_repository.dart';
 import 'package:warehouse_app/data/api/api_stock_count_repository.dart';
+import 'package:warehouse_app/data/api/api_tasks_repository.dart';
 import 'package:warehouse_app/data/api/key_value_store.dart';
 import 'package:warehouse_app/data/api/token_store.dart';
 import 'package:warehouse_app/data/local/app_database.dart' hide UserSession;
@@ -56,7 +58,15 @@ Future<void> main() async {
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
         if (client != null) apiClientProvider.overrideWithValue(client),
-        alertsRepositoryProvider.overrideWith((_) => SampleAlertsRepository()),
+        alertsRepositoryProvider.overrideWith(
+          (ref) => client == null
+              ? SampleAlertsRepository()
+              : ApiAlertsRepository(
+                  db: database,
+                  session: () => ref.read(authNotifierProvider).valueOrNull,
+                  onQueued: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()),
+                ),
+        ),
         authBootstrapStateProvider.overrideWith((_) => AuthBootstrapState.hydrated(locked ? null : initialSession)),
         settingsStoreProvider.overrideWithValue(settingsStore),
         biometricPreferenceProvider.overrideWithValue(biometricOn),
@@ -90,7 +100,16 @@ Future<void> main() async {
                   onQueued: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()),
                 ),
         ),
-        tasksRepositoryProvider.overrideWith((_) => SampleTasksRepository()),
+        tasksRepositoryProvider.overrideWith(
+          (ref) => client == null
+              ? SampleTasksRepository()
+              : ApiTasksRepository(
+                  client: client,
+                  db: database,
+                  session: () => ref.read(authNotifierProvider).valueOrNull,
+                  onQueued: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()),
+                ),
+        ),
       ],
       child: const WarehouseApp(),
     ),
