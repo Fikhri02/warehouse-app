@@ -30,7 +30,7 @@ class AlertsScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: alertsAsync.valueOrNull?.unreadCount == 0
+              onPressed: (alertsAsync.valueOrNull?.filtered.where((a) => !a.isRead).isEmpty ?? true)
                   ? null
                   : () => ref.read(alertsProvider.notifier).markAllRead(),
               child: Text(

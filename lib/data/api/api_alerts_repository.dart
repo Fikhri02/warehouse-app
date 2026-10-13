@@ -7,8 +7,8 @@ import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 import 'package:warehouse_app/data/sync/command_sender.dart';
 
 /// The signed-in person's alerts from the phone's copy. A read waiting in the outbox already counts as read.
-/// "Mark all read" queues one read per alert on screen, never the server's read-all: that would also mark alerts that
-/// arrived while this phone was offline, which the person never saw.
+/// "Mark all read" queues one read per alert on screen, never the server's read-all: that would also mark alerts the
+/// chip hides or that arrived while this phone was offline, which the person never saw.
 class ApiAlertsRepository implements AlertsRepository {
   ApiAlertsRepository({required AppDatabase db, required UserSession? Function() session, required void Function() onQueued})
       : _db = db,
@@ -53,8 +53,9 @@ class ApiAlertsRepository implements AlertsRepository {
   }
 
   @override
-  Future<void> markAllRead() async {
-    final unread = (await getAlerts()).where((a) => !a.isRead).toList();
+  Future<void> markAllRead(Iterable<String> alertIds) async {
+    final ids = alertIds.toSet();
+    final unread = (await getAlerts()).where((a) => !a.isRead && ids.contains(a.id)).toList();
     if (unread.isEmpty) return;
     for (final alert in unread) {
       await _queueRead(alert);

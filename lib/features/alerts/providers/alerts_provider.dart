@@ -31,8 +31,11 @@ class AlertsNotifier extends AsyncNotifier<AlertsState> {
     ref.invalidateSelf();
   }
 
+  /// Marks read the unread alerts the current chip shows — the ones the person can see.
   Future<void> markAllRead() async {
-    await ref.read(alertsRepositoryProvider).markAllRead();
+    final onScreen = [for (final a in state.valueOrNull?.filtered ?? const <Alert>[]) if (!a.isRead) a.id];
+    if (onScreen.isEmpty) return;
+    await ref.read(alertsRepositoryProvider).markAllRead(onScreen);
     ref.invalidateSelf();
   }
 

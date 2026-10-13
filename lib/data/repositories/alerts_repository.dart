@@ -7,8 +7,8 @@ abstract class AlertsRepository {
 
   Future<void> markRead(String alertId);
 
-  /// Marks the alerts the person has now as read — not ones that arrive later.
-  Future<void> markAllRead();
+  /// Marks [alertIds] read: the alerts the person has on screen, never ones the chip hides or that arrive later.
+  Future<void> markAllRead(Iterable<String> alertIds);
 }
 
 final alertsRepositoryProvider = Provider<AlertsRepository>((ref) {

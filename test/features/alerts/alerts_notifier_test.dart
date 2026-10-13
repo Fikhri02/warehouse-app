@@ -8,6 +8,8 @@ import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 class MockAlertsRepository extends Mock implements AlertsRepository {}
 
 void main() {
+  setUpAll(() => registerFallbackValue(<String>[]));
+
   late MockAlertsRepository mockRepo;
 
   setUp(() {
@@ -58,7 +60,7 @@ void main() {
       callCount++;
       return callCount == 1 ? sampleAlerts : markedAlerts;
     });
-    when(() => mockRepo.markAllRead()).thenAnswer((_) async {});
+    when(() => mockRepo.markAllRead(['a1'])).thenAnswer((_) async {});
 
     final container = makeContainer();
     addTearDown(container.dispose);
@@ -67,8 +69,20 @@ void main() {
     await container.read(alertsProvider.notifier).markAllRead();
     await container.read(alertsProvider.future);
 
-    verify(() => mockRepo.markAllRead()).called(1);
+    verify(() => mockRepo.markAllRead(['a1'])).called(1);
     expect(container.read(alertsProvider).valueOrNull?.unreadCount, 0);
+  });
+
+  test('mark all read covers only the unread alerts the chip shows', () async {
+    when(() => mockRepo.getAlerts()).thenAnswer((_) async => sampleAlerts);
+    final container = makeContainer();
+    addTearDown(container.dispose);
+
+    await container.read(alertsProvider.future);
+    container.read(alertsProvider.notifier).setFilter(AlertFilter.tasks); // a2 is read; a1 (stock) is not on screen
+    await container.read(alertsProvider.notifier).markAllRead();
+
+    verifyNever(() => mockRepo.markAllRead(any()));
   });
 
   test('filterByType returns only matching alerts', () async {

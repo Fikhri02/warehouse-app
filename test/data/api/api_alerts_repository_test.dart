@@ -64,7 +64,7 @@ void main() {
   });
 
   test('mark all read marks only the alerts on screen, so one that arrives later stays unread', () async {
-    await repo.markAllRead();
+    await repo.markAllRead(['task', 'conflict']);
     await db.serverMirrorDao.upsertAlert(alert('later', 'LowStock', 8));
 
     final queued = await db.syncQueueDao.getPendingItems();
@@ -73,5 +73,13 @@ void main() {
     final alerts = await repo.getAlerts();
     expect(alerts.firstWhere((a) => a.id == 'later').isRead, isFalse);
     expect(alerts.where((a) => !a.isRead).map((a) => a.id), ['later']);
+  });
+
+  test('mark all read leaves alone the alerts the chip was hiding', () async {
+    await repo.markAllRead(['conflict', 'old']); // the Sync chip shows these two; 'old' is already read
+
+    final queued = await db.syncQueueDao.getPendingItems();
+    expect(queued.map((c) => c.referenceId), ['conflict']);
+    expect((await repo.getAlerts()).firstWhere((a) => a.id == 'task').isRead, isFalse);
   });
 }

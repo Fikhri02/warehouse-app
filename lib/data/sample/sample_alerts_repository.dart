@@ -48,9 +48,10 @@ class SampleAlertsRepository implements AlertsRepository {
   }
 
   @override
-  Future<void> markAllRead() async {
+  Future<void> markAllRead(Iterable<String> alertIds) async {
+    final ids = alertIds.toSet();
     for (var i = 0; i < _alerts.length; i++) {
-      _alerts[i] = _alerts[i].copyWith(isRead: true);
+      if (ids.contains(_alerts[i].id)) _alerts[i] = _alerts[i].copyWith(isRead: true);
     }
   }
 }
