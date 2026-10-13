@@ -10,6 +10,7 @@ enum FlushOutcome { done, offline, sessionExpired, serverTrouble }
 /// Sends the outbox oldest first, following the response table in spec §3:
 /// - 2xx: done.
 /// - 409: kept as conflicted with the server's reason; the next command still goes.
+/// - 404 on a task command: conflicted. 404 on alert.read: done.
 /// - Any other 4xx: failed.
 /// - 5xx, 429, offline or session ended: stop, so later commands keep their order, and retry on the next run.
 /// Without a [CommandSender] (Sample mode) there is nothing to send: queued items are simply marked done.
@@ -25,6 +26,9 @@ class SyncService {
   static const _dependsOn = {
     SyncOps.receiptSignature: (SyncOps.receiptCreate, 'Signature not sent: its receipt was not accepted.'),
     SyncOps.orderStatus: (SyncOps.orderSave, 'Status not sent: the order was not saved.'),
+    SyncOps.taskAssign: (SyncOps.taskCreate, 'Not sent: the task was not created.'),
+    SyncOps.taskStart: (SyncOps.taskCreate, 'Not sent: the task was not created.'),
+    SyncOps.taskComplete: (SyncOps.taskCreate, 'Not sent: the task was not created.'),
   };
   Future<FlushOutcome>? _running;
 
@@ -52,8 +56,11 @@ class SyncService {
         await sender.send(item);
         await dao.markSynced(item.id);
       } on ApiException catch (e) {
-        if (e.status == 409) {
+        if (e.status == 409 || (e.status == 404 && SyncOps.taskCommands.contains(item.operationType))) {
+          // A task the server no longer has: things moved on, as with a 409.
           await dao.markConflicted(item.id, e);
+        } else if (e.status == 404 && item.operationType == SyncOps.alertRead) {
+          await dao.markSynced(item.id); // the alert is gone: nothing left to mark read
         } else if (e.status == 401) {
           return FlushOutcome.sessionExpired;
         } else if (e.status >= 500 || e.status == 429) {

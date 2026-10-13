@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:warehouse_app/data/api/api_client.dart';
 import 'package:warehouse_app/data/local/app_database.dart';
 
-/// The commands the phone queues. 3d adds tasks and alerts.
+/// The commands the phone queues.
 class SyncOps {
   SyncOps._();
 
@@ -14,6 +14,13 @@ class SyncOps {
   static const receiptSignature = 'receipt.signature';
   static const orderSave = 'order.save';
   static const orderStatus = 'order.status';
+  static const taskCreate = 'task.create';
+  static const taskAssign = 'task.assign';
+  static const taskStart = 'task.start';
+  static const taskComplete = 'task.complete';
+  static const alertRead = 'alert.read';
+
+  static const taskCommands = {taskCreate, taskAssign, taskStart, taskComplete};
 }
 
 /// Sends one queued command to its endpoint (spec §3 Commands) with the command's own Idempotency-Key.
@@ -68,10 +75,29 @@ class CommandSender {
           idempotencyKey: key,
           headers: clock,
         );
+      case SyncOps.taskCreate:
+        final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+        await _client.post('/warehouses/${item.warehouseId}/tasks', body: payload['body'], idempotencyKey: key, headers: clock);
+      case SyncOps.taskAssign:
+        final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+        await _client.post(
+          '${_taskPath(item)}/assign',
+          body: {'assigneeUserId': payload['assigneeUserId']},
+          idempotencyKey: key,
+          headers: clock,
+        );
+      case SyncOps.taskStart:
+        await _client.post('${_taskPath(item)}/start', idempotencyKey: key, headers: clock);
+      case SyncOps.taskComplete:
+        await _client.post('${_taskPath(item)}/complete', idempotencyKey: key, headers: clock);
+      case SyncOps.alertRead:
+        await _client.post('/alerts/${item.referenceId}/read', idempotencyKey: key, headers: clock);
       default:
         throw UnsupportedError('Nothing sends "${item.operationType}" to the server.');
     }
   }
+
+  String _taskPath(SyncQueueData item) => '/warehouses/${item.warehouseId}/tasks/${item.referenceId}';
 
   String _orderPath(SyncQueueData item, Map<String, dynamic> payload) =>
       '/warehouses/${item.warehouseId}/${payload['kind'] == 'Sales' ? 'sales' : 'delivery'}-orders/${item.referenceId}';

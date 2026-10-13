@@ -96,6 +96,11 @@ final syncIssuesProvider = StreamProvider<List<SyncIssue>>((ref) {
               SyncOps.receiptSignature => 'Signature not sent',
               SyncOps.orderSave => 'Order not saved',
               SyncOps.orderStatus => 'Status change not accepted',
+              SyncOps.taskCreate => 'Task not created',
+              SyncOps.taskAssign => 'Assignment not accepted',
+              SyncOps.taskStart => 'Start not accepted',
+              SyncOps.taskComplete => 'Task not finished',
+              SyncOps.alertRead => 'Alert not marked read',
               _ => 'Change not accepted',
             },
             message: _naming(
@@ -108,8 +113,14 @@ final syncIssuesProvider = StreamProvider<List<SyncIssue>>((ref) {
       ]);
 });
 
-/// Puts the order's number (and where it goes) in front of the reason, so the person knows which order to redo.
+/// Puts the order's number (and where it goes), or the task's title, in front of the reason, so the person knows what to
+/// redo.
 String _naming(SyncQueueData item, String message) {
+  if (SyncOps.taskCommands.contains(item.operationType)) {
+    // The server's conflict sentences already quote the title; don't say it twice.
+    final title = (jsonDecode(item.payload) as Map<String, dynamic>)['title'] as String?;
+    return title == null || message.contains(title) ? message : '$title: $message';
+  }
   if (item.operationType != SyncOps.orderSave && item.operationType != SyncOps.orderStatus) return message;
   final payload = jsonDecode(item.payload) as Map<String, dynamic>;
   final body = payload['body'] as Map<String, dynamic>?;

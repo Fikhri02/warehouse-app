@@ -39,4 +39,38 @@ void main() {
       'DO-261012-9F3C0000 (Outlet Cheras): Location is not in this warehouse.',
     ]);
   });
+
+  test('a refused task names its title once, and other task refusals say which task', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final start = await db.syncQueueDao.enqueue(
+      operationType: SyncOps.taskStart,
+      referenceId: 't1',
+      warehouseId: 'w1',
+      payload: jsonEncode({'title': 'Count aisle C'}),
+    );
+    final assign = await db.syncQueueDao.enqueue(
+      operationType: SyncOps.taskAssign,
+      referenceId: 't2',
+      warehouseId: 'w1',
+      payload: jsonEncode({'title': 'Tidy dock 2', 'assigneeUserId': 'u5'}),
+    );
+    await db.syncQueueDao.markConflicted(
+      start,
+      const ApiException(status: 409, code: 'task-reassigned', title: 'Task reassigned', detail: '"Count aisle C" was given to someone else before your update arrived.'),
+    );
+    await db.syncQueueDao.markFailed(
+      assign,
+      const ApiException(status: 422, errors: {'assigneeUserId': ['The assignee must be an active member of this warehouse.']}),
+    );
+    final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
+    addTearDown(container.dispose);
+
+    final issues = await container.read(syncIssuesProvider.future);
+
+    expect(issues.map((i) => (i.title, i.message)), [
+      ('Assignment not accepted', 'Tidy dock 2: The assignee must be an active member of this warehouse.'),
+      ('Start not accepted', '"Count aisle C" was given to someone else before your update arrived.'),
+    ]);
+  });
 }
