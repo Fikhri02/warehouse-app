@@ -39,6 +39,7 @@ void main() {
     final worker = AsyncData<UserSession?>(session(warehouseId: 'kp1', warehouses: [kp1]));
     expect(authRedirect(auth: worker, location: AppRoutes.pendingReview), AppRoutes.dashboard);
     expect(authRedirect(auth: worker, location: AppRoutes.pendingReviewDetail), AppRoutes.dashboard);
+    expect(authRedirect(auth: worker, location: AppRoutes.taskNew), AppRoutes.dashboard);
   });
 
   test('Sample-mode sessions (no warehouses) go straight in', () {

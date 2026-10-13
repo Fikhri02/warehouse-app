@@ -29,6 +29,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/tasks/screens/tasks_screen.dart';
 import '../../features/tasks/providers/active_task_provider.dart';
 import '../../features/supervisor/screens/assign_tasks_screen.dart';
+import '../../features/supervisor/screens/new_task_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
 import '../../features/supervisor/screens/count_review_screen.dart';
@@ -243,6 +244,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.assignTasks,
         builder: (_, __) => const AssignTasksScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.taskNew,
+        builder: (_, __) => const NewTaskScreen(),
       ),
       GoRoute(
         path: AppRoutes.reports,

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_session.dart';
 import 'app_routes.dart';
 
-const _supervisorOnly = [AppRoutes.assignTasks, AppRoutes.reports, AppRoutes.pendingReview, AppRoutes.pendingReviewDetail];
+const _supervisorOnly = [AppRoutes.assignTasks, AppRoutes.taskNew, AppRoutes.reports, AppRoutes.pendingReview, AppRoutes.pendingReviewDetail];
 
 /// Where to send someone who asked for [location], or null to let them through.
 String? authRedirect({required AsyncValue<UserSession?> auth, required String location, UserSession? locked}) {
