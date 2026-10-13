@@ -44,10 +44,11 @@ class ServerMirrorDao extends DatabaseAccessor<AppDatabase> with _$ServerMirrorD
         SyncCursorsCompanion.insert(warehouseId: warehouseId, cursor: cursor, mirrorVersion: const Value(kMirrorVersion)),
       );
 
-  /// See SyncCursors.caughtUpThrough. 0 before the first complete pull.
+  /// See SyncCursors.caughtUpThrough. 0 before the first complete pull. Kept across a kMirrorVersion bump: the copy is
+  /// re-read but not emptied, so what those commands did is still in it (and newly copied kinds have no older commands).
   Future<int> caughtUpThrough(String warehouseId) async {
     final row = await (select(syncCursors)..where((c) => c.warehouseId.equals(warehouseId))).getSingleOrNull();
-    return row == null || row.mirrorVersion < kMirrorVersion ? 0 : row.caughtUpThrough;
+    return row?.caughtUpThrough ?? 0;
   }
 
   Future<void> markCaughtUp(String warehouseId, {required int through}) =>

@@ -46,4 +46,14 @@ void main() {
     expect((await dao.members('w1')).map((m) => m.displayName), ['Arjun Nair']);
     expect((await dao.members('w2')).map((m) => m.displayName), ['Elsewhere']);
   });
+
+  test('after a mirror version bump the feed is read again, but what was already sent stays counted as in the copy', () async {
+    final dao = db.serverMirrorDao;
+    await dao.saveCursor('w1', 40);
+    await dao.markCaughtUp('w1', through: 7);
+    await db.customStatement('UPDATE sync_cursors SET mirror_version = mirror_version - 1');
+
+    expect(await dao.cursorFor('w1'), 0); // read the feed again from the start
+    expect(await dao.caughtUpThrough('w1'), 7); // commands 1-7 are already in the copy: don't lay them over it again
+  });
 }
