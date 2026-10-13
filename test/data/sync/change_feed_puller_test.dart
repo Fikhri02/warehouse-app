@@ -227,4 +227,35 @@ void main() {
     expect(await db.serverMirrorDao.orders(w, kind: 'Delivery'), isEmpty);
     expect(await db.serverMirrorDao.orderLinesFor('do-2'), isEmpty);
   });
+
+  test('tasks and alerts come into the copy, and a deleted alert goes', () async {
+    final puller = await pullerServing([
+      page([
+        change('staffTask', 'task-1', 1, {
+          'id': 'task-1', 'warehouseId': w, 'title': 'Count aisle C', 'type': 'StockCount', 'locationId': bin,
+          'assigneeUserId': 'u1', 'status': 'InProgress', 'dueAt': '2026-10-13T07:00:00Z', 'createdByUserId': 'u9',
+          'completedAt': null,
+        }),
+        change('alert', 'alert-1', 2, {
+          'id': 'alert-1', 'warehouseId': w, 'type': 'TaskAssigned', 'title': 'New task', 'body': 'Count aisle C',
+          'payload': {'taskId': 'task-1'}, 'createdAt': '2026-10-13T06:00:00Z', 'readAt': null,
+        }),
+        change('alert', 'alert-2', 3, {
+          'id': 'alert-2', 'warehouseId': null, 'type': 'SyncConflict', 'title': 'Task already done', 'body': 'x',
+          'payload': null, 'createdAt': '2026-10-13T06:10:00Z', 'readAt': '2026-10-13T06:30:00Z',
+        }),
+      ], next: 3, more: true),
+      page([change('alert', 'alert-2', 4)], next: 4),
+    ]);
+
+    await puller.pull(w);
+
+    final task = (await db.serverMirrorDao.tasks(w)).single;
+    expect((task.title, task.type, task.status, task.locationId, task.assigneeUserId, task.completedAt),
+        ('Count aisle C', 'StockCount', 'InProgress', bin, 'u1', null));
+    expect(task.dueAt!.toUtc(), DateTime.utc(2026, 10, 13, 7));
+    final alert = (await db.serverMirrorDao.alerts(w)).single;
+    expect((alert.id, alert.type, alert.readAt), ('alert-1', 'TaskAssigned', null));
+    expect(jsonDecode(alert.payload!), {'taskId': 'task-1'});
+  });
 }

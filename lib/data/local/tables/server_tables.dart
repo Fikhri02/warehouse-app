@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 /// Bump when the app starts storing a change-feed entity it used to skip. Every phone then reads its feed again from
 /// the start, so the rows it skipped before arrive. 1 = 3a (catalogue, locations, counts); 2 = 3b (+ purchase orders).
-const kMirrorVersion = 3;
+const kMirrorVersion = 4;
 
 // Read-only copies of the server's data, filled from the change feed (spec §3). Row classes end in "Row" so
 // they never clash with the app's own models (CatalogItem in core/models/order.dart, Location, …).
@@ -145,4 +145,52 @@ class RemoteOrderLines extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// Staff tasks as the server has them. Every task in the warehouse comes to every member, so a reassignment
+/// reaches the previous assignee too.
+@DataClassName('RemoteTaskRow')
+class RemoteTasks extends Table {
+  TextColumn get id => text()();
+  TextColumn get warehouseId => text()();
+  TextColumn get title => text()();
+  TextColumn get type => text()(); // StockCount · StockReceive · Other
+  TextColumn get locationId => text().nullable()();
+  TextColumn get assigneeUserId => text().nullable()();
+  TextColumn get status => text()(); // Pending · InProgress · Done
+  DateTimeColumn get dueAt => dateTime().nullable()();
+  TextColumn get createdByUserId => text()();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The signed-in person's alerts. Payload is the server's JSON, as text.
+@DataClassName('RemoteAlertRow')
+class RemoteAlerts extends Table {
+  TextColumn get id => text()();
+  TextColumn get warehouseId => text().nullable()();
+  TextColumn get type => text()(); // LowStock · TaskAssigned · CountToReview · SyncConflict
+  TextColumn get title => text()();
+  TextColumn get body => text()();
+  TextColumn get payload => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get readAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A warehouse's people as GET /warehouses/{id}/members last listed them, for the assignee picker. Not in the feed.
+@DataClassName('WarehouseMemberRow')
+class WarehouseMembers extends Table {
+  TextColumn get warehouseId => text()();
+  TextColumn get userId => text()();
+  TextColumn get displayName => text()();
+  TextColumn get role => text()(); // Worker · Supervisor
+  BoolColumn get isActive => boolean()();
+
+  @override
+  Set<Column> get primaryKey => {warehouseId, userId};
 }

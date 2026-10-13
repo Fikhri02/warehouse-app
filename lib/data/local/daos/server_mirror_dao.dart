@@ -4,7 +4,7 @@ import 'package:warehouse_app/data/local/tables/server_tables.dart';
 
 part 'server_mirror_dao.g.dart';
 
-@DriftAccessor(tables: [CatalogItems, CatalogBarcodes, WarehouseLocations, RemoteCountSessions, RemoteCountLines, SyncCursors, RemotePurchaseOrders, RemotePoLines, RemoteOrders, RemoteOrderLines])
+@DriftAccessor(tables: [CatalogItems, CatalogBarcodes, WarehouseLocations, RemoteCountSessions, RemoteCountLines, SyncCursors, RemotePurchaseOrders, RemotePoLines, RemoteOrders, RemoteOrderLines, RemoteTasks, RemoteAlerts, WarehouseMembers])
 class ServerMirrorDao extends DatabaseAccessor<AppDatabase> with _$ServerMirrorDaoMixin {
   ServerMirrorDao(super.db);
 
@@ -142,4 +142,34 @@ class ServerMirrorDao extends DatabaseAccessor<AppDatabase> with _$ServerMirrorD
 
   Future<List<RemoteOrderLineRow>> orderLinesFor(String orderId) =>
       (select(remoteOrderLines)..where((l) => l.orderId.equals(orderId))).get();
+
+  Future<void> upsertTask(RemoteTasksCompanion task) => into(remoteTasks).insertOnConflictUpdate(task);
+
+  Future<void> deleteTask(String id) => (delete(remoteTasks)..where((t) => t.id.equals(id))).go();
+
+  Future<List<RemoteTaskRow>> tasks(String warehouseId) =>
+      (select(remoteTasks)..where((t) => t.warehouseId.equals(warehouseId))).get();
+
+  Future<void> upsertAlert(RemoteAlertsCompanion alert) => into(remoteAlerts).insertOnConflictUpdate(alert);
+
+  Future<void> deleteAlert(String id) => (delete(remoteAlerts)..where((a) => a.id.equals(id))).go();
+
+  /// This warehouse's alerts and those for no warehouse in particular, newest first.
+  Future<List<RemoteAlertRow>> alerts(String warehouseId) => (select(remoteAlerts)
+        ..where((a) => a.warehouseId.equals(warehouseId) | a.warehouseId.isNull())
+        ..orderBy([(a) => OrderingTerm.desc(a.createdAt)]))
+      .get();
+
+  /// The warehouse's people as the server listed them just now: the old list goes.
+  Future<void> replaceMembers(String warehouseId, List<WarehouseMembersCompanion> members) => transaction(() async {
+        await (delete(warehouseMembers)..where((m) => m.warehouseId.equals(warehouseId))).go();
+        for (final m in members) {
+          await into(warehouseMembers).insert(m);
+        }
+      });
+
+  Future<List<WarehouseMemberRow>> members(String warehouseId) => (select(warehouseMembers)
+        ..where((m) => m.warehouseId.equals(warehouseId))
+        ..orderBy([(m) => OrderingTerm.asc(m.displayName)]))
+      .get();
 }

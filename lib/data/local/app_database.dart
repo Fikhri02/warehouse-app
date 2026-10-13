@@ -2,15 +2,11 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:warehouse_app/data/local/tables/user_session_table.dart';
-import 'package:warehouse_app/data/local/tables/alert_table.dart';
-import 'package:warehouse_app/data/local/tables/staff_task_table.dart';
 import 'package:warehouse_app/data/local/tables/count_session_table.dart';
 import 'package:warehouse_app/data/local/tables/order_tables.dart';
 import 'package:warehouse_app/data/local/tables/purchase_order_table.dart';
 import 'package:warehouse_app/data/local/tables/sync_queue_table.dart';
 import 'package:warehouse_app/data/local/tables/server_tables.dart';
-import 'package:warehouse_app/data/local/daos/alerts_dao.dart';
-import 'package:warehouse_app/data/local/daos/tasks_dao.dart';
 import 'package:warehouse_app/data/local/daos/count_session_dao.dart';
 import 'package:warehouse_app/data/local/daos/orders_dao.dart';
 import 'package:warehouse_app/data/local/daos/receiving_dao.dart';
@@ -22,8 +18,6 @@ part 'app_database.g.dart';
 @DriftDatabase(
   tables: [
     UserSessions,
-    Alerts,
-    StaffTasks,
     CountSessions,
     CountItems,
     LocationEntries,
@@ -44,10 +38,11 @@ part 'app_database.g.dart';
     RemotePoLines,
     RemoteOrders,
     RemoteOrderLines,
+    RemoteTasks,
+    RemoteAlerts,
+    WarehouseMembers,
   ],
   daos: [
-    AlertsDao,
-    TasksDao,
     CountSessionDao,
     OrdersDao,
     ReceivingDao,
@@ -61,7 +56,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -127,6 +122,15 @@ class AppDatabase extends _$AppDatabase {
             await migrator.createTable(remoteOrders);
             await migrator.createTable(remoteOrderLines);
           }
+          if (from < 9) {
+            // The Sample-era alert and task tables were never filled from the server; the server's copies replace
+            // them. kMirrorVersion 4 makes the next pull start from 0 and bring the tasks and alerts a 3c phone skipped.
+            await customStatement('DROP TABLE IF EXISTS alerts');
+            await customStatement('DROP TABLE IF EXISTS staff_tasks');
+            await migrator.createTable(remoteTasks);
+            await migrator.createTable(remoteAlerts);
+            await migrator.createTable(warehouseMembers);
+          }
         },
       );
 
@@ -146,6 +150,9 @@ class AppDatabase extends _$AppDatabase {
           remotePoLines,
           remoteOrders,
           remoteOrderLines,
+          remoteTasks,
+          remoteAlerts,
+          warehouseMembers,
         ]) {
           await delete(table).go();
         }

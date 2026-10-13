@@ -151,9 +151,37 @@ class ChangeFeedPuller {
               ),
           ],
         );
+      case 'staffTask':
+        if (data == null) return dao.deleteTask(id);
+        return dao.upsertTask(RemoteTasksCompanion.insert(
+          id: id,
+          warehouseId: data['warehouseId'] as String,
+          title: data['title'] as String,
+          type: data['type'] as String,
+          locationId: Value(data['locationId'] as String?),
+          assigneeUserId: Value(data['assigneeUserId'] as String?),
+          status: data['status'] as String,
+          dueAt: Value(_time(data['dueAt'])),
+          createdByUserId: data['createdByUserId'] as String,
+          completedAt: Value(_time(data['completedAt'])),
+        ));
+      case 'alert':
+        if (data == null) return dao.deleteAlert(id);
+        return dao.upsertAlert(RemoteAlertsCompanion.insert(
+          id: id,
+          warehouseId: Value(data['warehouseId'] as String?),
+          type: data['type'] as String,
+          title: data['title'] as String,
+          body: data['body'] as String,
+          payload: Value(data['payload'] == null ? null : jsonEncode(data['payload'])),
+          createdAt: DateTime.parse(data['createdAt'] as String),
+          readAt: Value(_time(data['readAt'])),
+        ));
       default:
-        // Tasks and alerts come in 3d, bumping kMirrorVersion so they are pulled from the start.
+        // Warehouses and anything newer than this version of the app: nothing on the phone keeps them.
         return;
     }
   }
+
+  static DateTime? _time(Object? value) => value == null ? null : DateTime.parse(value as String);
 }

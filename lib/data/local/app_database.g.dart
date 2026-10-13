@@ -382,695 +382,6 @@ class UserSessionsCompanion extends UpdateCompanion<UserSession> {
   }
 }
 
-class $AlertsTable extends Alerts with TableInfo<$AlertsTable, Alert> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $AlertsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
-  @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-      'type', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-      'title', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
-  @override
-  late final GeneratedColumn<String> body = GeneratedColumn<String>(
-      'body', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
-  @override
-  late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
-      'is_read', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_read" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  @override
-  List<GeneratedColumn> get $columns =>
-      [id, type, title, body, createdAt, isRead];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'alerts';
-  @override
-  VerificationContext validateIntegrity(Insertable<Alert> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('type')) {
-      context.handle(
-          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
-    } else if (isInserting) {
-      context.missing(_typeMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('body')) {
-      context.handle(
-          _bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
-    } else if (isInserting) {
-      context.missing(_bodyMeta);
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('is_read')) {
-      context.handle(_isReadMeta,
-          isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Alert map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Alert(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      type: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      title: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
-      body: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      isRead: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_read'])!,
-    );
-  }
-
-  @override
-  $AlertsTable createAlias(String alias) {
-    return $AlertsTable(attachedDatabase, alias);
-  }
-}
-
-class Alert extends DataClass implements Insertable<Alert> {
-  final String id;
-  final String type;
-  final String title;
-  final String body;
-  final DateTime createdAt;
-  final bool isRead;
-  const Alert(
-      {required this.id,
-      required this.type,
-      required this.title,
-      required this.body,
-      required this.createdAt,
-      required this.isRead});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['type'] = Variable<String>(type);
-    map['title'] = Variable<String>(title);
-    map['body'] = Variable<String>(body);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['is_read'] = Variable<bool>(isRead);
-    return map;
-  }
-
-  AlertsCompanion toCompanion(bool nullToAbsent) {
-    return AlertsCompanion(
-      id: Value(id),
-      type: Value(type),
-      title: Value(title),
-      body: Value(body),
-      createdAt: Value(createdAt),
-      isRead: Value(isRead),
-    );
-  }
-
-  factory Alert.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Alert(
-      id: serializer.fromJson<String>(json['id']),
-      type: serializer.fromJson<String>(json['type']),
-      title: serializer.fromJson<String>(json['title']),
-      body: serializer.fromJson<String>(json['body']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      isRead: serializer.fromJson<bool>(json['isRead']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'type': serializer.toJson<String>(type),
-      'title': serializer.toJson<String>(title),
-      'body': serializer.toJson<String>(body),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'isRead': serializer.toJson<bool>(isRead),
-    };
-  }
-
-  Alert copyWith(
-          {String? id,
-          String? type,
-          String? title,
-          String? body,
-          DateTime? createdAt,
-          bool? isRead}) =>
-      Alert(
-        id: id ?? this.id,
-        type: type ?? this.type,
-        title: title ?? this.title,
-        body: body ?? this.body,
-        createdAt: createdAt ?? this.createdAt,
-        isRead: isRead ?? this.isRead,
-      );
-  Alert copyWithCompanion(AlertsCompanion data) {
-    return Alert(
-      id: data.id.present ? data.id.value : this.id,
-      type: data.type.present ? data.type.value : this.type,
-      title: data.title.present ? data.title.value : this.title,
-      body: data.body.present ? data.body.value : this.body,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      isRead: data.isRead.present ? data.isRead.value : this.isRead,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Alert(')
-          ..write('id: $id, ')
-          ..write('type: $type, ')
-          ..write('title: $title, ')
-          ..write('body: $body, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('isRead: $isRead')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(id, type, title, body, createdAt, isRead);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Alert &&
-          other.id == this.id &&
-          other.type == this.type &&
-          other.title == this.title &&
-          other.body == this.body &&
-          other.createdAt == this.createdAt &&
-          other.isRead == this.isRead);
-}
-
-class AlertsCompanion extends UpdateCompanion<Alert> {
-  final Value<String> id;
-  final Value<String> type;
-  final Value<String> title;
-  final Value<String> body;
-  final Value<DateTime> createdAt;
-  final Value<bool> isRead;
-  final Value<int> rowid;
-  const AlertsCompanion({
-    this.id = const Value.absent(),
-    this.type = const Value.absent(),
-    this.title = const Value.absent(),
-    this.body = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.isRead = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  AlertsCompanion.insert({
-    required String id,
-    required String type,
-    required String title,
-    required String body,
-    required DateTime createdAt,
-    this.isRead = const Value.absent(),
-    this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        type = Value(type),
-        title = Value(title),
-        body = Value(body),
-        createdAt = Value(createdAt);
-  static Insertable<Alert> custom({
-    Expression<String>? id,
-    Expression<String>? type,
-    Expression<String>? title,
-    Expression<String>? body,
-    Expression<DateTime>? createdAt,
-    Expression<bool>? isRead,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (type != null) 'type': type,
-      if (title != null) 'title': title,
-      if (body != null) 'body': body,
-      if (createdAt != null) 'created_at': createdAt,
-      if (isRead != null) 'is_read': isRead,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  AlertsCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? type,
-      Value<String>? title,
-      Value<String>? body,
-      Value<DateTime>? createdAt,
-      Value<bool>? isRead,
-      Value<int>? rowid}) {
-    return AlertsCompanion(
-      id: id ?? this.id,
-      type: type ?? this.type,
-      title: title ?? this.title,
-      body: body ?? this.body,
-      createdAt: createdAt ?? this.createdAt,
-      isRead: isRead ?? this.isRead,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (body.present) {
-      map['body'] = Variable<String>(body.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (isRead.present) {
-      map['is_read'] = Variable<bool>(isRead.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('AlertsCompanion(')
-          ..write('id: $id, ')
-          ..write('type: $type, ')
-          ..write('title: $title, ')
-          ..write('body: $body, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('isRead: $isRead, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $StaffTasksTable extends StaffTasks
-    with TableInfo<$StaffTasksTable, StaffTask> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $StaffTasksTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
-  @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-      'type', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _locationMeta =
-      const VerificationMeta('location');
-  @override
-  late final GeneratedColumn<String> location = GeneratedColumn<String>(
-      'location', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _dueAtMeta = const VerificationMeta('dueAt');
-  @override
-  late final GeneratedColumn<DateTime> dueAt = GeneratedColumn<DateTime>(
-      'due_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
-  @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-      'status', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _assignedToMeta =
-      const VerificationMeta('assignedTo');
-  @override
-  late final GeneratedColumn<String> assignedTo = GeneratedColumn<String>(
-      'assigned_to', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  @override
-  List<GeneratedColumn> get $columns =>
-      [id, type, location, dueAt, status, assignedTo];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'staff_tasks';
-  @override
-  VerificationContext validateIntegrity(Insertable<StaffTask> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('type')) {
-      context.handle(
-          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
-    } else if (isInserting) {
-      context.missing(_typeMeta);
-    }
-    if (data.containsKey('location')) {
-      context.handle(_locationMeta,
-          location.isAcceptableOrUnknown(data['location']!, _locationMeta));
-    } else if (isInserting) {
-      context.missing(_locationMeta);
-    }
-    if (data.containsKey('due_at')) {
-      context.handle(
-          _dueAtMeta, dueAt.isAcceptableOrUnknown(data['due_at']!, _dueAtMeta));
-    } else if (isInserting) {
-      context.missing(_dueAtMeta);
-    }
-    if (data.containsKey('status')) {
-      context.handle(_statusMeta,
-          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
-    } else if (isInserting) {
-      context.missing(_statusMeta);
-    }
-    if (data.containsKey('assigned_to')) {
-      context.handle(
-          _assignedToMeta,
-          assignedTo.isAcceptableOrUnknown(
-              data['assigned_to']!, _assignedToMeta));
-    } else if (isInserting) {
-      context.missing(_assignedToMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  StaffTask map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return StaffTask(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      type: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      location: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}location'])!,
-      dueAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}due_at'])!,
-      status: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
-      assignedTo: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}assigned_to'])!,
-    );
-  }
-
-  @override
-  $StaffTasksTable createAlias(String alias) {
-    return $StaffTasksTable(attachedDatabase, alias);
-  }
-}
-
-class StaffTask extends DataClass implements Insertable<StaffTask> {
-  final String id;
-  final String type;
-  final String location;
-  final DateTime dueAt;
-  final String status;
-  final String assignedTo;
-  const StaffTask(
-      {required this.id,
-      required this.type,
-      required this.location,
-      required this.dueAt,
-      required this.status,
-      required this.assignedTo});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['type'] = Variable<String>(type);
-    map['location'] = Variable<String>(location);
-    map['due_at'] = Variable<DateTime>(dueAt);
-    map['status'] = Variable<String>(status);
-    map['assigned_to'] = Variable<String>(assignedTo);
-    return map;
-  }
-
-  StaffTasksCompanion toCompanion(bool nullToAbsent) {
-    return StaffTasksCompanion(
-      id: Value(id),
-      type: Value(type),
-      location: Value(location),
-      dueAt: Value(dueAt),
-      status: Value(status),
-      assignedTo: Value(assignedTo),
-    );
-  }
-
-  factory StaffTask.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return StaffTask(
-      id: serializer.fromJson<String>(json['id']),
-      type: serializer.fromJson<String>(json['type']),
-      location: serializer.fromJson<String>(json['location']),
-      dueAt: serializer.fromJson<DateTime>(json['dueAt']),
-      status: serializer.fromJson<String>(json['status']),
-      assignedTo: serializer.fromJson<String>(json['assignedTo']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'type': serializer.toJson<String>(type),
-      'location': serializer.toJson<String>(location),
-      'dueAt': serializer.toJson<DateTime>(dueAt),
-      'status': serializer.toJson<String>(status),
-      'assignedTo': serializer.toJson<String>(assignedTo),
-    };
-  }
-
-  StaffTask copyWith(
-          {String? id,
-          String? type,
-          String? location,
-          DateTime? dueAt,
-          String? status,
-          String? assignedTo}) =>
-      StaffTask(
-        id: id ?? this.id,
-        type: type ?? this.type,
-        location: location ?? this.location,
-        dueAt: dueAt ?? this.dueAt,
-        status: status ?? this.status,
-        assignedTo: assignedTo ?? this.assignedTo,
-      );
-  StaffTask copyWithCompanion(StaffTasksCompanion data) {
-    return StaffTask(
-      id: data.id.present ? data.id.value : this.id,
-      type: data.type.present ? data.type.value : this.type,
-      location: data.location.present ? data.location.value : this.location,
-      dueAt: data.dueAt.present ? data.dueAt.value : this.dueAt,
-      status: data.status.present ? data.status.value : this.status,
-      assignedTo:
-          data.assignedTo.present ? data.assignedTo.value : this.assignedTo,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('StaffTask(')
-          ..write('id: $id, ')
-          ..write('type: $type, ')
-          ..write('location: $location, ')
-          ..write('dueAt: $dueAt, ')
-          ..write('status: $status, ')
-          ..write('assignedTo: $assignedTo')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, type, location, dueAt, status, assignedTo);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is StaffTask &&
-          other.id == this.id &&
-          other.type == this.type &&
-          other.location == this.location &&
-          other.dueAt == this.dueAt &&
-          other.status == this.status &&
-          other.assignedTo == this.assignedTo);
-}
-
-class StaffTasksCompanion extends UpdateCompanion<StaffTask> {
-  final Value<String> id;
-  final Value<String> type;
-  final Value<String> location;
-  final Value<DateTime> dueAt;
-  final Value<String> status;
-  final Value<String> assignedTo;
-  final Value<int> rowid;
-  const StaffTasksCompanion({
-    this.id = const Value.absent(),
-    this.type = const Value.absent(),
-    this.location = const Value.absent(),
-    this.dueAt = const Value.absent(),
-    this.status = const Value.absent(),
-    this.assignedTo = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  StaffTasksCompanion.insert({
-    required String id,
-    required String type,
-    required String location,
-    required DateTime dueAt,
-    required String status,
-    required String assignedTo,
-    this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        type = Value(type),
-        location = Value(location),
-        dueAt = Value(dueAt),
-        status = Value(status),
-        assignedTo = Value(assignedTo);
-  static Insertable<StaffTask> custom({
-    Expression<String>? id,
-    Expression<String>? type,
-    Expression<String>? location,
-    Expression<DateTime>? dueAt,
-    Expression<String>? status,
-    Expression<String>? assignedTo,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (type != null) 'type': type,
-      if (location != null) 'location': location,
-      if (dueAt != null) 'due_at': dueAt,
-      if (status != null) 'status': status,
-      if (assignedTo != null) 'assigned_to': assignedTo,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  StaffTasksCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? type,
-      Value<String>? location,
-      Value<DateTime>? dueAt,
-      Value<String>? status,
-      Value<String>? assignedTo,
-      Value<int>? rowid}) {
-    return StaffTasksCompanion(
-      id: id ?? this.id,
-      type: type ?? this.type,
-      location: location ?? this.location,
-      dueAt: dueAt ?? this.dueAt,
-      status: status ?? this.status,
-      assignedTo: assignedTo ?? this.assignedTo,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
-    }
-    if (location.present) {
-      map['location'] = Variable<String>(location.value);
-    }
-    if (dueAt.present) {
-      map['due_at'] = Variable<DateTime>(dueAt.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<String>(status.value);
-    }
-    if (assignedTo.present) {
-      map['assigned_to'] = Variable<String>(assignedTo.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('StaffTasksCompanion(')
-          ..write('id: $id, ')
-          ..write('type: $type, ')
-          ..write('location: $location, ')
-          ..write('dueAt: $dueAt, ')
-          ..write('status: $status, ')
-          ..write('assignedTo: $assignedTo, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $CountSessionsTable extends CountSessions
     with TableInfo<$CountSessionsTable, CountSession> {
   @override
@@ -9148,12 +8459,1274 @@ class RemoteOrderLinesCompanion extends UpdateCompanion<RemoteOrderLineRow> {
   }
 }
 
+class $RemoteTasksTable extends RemoteTasks
+    with TableInfo<$RemoteTasksTable, RemoteTaskRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteTasksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _locationIdMeta =
+      const VerificationMeta('locationId');
+  @override
+  late final GeneratedColumn<String> locationId = GeneratedColumn<String>(
+      'location_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _assigneeUserIdMeta =
+      const VerificationMeta('assigneeUserId');
+  @override
+  late final GeneratedColumn<String> assigneeUserId = GeneratedColumn<String>(
+      'assignee_user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _dueAtMeta = const VerificationMeta('dueAt');
+  @override
+  late final GeneratedColumn<DateTime> dueAt = GeneratedColumn<DateTime>(
+      'due_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _createdByUserIdMeta =
+      const VerificationMeta('createdByUserId');
+  @override
+  late final GeneratedColumn<String> createdByUserId = GeneratedColumn<String>(
+      'created_by_user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _completedAtMeta =
+      const VerificationMeta('completedAt');
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+      'completed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        warehouseId,
+        title,
+        type,
+        locationId,
+        assigneeUserId,
+        status,
+        dueAt,
+        createdByUserId,
+        completedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_tasks';
+  @override
+  VerificationContext validateIntegrity(Insertable<RemoteTaskRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('location_id')) {
+      context.handle(
+          _locationIdMeta,
+          locationId.isAcceptableOrUnknown(
+              data['location_id']!, _locationIdMeta));
+    }
+    if (data.containsKey('assignee_user_id')) {
+      context.handle(
+          _assigneeUserIdMeta,
+          assigneeUserId.isAcceptableOrUnknown(
+              data['assignee_user_id']!, _assigneeUserIdMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('due_at')) {
+      context.handle(
+          _dueAtMeta, dueAt.isAcceptableOrUnknown(data['due_at']!, _dueAtMeta));
+    }
+    if (data.containsKey('created_by_user_id')) {
+      context.handle(
+          _createdByUserIdMeta,
+          createdByUserId.isAcceptableOrUnknown(
+              data['created_by_user_id']!, _createdByUserIdMeta));
+    } else if (isInserting) {
+      context.missing(_createdByUserIdMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+          _completedAtMeta,
+          completedAt.isAcceptableOrUnknown(
+              data['completed_at']!, _completedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemoteTaskRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteTaskRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      locationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location_id']),
+      assigneeUserId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}assignee_user_id']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      dueAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}due_at']),
+      createdByUserId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}created_by_user_id'])!,
+      completedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at']),
+    );
+  }
+
+  @override
+  $RemoteTasksTable createAlias(String alias) {
+    return $RemoteTasksTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteTaskRow extends DataClass implements Insertable<RemoteTaskRow> {
+  final String id;
+  final String warehouseId;
+  final String title;
+  final String type;
+  final String? locationId;
+  final String? assigneeUserId;
+  final String status;
+  final DateTime? dueAt;
+  final String createdByUserId;
+  final DateTime? completedAt;
+  const RemoteTaskRow(
+      {required this.id,
+      required this.warehouseId,
+      required this.title,
+      required this.type,
+      this.locationId,
+      this.assigneeUserId,
+      required this.status,
+      this.dueAt,
+      required this.createdByUserId,
+      this.completedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['title'] = Variable<String>(title);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || locationId != null) {
+      map['location_id'] = Variable<String>(locationId);
+    }
+    if (!nullToAbsent || assigneeUserId != null) {
+      map['assignee_user_id'] = Variable<String>(assigneeUserId);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || dueAt != null) {
+      map['due_at'] = Variable<DateTime>(dueAt);
+    }
+    map['created_by_user_id'] = Variable<String>(createdByUserId);
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    return map;
+  }
+
+  RemoteTasksCompanion toCompanion(bool nullToAbsent) {
+    return RemoteTasksCompanion(
+      id: Value(id),
+      warehouseId: Value(warehouseId),
+      title: Value(title),
+      type: Value(type),
+      locationId: locationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(locationId),
+      assigneeUserId: assigneeUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assigneeUserId),
+      status: Value(status),
+      dueAt:
+          dueAt == null && nullToAbsent ? const Value.absent() : Value(dueAt),
+      createdByUserId: Value(createdByUserId),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+    );
+  }
+
+  factory RemoteTaskRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteTaskRow(
+      id: serializer.fromJson<String>(json['id']),
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      title: serializer.fromJson<String>(json['title']),
+      type: serializer.fromJson<String>(json['type']),
+      locationId: serializer.fromJson<String?>(json['locationId']),
+      assigneeUserId: serializer.fromJson<String?>(json['assigneeUserId']),
+      status: serializer.fromJson<String>(json['status']),
+      dueAt: serializer.fromJson<DateTime?>(json['dueAt']),
+      createdByUserId: serializer.fromJson<String>(json['createdByUserId']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'title': serializer.toJson<String>(title),
+      'type': serializer.toJson<String>(type),
+      'locationId': serializer.toJson<String?>(locationId),
+      'assigneeUserId': serializer.toJson<String?>(assigneeUserId),
+      'status': serializer.toJson<String>(status),
+      'dueAt': serializer.toJson<DateTime?>(dueAt),
+      'createdByUserId': serializer.toJson<String>(createdByUserId),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+    };
+  }
+
+  RemoteTaskRow copyWith(
+          {String? id,
+          String? warehouseId,
+          String? title,
+          String? type,
+          Value<String?> locationId = const Value.absent(),
+          Value<String?> assigneeUserId = const Value.absent(),
+          String? status,
+          Value<DateTime?> dueAt = const Value.absent(),
+          String? createdByUserId,
+          Value<DateTime?> completedAt = const Value.absent()}) =>
+      RemoteTaskRow(
+        id: id ?? this.id,
+        warehouseId: warehouseId ?? this.warehouseId,
+        title: title ?? this.title,
+        type: type ?? this.type,
+        locationId: locationId.present ? locationId.value : this.locationId,
+        assigneeUserId:
+            assigneeUserId.present ? assigneeUserId.value : this.assigneeUserId,
+        status: status ?? this.status,
+        dueAt: dueAt.present ? dueAt.value : this.dueAt,
+        createdByUserId: createdByUserId ?? this.createdByUserId,
+        completedAt: completedAt.present ? completedAt.value : this.completedAt,
+      );
+  RemoteTaskRow copyWithCompanion(RemoteTasksCompanion data) {
+    return RemoteTaskRow(
+      id: data.id.present ? data.id.value : this.id,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      title: data.title.present ? data.title.value : this.title,
+      type: data.type.present ? data.type.value : this.type,
+      locationId:
+          data.locationId.present ? data.locationId.value : this.locationId,
+      assigneeUserId: data.assigneeUserId.present
+          ? data.assigneeUserId.value
+          : this.assigneeUserId,
+      status: data.status.present ? data.status.value : this.status,
+      dueAt: data.dueAt.present ? data.dueAt.value : this.dueAt,
+      createdByUserId: data.createdByUserId.present
+          ? data.createdByUserId.value
+          : this.createdByUserId,
+      completedAt:
+          data.completedAt.present ? data.completedAt.value : this.completedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteTaskRow(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('title: $title, ')
+          ..write('type: $type, ')
+          ..write('locationId: $locationId, ')
+          ..write('assigneeUserId: $assigneeUserId, ')
+          ..write('status: $status, ')
+          ..write('dueAt: $dueAt, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('completedAt: $completedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, warehouseId, title, type, locationId,
+      assigneeUserId, status, dueAt, createdByUserId, completedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteTaskRow &&
+          other.id == this.id &&
+          other.warehouseId == this.warehouseId &&
+          other.title == this.title &&
+          other.type == this.type &&
+          other.locationId == this.locationId &&
+          other.assigneeUserId == this.assigneeUserId &&
+          other.status == this.status &&
+          other.dueAt == this.dueAt &&
+          other.createdByUserId == this.createdByUserId &&
+          other.completedAt == this.completedAt);
+}
+
+class RemoteTasksCompanion extends UpdateCompanion<RemoteTaskRow> {
+  final Value<String> id;
+  final Value<String> warehouseId;
+  final Value<String> title;
+  final Value<String> type;
+  final Value<String?> locationId;
+  final Value<String?> assigneeUserId;
+  final Value<String> status;
+  final Value<DateTime?> dueAt;
+  final Value<String> createdByUserId;
+  final Value<DateTime?> completedAt;
+  final Value<int> rowid;
+  const RemoteTasksCompanion({
+    this.id = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.type = const Value.absent(),
+    this.locationId = const Value.absent(),
+    this.assigneeUserId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.dueAt = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteTasksCompanion.insert({
+    required String id,
+    required String warehouseId,
+    required String title,
+    required String type,
+    this.locationId = const Value.absent(),
+    this.assigneeUserId = const Value.absent(),
+    required String status,
+    this.dueAt = const Value.absent(),
+    required String createdByUserId,
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        warehouseId = Value(warehouseId),
+        title = Value(title),
+        type = Value(type),
+        status = Value(status),
+        createdByUserId = Value(createdByUserId);
+  static Insertable<RemoteTaskRow> custom({
+    Expression<String>? id,
+    Expression<String>? warehouseId,
+    Expression<String>? title,
+    Expression<String>? type,
+    Expression<String>? locationId,
+    Expression<String>? assigneeUserId,
+    Expression<String>? status,
+    Expression<DateTime>? dueAt,
+    Expression<String>? createdByUserId,
+    Expression<DateTime>? completedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (title != null) 'title': title,
+      if (type != null) 'type': type,
+      if (locationId != null) 'location_id': locationId,
+      if (assigneeUserId != null) 'assignee_user_id': assigneeUserId,
+      if (status != null) 'status': status,
+      if (dueAt != null) 'due_at': dueAt,
+      if (createdByUserId != null) 'created_by_user_id': createdByUserId,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteTasksCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? warehouseId,
+      Value<String>? title,
+      Value<String>? type,
+      Value<String?>? locationId,
+      Value<String?>? assigneeUserId,
+      Value<String>? status,
+      Value<DateTime?>? dueAt,
+      Value<String>? createdByUserId,
+      Value<DateTime?>? completedAt,
+      Value<int>? rowid}) {
+    return RemoteTasksCompanion(
+      id: id ?? this.id,
+      warehouseId: warehouseId ?? this.warehouseId,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      locationId: locationId ?? this.locationId,
+      assigneeUserId: assigneeUserId ?? this.assigneeUserId,
+      status: status ?? this.status,
+      dueAt: dueAt ?? this.dueAt,
+      createdByUserId: createdByUserId ?? this.createdByUserId,
+      completedAt: completedAt ?? this.completedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (locationId.present) {
+      map['location_id'] = Variable<String>(locationId.value);
+    }
+    if (assigneeUserId.present) {
+      map['assignee_user_id'] = Variable<String>(assigneeUserId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (dueAt.present) {
+      map['due_at'] = Variable<DateTime>(dueAt.value);
+    }
+    if (createdByUserId.present) {
+      map['created_by_user_id'] = Variable<String>(createdByUserId.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteTasksCompanion(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('title: $title, ')
+          ..write('type: $type, ')
+          ..write('locationId: $locationId, ')
+          ..write('assigneeUserId: $assigneeUserId, ')
+          ..write('status: $status, ')
+          ..write('dueAt: $dueAt, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemoteAlertsTable extends RemoteAlerts
+    with TableInfo<$RemoteAlertsTable, RemoteAlertRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteAlertsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+      'body', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _payloadMeta =
+      const VerificationMeta('payload');
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+      'payload', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _readAtMeta = const VerificationMeta('readAt');
+  @override
+  late final GeneratedColumn<DateTime> readAt = GeneratedColumn<DateTime>(
+      'read_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, warehouseId, type, title, body, payload, createdAt, readAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_alerts';
+  @override
+  VerificationContext validateIntegrity(Insertable<RemoteAlertRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+          _bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(_payloadMeta,
+          payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('read_at')) {
+      context.handle(_readAtMeta,
+          readAt.isAcceptableOrUnknown(data['read_at']!, _readAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RemoteAlertRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteAlertRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id']),
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      body: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      payload: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payload']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      readAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}read_at']),
+    );
+  }
+
+  @override
+  $RemoteAlertsTable createAlias(String alias) {
+    return $RemoteAlertsTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteAlertRow extends DataClass implements Insertable<RemoteAlertRow> {
+  final String id;
+  final String? warehouseId;
+  final String type;
+  final String title;
+  final String body;
+  final String? payload;
+  final DateTime createdAt;
+  final DateTime? readAt;
+  const RemoteAlertRow(
+      {required this.id,
+      this.warehouseId,
+      required this.type,
+      required this.title,
+      required this.body,
+      this.payload,
+      required this.createdAt,
+      this.readAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || warehouseId != null) {
+      map['warehouse_id'] = Variable<String>(warehouseId);
+    }
+    map['type'] = Variable<String>(type);
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || payload != null) {
+      map['payload'] = Variable<String>(payload);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || readAt != null) {
+      map['read_at'] = Variable<DateTime>(readAt);
+    }
+    return map;
+  }
+
+  RemoteAlertsCompanion toCompanion(bool nullToAbsent) {
+    return RemoteAlertsCompanion(
+      id: Value(id),
+      warehouseId: warehouseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warehouseId),
+      type: Value(type),
+      title: Value(title),
+      body: Value(body),
+      payload: payload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payload),
+      createdAt: Value(createdAt),
+      readAt:
+          readAt == null && nullToAbsent ? const Value.absent() : Value(readAt),
+    );
+  }
+
+  factory RemoteAlertRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteAlertRow(
+      id: serializer.fromJson<String>(json['id']),
+      warehouseId: serializer.fromJson<String?>(json['warehouseId']),
+      type: serializer.fromJson<String>(json['type']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      payload: serializer.fromJson<String?>(json['payload']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      readAt: serializer.fromJson<DateTime?>(json['readAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'warehouseId': serializer.toJson<String?>(warehouseId),
+      'type': serializer.toJson<String>(type),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'payload': serializer.toJson<String?>(payload),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'readAt': serializer.toJson<DateTime?>(readAt),
+    };
+  }
+
+  RemoteAlertRow copyWith(
+          {String? id,
+          Value<String?> warehouseId = const Value.absent(),
+          String? type,
+          String? title,
+          String? body,
+          Value<String?> payload = const Value.absent(),
+          DateTime? createdAt,
+          Value<DateTime?> readAt = const Value.absent()}) =>
+      RemoteAlertRow(
+        id: id ?? this.id,
+        warehouseId: warehouseId.present ? warehouseId.value : this.warehouseId,
+        type: type ?? this.type,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        payload: payload.present ? payload.value : this.payload,
+        createdAt: createdAt ?? this.createdAt,
+        readAt: readAt.present ? readAt.value : this.readAt,
+      );
+  RemoteAlertRow copyWithCompanion(RemoteAlertsCompanion data) {
+    return RemoteAlertRow(
+      id: data.id.present ? data.id.value : this.id,
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      type: data.type.present ? data.type.value : this.type,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      readAt: data.readAt.present ? data.readAt.value : this.readAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteAlertRow(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('payload: $payload, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('readAt: $readAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, warehouseId, type, title, body, payload, createdAt, readAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteAlertRow &&
+          other.id == this.id &&
+          other.warehouseId == this.warehouseId &&
+          other.type == this.type &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.payload == this.payload &&
+          other.createdAt == this.createdAt &&
+          other.readAt == this.readAt);
+}
+
+class RemoteAlertsCompanion extends UpdateCompanion<RemoteAlertRow> {
+  final Value<String> id;
+  final Value<String?> warehouseId;
+  final Value<String> type;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<String?> payload;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> readAt;
+  final Value<int> rowid;
+  const RemoteAlertsCompanion({
+    this.id = const Value.absent(),
+    this.warehouseId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.readAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteAlertsCompanion.insert({
+    required String id,
+    this.warehouseId = const Value.absent(),
+    required String type,
+    required String title,
+    required String body,
+    this.payload = const Value.absent(),
+    required DateTime createdAt,
+    this.readAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        type = Value(type),
+        title = Value(title),
+        body = Value(body),
+        createdAt = Value(createdAt);
+  static Insertable<RemoteAlertRow> custom({
+    Expression<String>? id,
+    Expression<String>? warehouseId,
+    Expression<String>? type,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? payload,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? readAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (type != null) 'type': type,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (payload != null) 'payload': payload,
+      if (createdAt != null) 'created_at': createdAt,
+      if (readAt != null) 'read_at': readAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteAlertsCompanion copyWith(
+      {Value<String>? id,
+      Value<String?>? warehouseId,
+      Value<String>? type,
+      Value<String>? title,
+      Value<String>? body,
+      Value<String?>? payload,
+      Value<DateTime>? createdAt,
+      Value<DateTime?>? readAt,
+      Value<int>? rowid}) {
+    return RemoteAlertsCompanion(
+      id: id ?? this.id,
+      warehouseId: warehouseId ?? this.warehouseId,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      payload: payload ?? this.payload,
+      createdAt: createdAt ?? this.createdAt,
+      readAt: readAt ?? this.readAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (readAt.present) {
+      map['read_at'] = Variable<DateTime>(readAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteAlertsCompanion(')
+          ..write('id: $id, ')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('payload: $payload, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('readAt: $readAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WarehouseMembersTable extends WarehouseMembers
+    with TableInfo<$WarehouseMembersTable, WarehouseMemberRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WarehouseMembersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _warehouseIdMeta =
+      const VerificationMeta('warehouseId');
+  @override
+  late final GeneratedColumn<String> warehouseId = GeneratedColumn<String>(
+      'warehouse_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _displayNameMeta =
+      const VerificationMeta('displayName');
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+      'display_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+      'role', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [warehouseId, userId, displayName, role, isActive];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'warehouse_members';
+  @override
+  VerificationContext validateIntegrity(Insertable<WarehouseMemberRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('warehouse_id')) {
+      context.handle(
+          _warehouseIdMeta,
+          warehouseId.isAcceptableOrUnknown(
+              data['warehouse_id']!, _warehouseIdMeta));
+    } else if (isInserting) {
+      context.missing(_warehouseIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+          _displayNameMeta,
+          displayName.isAcceptableOrUnknown(
+              data['display_name']!, _displayNameMeta));
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+          _roleMeta, role.isAcceptableOrUnknown(data['role']!, _roleMeta));
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    } else if (isInserting) {
+      context.missing(_isActiveMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {warehouseId, userId};
+  @override
+  WarehouseMemberRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WarehouseMemberRow(
+      warehouseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse_id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      displayName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}display_name'])!,
+      role: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}role'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+    );
+  }
+
+  @override
+  $WarehouseMembersTable createAlias(String alias) {
+    return $WarehouseMembersTable(attachedDatabase, alias);
+  }
+}
+
+class WarehouseMemberRow extends DataClass
+    implements Insertable<WarehouseMemberRow> {
+  final String warehouseId;
+  final String userId;
+  final String displayName;
+  final String role;
+  final bool isActive;
+  const WarehouseMemberRow(
+      {required this.warehouseId,
+      required this.userId,
+      required this.displayName,
+      required this.role,
+      required this.isActive});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['warehouse_id'] = Variable<String>(warehouseId);
+    map['user_id'] = Variable<String>(userId);
+    map['display_name'] = Variable<String>(displayName);
+    map['role'] = Variable<String>(role);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  WarehouseMembersCompanion toCompanion(bool nullToAbsent) {
+    return WarehouseMembersCompanion(
+      warehouseId: Value(warehouseId),
+      userId: Value(userId),
+      displayName: Value(displayName),
+      role: Value(role),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory WarehouseMemberRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WarehouseMemberRow(
+      warehouseId: serializer.fromJson<String>(json['warehouseId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      role: serializer.fromJson<String>(json['role']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'warehouseId': serializer.toJson<String>(warehouseId),
+      'userId': serializer.toJson<String>(userId),
+      'displayName': serializer.toJson<String>(displayName),
+      'role': serializer.toJson<String>(role),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  WarehouseMemberRow copyWith(
+          {String? warehouseId,
+          String? userId,
+          String? displayName,
+          String? role,
+          bool? isActive}) =>
+      WarehouseMemberRow(
+        warehouseId: warehouseId ?? this.warehouseId,
+        userId: userId ?? this.userId,
+        displayName: displayName ?? this.displayName,
+        role: role ?? this.role,
+        isActive: isActive ?? this.isActive,
+      );
+  WarehouseMemberRow copyWithCompanion(WarehouseMembersCompanion data) {
+    return WarehouseMemberRow(
+      warehouseId:
+          data.warehouseId.present ? data.warehouseId.value : this.warehouseId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      displayName:
+          data.displayName.present ? data.displayName.value : this.displayName,
+      role: data.role.present ? data.role.value : this.role,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WarehouseMemberRow(')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('userId: $userId, ')
+          ..write('displayName: $displayName, ')
+          ..write('role: $role, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(warehouseId, userId, displayName, role, isActive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WarehouseMemberRow &&
+          other.warehouseId == this.warehouseId &&
+          other.userId == this.userId &&
+          other.displayName == this.displayName &&
+          other.role == this.role &&
+          other.isActive == this.isActive);
+}
+
+class WarehouseMembersCompanion extends UpdateCompanion<WarehouseMemberRow> {
+  final Value<String> warehouseId;
+  final Value<String> userId;
+  final Value<String> displayName;
+  final Value<String> role;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const WarehouseMembersCompanion({
+    this.warehouseId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.role = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WarehouseMembersCompanion.insert({
+    required String warehouseId,
+    required String userId,
+    required String displayName,
+    required String role,
+    required bool isActive,
+    this.rowid = const Value.absent(),
+  })  : warehouseId = Value(warehouseId),
+        userId = Value(userId),
+        displayName = Value(displayName),
+        role = Value(role),
+        isActive = Value(isActive);
+  static Insertable<WarehouseMemberRow> custom({
+    Expression<String>? warehouseId,
+    Expression<String>? userId,
+    Expression<String>? displayName,
+    Expression<String>? role,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      if (userId != null) 'user_id': userId,
+      if (displayName != null) 'display_name': displayName,
+      if (role != null) 'role': role,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WarehouseMembersCompanion copyWith(
+      {Value<String>? warehouseId,
+      Value<String>? userId,
+      Value<String>? displayName,
+      Value<String>? role,
+      Value<bool>? isActive,
+      Value<int>? rowid}) {
+    return WarehouseMembersCompanion(
+      warehouseId: warehouseId ?? this.warehouseId,
+      userId: userId ?? this.userId,
+      displayName: displayName ?? this.displayName,
+      role: role ?? this.role,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (warehouseId.present) {
+      map['warehouse_id'] = Variable<String>(warehouseId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WarehouseMembersCompanion(')
+          ..write('warehouseId: $warehouseId, ')
+          ..write('userId: $userId, ')
+          ..write('displayName: $displayName, ')
+          ..write('role: $role, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $UserSessionsTable userSessions = $UserSessionsTable(this);
-  late final $AlertsTable alerts = $AlertsTable(this);
-  late final $StaffTasksTable staffTasks = $StaffTasksTable(this);
   late final $CountSessionsTable countSessions = $CountSessionsTable(this);
   late final $CountItemsTable countItems = $CountItemsTable(this);
   late final $LocationEntriesTable locationEntries =
@@ -9185,8 +9758,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RemoteOrdersTable remoteOrders = $RemoteOrdersTable(this);
   late final $RemoteOrderLinesTable remoteOrderLines =
       $RemoteOrderLinesTable(this);
-  late final AlertsDao alertsDao = AlertsDao(this as AppDatabase);
-  late final TasksDao tasksDao = TasksDao(this as AppDatabase);
+  late final $RemoteTasksTable remoteTasks = $RemoteTasksTable(this);
+  late final $RemoteAlertsTable remoteAlerts = $RemoteAlertsTable(this);
+  late final $WarehouseMembersTable warehouseMembers =
+      $WarehouseMembersTable(this);
   late final CountSessionDao countSessionDao =
       CountSessionDao(this as AppDatabase);
   late final OrdersDao ordersDao = OrdersDao(this as AppDatabase);
@@ -9200,8 +9775,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         userSessions,
-        alerts,
-        staffTasks,
         countSessions,
         countItems,
         locationEntries,
@@ -9221,7 +9794,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         remotePurchaseOrders,
         remotePoLines,
         remoteOrders,
-        remoteOrderLines
+        remoteOrderLines,
+        remoteTasks,
+        remoteAlerts,
+        warehouseMembers
       ];
 }
 
@@ -9427,366 +10003,6 @@ typedef $$UserSessionsTableProcessedTableManager = ProcessedTableManager<
       BaseReferences<_$AppDatabase, $UserSessionsTable, UserSession>
     ),
     UserSession,
-    PrefetchHooks Function()>;
-typedef $$AlertsTableCreateCompanionBuilder = AlertsCompanion Function({
-  required String id,
-  required String type,
-  required String title,
-  required String body,
-  required DateTime createdAt,
-  Value<bool> isRead,
-  Value<int> rowid,
-});
-typedef $$AlertsTableUpdateCompanionBuilder = AlertsCompanion Function({
-  Value<String> id,
-  Value<String> type,
-  Value<String> title,
-  Value<String> body,
-  Value<DateTime> createdAt,
-  Value<bool> isRead,
-  Value<int> rowid,
-});
-
-class $$AlertsTableFilterComposer
-    extends Composer<_$AppDatabase, $AlertsTable> {
-  $$AlertsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get type => $composableBuilder(
-      column: $table.type, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get title => $composableBuilder(
-      column: $table.title, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get body => $composableBuilder(
-      column: $table.body, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get isRead => $composableBuilder(
-      column: $table.isRead, builder: (column) => ColumnFilters(column));
-}
-
-class $$AlertsTableOrderingComposer
-    extends Composer<_$AppDatabase, $AlertsTable> {
-  $$AlertsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get type => $composableBuilder(
-      column: $table.type, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get title => $composableBuilder(
-      column: $table.title, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get body => $composableBuilder(
-      column: $table.body, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get isRead => $composableBuilder(
-      column: $table.isRead, builder: (column) => ColumnOrderings(column));
-}
-
-class $$AlertsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $AlertsTable> {
-  $$AlertsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get body =>
-      $composableBuilder(column: $table.body, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<bool> get isRead =>
-      $composableBuilder(column: $table.isRead, builder: (column) => column);
-}
-
-class $$AlertsTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $AlertsTable,
-    Alert,
-    $$AlertsTableFilterComposer,
-    $$AlertsTableOrderingComposer,
-    $$AlertsTableAnnotationComposer,
-    $$AlertsTableCreateCompanionBuilder,
-    $$AlertsTableUpdateCompanionBuilder,
-    (Alert, BaseReferences<_$AppDatabase, $AlertsTable, Alert>),
-    Alert,
-    PrefetchHooks Function()> {
-  $$AlertsTableTableManager(_$AppDatabase db, $AlertsTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$AlertsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$AlertsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$AlertsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> type = const Value.absent(),
-            Value<String> title = const Value.absent(),
-            Value<String> body = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-            Value<bool> isRead = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              AlertsCompanion(
-            id: id,
-            type: type,
-            title: title,
-            body: body,
-            createdAt: createdAt,
-            isRead: isRead,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String type,
-            required String title,
-            required String body,
-            required DateTime createdAt,
-            Value<bool> isRead = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              AlertsCompanion.insert(
-            id: id,
-            type: type,
-            title: title,
-            body: body,
-            createdAt: createdAt,
-            isRead: isRead,
-            rowid: rowid,
-          ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ));
-}
-
-typedef $$AlertsTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $AlertsTable,
-    Alert,
-    $$AlertsTableFilterComposer,
-    $$AlertsTableOrderingComposer,
-    $$AlertsTableAnnotationComposer,
-    $$AlertsTableCreateCompanionBuilder,
-    $$AlertsTableUpdateCompanionBuilder,
-    (Alert, BaseReferences<_$AppDatabase, $AlertsTable, Alert>),
-    Alert,
-    PrefetchHooks Function()>;
-typedef $$StaffTasksTableCreateCompanionBuilder = StaffTasksCompanion Function({
-  required String id,
-  required String type,
-  required String location,
-  required DateTime dueAt,
-  required String status,
-  required String assignedTo,
-  Value<int> rowid,
-});
-typedef $$StaffTasksTableUpdateCompanionBuilder = StaffTasksCompanion Function({
-  Value<String> id,
-  Value<String> type,
-  Value<String> location,
-  Value<DateTime> dueAt,
-  Value<String> status,
-  Value<String> assignedTo,
-  Value<int> rowid,
-});
-
-class $$StaffTasksTableFilterComposer
-    extends Composer<_$AppDatabase, $StaffTasksTable> {
-  $$StaffTasksTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get type => $composableBuilder(
-      column: $table.type, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get location => $composableBuilder(
-      column: $table.location, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get dueAt => $composableBuilder(
-      column: $table.dueAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get status => $composableBuilder(
-      column: $table.status, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get assignedTo => $composableBuilder(
-      column: $table.assignedTo, builder: (column) => ColumnFilters(column));
-}
-
-class $$StaffTasksTableOrderingComposer
-    extends Composer<_$AppDatabase, $StaffTasksTable> {
-  $$StaffTasksTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get type => $composableBuilder(
-      column: $table.type, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get location => $composableBuilder(
-      column: $table.location, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get dueAt => $composableBuilder(
-      column: $table.dueAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get status => $composableBuilder(
-      column: $table.status, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get assignedTo => $composableBuilder(
-      column: $table.assignedTo, builder: (column) => ColumnOrderings(column));
-}
-
-class $$StaffTasksTableAnnotationComposer
-    extends Composer<_$AppDatabase, $StaffTasksTable> {
-  $$StaffTasksTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<String> get location =>
-      $composableBuilder(column: $table.location, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get dueAt =>
-      $composableBuilder(column: $table.dueAt, builder: (column) => column);
-
-  GeneratedColumn<String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
-
-  GeneratedColumn<String> get assignedTo => $composableBuilder(
-      column: $table.assignedTo, builder: (column) => column);
-}
-
-class $$StaffTasksTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $StaffTasksTable,
-    StaffTask,
-    $$StaffTasksTableFilterComposer,
-    $$StaffTasksTableOrderingComposer,
-    $$StaffTasksTableAnnotationComposer,
-    $$StaffTasksTableCreateCompanionBuilder,
-    $$StaffTasksTableUpdateCompanionBuilder,
-    (StaffTask, BaseReferences<_$AppDatabase, $StaffTasksTable, StaffTask>),
-    StaffTask,
-    PrefetchHooks Function()> {
-  $$StaffTasksTableTableManager(_$AppDatabase db, $StaffTasksTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$StaffTasksTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$StaffTasksTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$StaffTasksTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> type = const Value.absent(),
-            Value<String> location = const Value.absent(),
-            Value<DateTime> dueAt = const Value.absent(),
-            Value<String> status = const Value.absent(),
-            Value<String> assignedTo = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              StaffTasksCompanion(
-            id: id,
-            type: type,
-            location: location,
-            dueAt: dueAt,
-            status: status,
-            assignedTo: assignedTo,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String type,
-            required String location,
-            required DateTime dueAt,
-            required String status,
-            required String assignedTo,
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              StaffTasksCompanion.insert(
-            id: id,
-            type: type,
-            location: location,
-            dueAt: dueAt,
-            status: status,
-            assignedTo: assignedTo,
-            rowid: rowid,
-          ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ));
-}
-
-typedef $$StaffTasksTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $StaffTasksTable,
-    StaffTask,
-    $$StaffTasksTableFilterComposer,
-    $$StaffTasksTableOrderingComposer,
-    $$StaffTasksTableAnnotationComposer,
-    $$StaffTasksTableCreateCompanionBuilder,
-    $$StaffTasksTableUpdateCompanionBuilder,
-    (StaffTask, BaseReferences<_$AppDatabase, $StaffTasksTable, StaffTask>),
-    StaffTask,
     PrefetchHooks Function()>;
 typedef $$CountSessionsTableCreateCompanionBuilder = CountSessionsCompanion
     Function({
@@ -13938,16 +14154,656 @@ typedef $$RemoteOrderLinesTableProcessedTableManager = ProcessedTableManager<
     ),
     RemoteOrderLineRow,
     PrefetchHooks Function()>;
+typedef $$RemoteTasksTableCreateCompanionBuilder = RemoteTasksCompanion
+    Function({
+  required String id,
+  required String warehouseId,
+  required String title,
+  required String type,
+  Value<String?> locationId,
+  Value<String?> assigneeUserId,
+  required String status,
+  Value<DateTime?> dueAt,
+  required String createdByUserId,
+  Value<DateTime?> completedAt,
+  Value<int> rowid,
+});
+typedef $$RemoteTasksTableUpdateCompanionBuilder = RemoteTasksCompanion
+    Function({
+  Value<String> id,
+  Value<String> warehouseId,
+  Value<String> title,
+  Value<String> type,
+  Value<String?> locationId,
+  Value<String?> assigneeUserId,
+  Value<String> status,
+  Value<DateTime?> dueAt,
+  Value<String> createdByUserId,
+  Value<DateTime?> completedAt,
+  Value<int> rowid,
+});
+
+class $$RemoteTasksTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteTasksTable> {
+  $$RemoteTasksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get assigneeUserId => $composableBuilder(
+      column: $table.assigneeUserId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get dueAt => $composableBuilder(
+      column: $table.dueAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get createdByUserId => $composableBuilder(
+      column: $table.createdByUserId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteTasksTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteTasksTable> {
+  $$RemoteTasksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get assigneeUserId => $composableBuilder(
+      column: $table.assigneeUserId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get dueAt => $composableBuilder(
+      column: $table.dueAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get createdByUserId => $composableBuilder(
+      column: $table.createdByUserId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteTasksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteTasksTable> {
+  $$RemoteTasksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get locationId => $composableBuilder(
+      column: $table.locationId, builder: (column) => column);
+
+  GeneratedColumn<String> get assigneeUserId => $composableBuilder(
+      column: $table.assigneeUserId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueAt =>
+      $composableBuilder(column: $table.dueAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByUserId => $composableBuilder(
+      column: $table.createdByUserId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => column);
+}
+
+class $$RemoteTasksTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteTasksTable,
+    RemoteTaskRow,
+    $$RemoteTasksTableFilterComposer,
+    $$RemoteTasksTableOrderingComposer,
+    $$RemoteTasksTableAnnotationComposer,
+    $$RemoteTasksTableCreateCompanionBuilder,
+    $$RemoteTasksTableUpdateCompanionBuilder,
+    (
+      RemoteTaskRow,
+      BaseReferences<_$AppDatabase, $RemoteTasksTable, RemoteTaskRow>
+    ),
+    RemoteTaskRow,
+    PrefetchHooks Function()> {
+  $$RemoteTasksTableTableManager(_$AppDatabase db, $RemoteTasksTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteTasksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteTasksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteTasksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> warehouseId = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<String?> locationId = const Value.absent(),
+            Value<String?> assigneeUserId = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<DateTime?> dueAt = const Value.absent(),
+            Value<String> createdByUserId = const Value.absent(),
+            Value<DateTime?> completedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteTasksCompanion(
+            id: id,
+            warehouseId: warehouseId,
+            title: title,
+            type: type,
+            locationId: locationId,
+            assigneeUserId: assigneeUserId,
+            status: status,
+            dueAt: dueAt,
+            createdByUserId: createdByUserId,
+            completedAt: completedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String warehouseId,
+            required String title,
+            required String type,
+            Value<String?> locationId = const Value.absent(),
+            Value<String?> assigneeUserId = const Value.absent(),
+            required String status,
+            Value<DateTime?> dueAt = const Value.absent(),
+            required String createdByUserId,
+            Value<DateTime?> completedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteTasksCompanion.insert(
+            id: id,
+            warehouseId: warehouseId,
+            title: title,
+            type: type,
+            locationId: locationId,
+            assigneeUserId: assigneeUserId,
+            status: status,
+            dueAt: dueAt,
+            createdByUserId: createdByUserId,
+            completedAt: completedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteTasksTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemoteTasksTable,
+    RemoteTaskRow,
+    $$RemoteTasksTableFilterComposer,
+    $$RemoteTasksTableOrderingComposer,
+    $$RemoteTasksTableAnnotationComposer,
+    $$RemoteTasksTableCreateCompanionBuilder,
+    $$RemoteTasksTableUpdateCompanionBuilder,
+    (
+      RemoteTaskRow,
+      BaseReferences<_$AppDatabase, $RemoteTasksTable, RemoteTaskRow>
+    ),
+    RemoteTaskRow,
+    PrefetchHooks Function()>;
+typedef $$RemoteAlertsTableCreateCompanionBuilder = RemoteAlertsCompanion
+    Function({
+  required String id,
+  Value<String?> warehouseId,
+  required String type,
+  required String title,
+  required String body,
+  Value<String?> payload,
+  required DateTime createdAt,
+  Value<DateTime?> readAt,
+  Value<int> rowid,
+});
+typedef $$RemoteAlertsTableUpdateCompanionBuilder = RemoteAlertsCompanion
+    Function({
+  Value<String> id,
+  Value<String?> warehouseId,
+  Value<String> type,
+  Value<String> title,
+  Value<String> body,
+  Value<String?> payload,
+  Value<DateTime> createdAt,
+  Value<DateTime?> readAt,
+  Value<int> rowid,
+});
+
+class $$RemoteAlertsTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteAlertsTable> {
+  $$RemoteAlertsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get payload => $composableBuilder(
+      column: $table.payload, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get readAt => $composableBuilder(
+      column: $table.readAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteAlertsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteAlertsTable> {
+  $$RemoteAlertsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+      column: $table.payload, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get readAt => $composableBuilder(
+      column: $table.readAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteAlertsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteAlertsTable> {
+  $$RemoteAlertsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get readAt =>
+      $composableBuilder(column: $table.readAt, builder: (column) => column);
+}
+
+class $$RemoteAlertsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteAlertsTable,
+    RemoteAlertRow,
+    $$RemoteAlertsTableFilterComposer,
+    $$RemoteAlertsTableOrderingComposer,
+    $$RemoteAlertsTableAnnotationComposer,
+    $$RemoteAlertsTableCreateCompanionBuilder,
+    $$RemoteAlertsTableUpdateCompanionBuilder,
+    (
+      RemoteAlertRow,
+      BaseReferences<_$AppDatabase, $RemoteAlertsTable, RemoteAlertRow>
+    ),
+    RemoteAlertRow,
+    PrefetchHooks Function()> {
+  $$RemoteAlertsTableTableManager(_$AppDatabase db, $RemoteAlertsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteAlertsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteAlertsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteAlertsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String?> warehouseId = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> body = const Value.absent(),
+            Value<String?> payload = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> readAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteAlertsCompanion(
+            id: id,
+            warehouseId: warehouseId,
+            type: type,
+            title: title,
+            body: body,
+            payload: payload,
+            createdAt: createdAt,
+            readAt: readAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            Value<String?> warehouseId = const Value.absent(),
+            required String type,
+            required String title,
+            required String body,
+            Value<String?> payload = const Value.absent(),
+            required DateTime createdAt,
+            Value<DateTime?> readAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteAlertsCompanion.insert(
+            id: id,
+            warehouseId: warehouseId,
+            type: type,
+            title: title,
+            body: body,
+            payload: payload,
+            createdAt: createdAt,
+            readAt: readAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteAlertsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemoteAlertsTable,
+    RemoteAlertRow,
+    $$RemoteAlertsTableFilterComposer,
+    $$RemoteAlertsTableOrderingComposer,
+    $$RemoteAlertsTableAnnotationComposer,
+    $$RemoteAlertsTableCreateCompanionBuilder,
+    $$RemoteAlertsTableUpdateCompanionBuilder,
+    (
+      RemoteAlertRow,
+      BaseReferences<_$AppDatabase, $RemoteAlertsTable, RemoteAlertRow>
+    ),
+    RemoteAlertRow,
+    PrefetchHooks Function()>;
+typedef $$WarehouseMembersTableCreateCompanionBuilder
+    = WarehouseMembersCompanion Function({
+  required String warehouseId,
+  required String userId,
+  required String displayName,
+  required String role,
+  required bool isActive,
+  Value<int> rowid,
+});
+typedef $$WarehouseMembersTableUpdateCompanionBuilder
+    = WarehouseMembersCompanion Function({
+  Value<String> warehouseId,
+  Value<String> userId,
+  Value<String> displayName,
+  Value<String> role,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+
+class $$WarehouseMembersTableFilterComposer
+    extends Composer<_$AppDatabase, $WarehouseMembersTable> {
+  $$WarehouseMembersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get role => $composableBuilder(
+      column: $table.role, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+}
+
+class $$WarehouseMembersTableOrderingComposer
+    extends Composer<_$AppDatabase, $WarehouseMembersTable> {
+  $$WarehouseMembersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get role => $composableBuilder(
+      column: $table.role, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+}
+
+class $$WarehouseMembersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WarehouseMembersTable> {
+  $$WarehouseMembersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get warehouseId => $composableBuilder(
+      column: $table.warehouseId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+}
+
+class $$WarehouseMembersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $WarehouseMembersTable,
+    WarehouseMemberRow,
+    $$WarehouseMembersTableFilterComposer,
+    $$WarehouseMembersTableOrderingComposer,
+    $$WarehouseMembersTableAnnotationComposer,
+    $$WarehouseMembersTableCreateCompanionBuilder,
+    $$WarehouseMembersTableUpdateCompanionBuilder,
+    (
+      WarehouseMemberRow,
+      BaseReferences<_$AppDatabase, $WarehouseMembersTable, WarehouseMemberRow>
+    ),
+    WarehouseMemberRow,
+    PrefetchHooks Function()> {
+  $$WarehouseMembersTableTableManager(
+      _$AppDatabase db, $WarehouseMembersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WarehouseMembersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WarehouseMembersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WarehouseMembersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> warehouseId = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<String> displayName = const Value.absent(),
+            Value<String> role = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              WarehouseMembersCompanion(
+            warehouseId: warehouseId,
+            userId: userId,
+            displayName: displayName,
+            role: role,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String warehouseId,
+            required String userId,
+            required String displayName,
+            required String role,
+            required bool isActive,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              WarehouseMembersCompanion.insert(
+            warehouseId: warehouseId,
+            userId: userId,
+            displayName: displayName,
+            role: role,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$WarehouseMembersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $WarehouseMembersTable,
+    WarehouseMemberRow,
+    $$WarehouseMembersTableFilterComposer,
+    $$WarehouseMembersTableOrderingComposer,
+    $$WarehouseMembersTableAnnotationComposer,
+    $$WarehouseMembersTableCreateCompanionBuilder,
+    $$WarehouseMembersTableUpdateCompanionBuilder,
+    (
+      WarehouseMemberRow,
+      BaseReferences<_$AppDatabase, $WarehouseMembersTable, WarehouseMemberRow>
+    ),
+    WarehouseMemberRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$UserSessionsTableTableManager get userSessions =>
       $$UserSessionsTableTableManager(_db, _db.userSessions);
-  $$AlertsTableTableManager get alerts =>
-      $$AlertsTableTableManager(_db, _db.alerts);
-  $$StaffTasksTableTableManager get staffTasks =>
-      $$StaffTasksTableTableManager(_db, _db.staffTasks);
   $$CountSessionsTableTableManager get countSessions =>
       $$CountSessionsTableTableManager(_db, _db.countSessions);
   $$CountItemsTableTableManager get countItems =>
@@ -13989,4 +14845,10 @@ class $AppDatabaseManager {
       $$RemoteOrdersTableTableManager(_db, _db.remoteOrders);
   $$RemoteOrderLinesTableTableManager get remoteOrderLines =>
       $$RemoteOrderLinesTableTableManager(_db, _db.remoteOrderLines);
+  $$RemoteTasksTableTableManager get remoteTasks =>
+      $$RemoteTasksTableTableManager(_db, _db.remoteTasks);
+  $$RemoteAlertsTableTableManager get remoteAlerts =>
+      $$RemoteAlertsTableTableManager(_db, _db.remoteAlerts);
+  $$WarehouseMembersTableTableManager get warehouseMembers =>
+      $$WarehouseMembersTableTableManager(_db, _db.warehouseMembers);
 }
