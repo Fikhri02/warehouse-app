@@ -61,4 +61,28 @@ void main() {
 
     verify(() => repo.assignTask('t3', 'u2')).called(1);
   });
+
+  testWidgets('names on assigned tasks appear once the team has loaded, without leaving the screen', (tester) async {
+    var teamLoaded = false;
+    when(() => repo.getOpenTasks()).thenAnswer((_) async => [
+          StaffTask(
+            id: 't1',
+            title: 'Receive PO-2041',
+            type: TaskType.stockReceive,
+            status: TaskStatus.inProgress,
+            assigneeId: 'u1',
+            assigneeName: teamLoaded ? 'Arjun Nair' : 'Someone else', // names come from the saved team
+          ),
+        ]);
+    when(() => repo.getTeam()).thenAnswer((_) async {
+      await Future<void>.value();
+      teamLoaded = true;
+      return const [TeamMember(id: 'u1', name: 'Arjun Nair', role: UserRole.worker)];
+    });
+
+    await open(tester);
+
+    expect(find.text('Someone else'), findsNothing);
+    expect(find.text('Arjun Nair'), findsOneWidget);
+  });
 }

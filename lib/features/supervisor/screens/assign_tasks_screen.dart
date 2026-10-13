@@ -28,7 +28,11 @@ class AssignTasksScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(assignTasksProvider);
-    ref.watch(teamProvider); // loads the team while the screen is open, so the picker has it
+    // Loads the team while the screen is open, so the picker has it. The task list takes its names from the saved team,
+    // so it reloads once a fresh team has arrived.
+    ref.listen(teamProvider, (_, next) {
+      if (next.hasValue && !next.isLoading) ref.invalidate(assignTasksProvider);
+    });
     final secondary = AppColors.textSecondary(Theme.of(context).brightness);
 
     Widget header(String text) => Padding(
