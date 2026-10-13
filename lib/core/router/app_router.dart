@@ -27,6 +27,7 @@ import '../../features/sales_orders/presentation/sales_order_detail_screen.dart'
 import '../../features/alerts/screens/alerts_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/tasks/screens/tasks_screen.dart';
+import '../../features/tasks/providers/active_task_provider.dart';
 import '../../features/supervisor/screens/assign_tasks_screen.dart';
 import '../../features/supervisor/screens/reports_screen.dart';
 import '../../features/supervisor/screens/pending_review_screen.dart';
@@ -79,7 +80,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
   final initialSession = ref.read(authNotifierProvider).valueOrNull;
 
-  return GoRouter(
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation:
         initialSession == null ? AppRoutes.welcome : AppRoutes.dashboard,
@@ -237,7 +238,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.tasks,
-        builder: (_, __) => const TasksScreen(),
+        builder: (_, state) => TasksScreen(openTaskId: state.extra as String?),
       ),
       GoRoute(
         path: AppRoutes.assignTasks,
@@ -257,4 +258,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  // Leaving counting, receiving and My Tasks forgets the task a person went to work on, so a later count that has
+  // nothing to do with it is not offered "Mark done?".
+  void forgetOutsideTaskWork() {
+    if (!keepsActiveTask(router.routerDelegate.currentConfiguration.uri.path)) {
+      ref.read(activeTaskProvider.notifier).forget();
+    }
+  }
+
+  router.routerDelegate.addListener(forgetOutsideTaskWork);
+  ref.onDispose(() => router.routerDelegate.removeListener(forgetOutsideTaskWork));
+  return router;
 });

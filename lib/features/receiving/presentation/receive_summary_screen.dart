@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/models/purchase_order.dart';
+import '../../../core/models/staff_task.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../providers/receiving_provider.dart';
+import '../../tasks/widgets/finish_task_prompt.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/models/count_records.dart';
 import '../../../core/providers/connectivity_provider.dart';
@@ -103,6 +105,8 @@ class ReceiveSummaryScreen extends ConsumerWidget {
             content: Text(ref.read(isOnlineProvider) ? 'Receipt sent.' : "Receipt saved. It will be sent when you're back online."),
           ));
         }
+        await offerToFinishTask(context, ref, TaskType.stockReceive);
+        if (!context.mounted) return;
         context.go(AppRoutes.receiving);
       } on StateError catch (error) {
         // Something the person can fix: more than is left, nothing new, no location.

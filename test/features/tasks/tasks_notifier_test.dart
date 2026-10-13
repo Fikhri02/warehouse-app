@@ -46,4 +46,18 @@ void main() {
     final tasks = container.read(tasksProvider).valueOrNull;
     expect(tasks, isEmpty);
   });
+
+  test('start goes through the repository and the list reloads', () async {
+    when(() => mockRepo.getMyTasks()).thenAnswer((_) async => sampleTasks);
+    when(() => mockRepo.startTask('t1')).thenAnswer((_) async {});
+    final container = makeContainer();
+    addTearDown(container.dispose);
+
+    await container.read(tasksProvider.future);
+    await container.read(tasksProvider.notifier).start('t1');
+    await container.read(tasksProvider.future);
+
+    verify(() => mockRepo.startTask('t1')).called(1);
+    verify(() => mockRepo.getMyTasks()).called(2);
+  });
 }

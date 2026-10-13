@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/models/count_session.dart';
+import '../../../core/models/staff_task.dart';
 import '../../../core/providers/connectivity_provider.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../providers/stock_count_provider.dart';
+import '../../tasks/widgets/finish_task_prompt.dart';
 
 class ReviewCountScreen extends ConsumerWidget {
   const ReviewCountScreen({super.key});
@@ -104,6 +106,7 @@ class ReviewCountScreen extends ConsumerWidget {
                             : "Count saved. It will be sent when you're back online."),
                       ));
                     }
+                    if (context.mounted) await offerToFinishTask(context, ref, TaskType.stockCount);
                     if (context.mounted) context.go(AppRoutes.stockCount);
                   } catch (_) {
                     if (context.mounted) {
