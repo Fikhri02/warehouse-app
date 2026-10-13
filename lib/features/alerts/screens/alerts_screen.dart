@@ -5,6 +5,7 @@ import 'package:warehouse_app/core/models/alert.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
+import 'package:warehouse_app/features/alerts/open_alert.dart';
 import 'package:warehouse_app/features/alerts/providers/alerts_provider.dart';
 import 'package:warehouse_app/features/alerts/widgets/alert_card.dart';
 
@@ -51,28 +52,23 @@ class AlertsScreen extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Error: $e')),
           data: (state) {
             final items = state.filtered;
-            if (items.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.notifications_none,
-                        size: 48, color: Colors.grey.shade400),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No alerts',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary(brightness),
+            return RefreshIndicator(
+              onRefresh: () => ref.read(alertsProvider.notifier).syncAndReload(),
+              child: items.isEmpty
+                  ? ListView(children: [
+                      const SizedBox(height: 120),
+                      Icon(Icons.notifications_none, size: 48, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Text('No alerts',
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary(brightness))),
                       ),
+                    ])
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: items.length,
+                      itemBuilder: (context, i) => AlertCard(alert: items[i], onTap: () => openAlert(context, ref, items[i])),
                     ),
-                  ],
-                ),
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: items.length,
-              itemBuilder: (context, i) => AlertCard(alert: items[i]),
             );
           },
         ),

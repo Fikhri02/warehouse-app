@@ -5,6 +5,7 @@ import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
+import 'package:warehouse_app/features/alerts/widgets/alerts_bell.dart';
 import 'widgets/quick_action_card.dart';
 
 class SupervisorDashboardScreen extends ConsumerWidget {
@@ -29,12 +30,7 @@ class SupervisorDashboardScreen extends ConsumerWidget {
                     .copyWith(color: Colors.white60, letterSpacing: 0.5)),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () => context.push(AppRoutes.alerts),
-          ),
-        ],
+        actions: const [AlertsBell()],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

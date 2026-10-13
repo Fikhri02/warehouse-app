@@ -83,4 +83,19 @@ void main() {
     expect(state.valueOrNull?.filtered.length, 1);
     expect(state.valueOrNull?.filtered.first.type, AlertType.lowStock);
   });
+
+  test('markRead goes through the repository and the filter survives the reload', () async {
+    when(() => mockRepo.getAlerts()).thenAnswer((_) async => sampleAlerts);
+    when(() => mockRepo.markRead('a1')).thenAnswer((_) async {});
+    final container = makeContainer();
+    addTearDown(container.dispose);
+
+    await container.read(alertsProvider.future);
+    container.read(alertsProvider.notifier).setFilter(AlertFilter.stock);
+    await container.read(alertsProvider.notifier).markRead('a1');
+    final state = await container.read(alertsProvider.future);
+
+    verify(() => mockRepo.markRead('a1')).called(1);
+    expect(state.filter, AlertFilter.stock);
+  });
 }
