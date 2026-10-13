@@ -69,7 +69,7 @@ class AssignTasksScreen extends ConsumerWidget {
   }
 
   void _showAssignDialog(BuildContext context, WidgetRef ref, StaffTask task) {
-    final workers = ['worker-1 (John Doe)', 'worker-2 (Alex Kim)'];
+    final workers = ['u002 (Arjun Nair)', 'u003 (Mei Ling Tan)'];
     String? selected;
 
     showDialog(
@@ -101,9 +101,7 @@ class AssignTasksScreen extends ConsumerWidget {
               onPressed: selected == null
                   ? null
                   : () {
-                      ref
-                          .read(assignTasksProvider.notifier)
-                          .assignTask(task.copyWith(assignedTo: selected));
+                      ref.read(assignTasksProvider.notifier).assign(task.id, selected!);
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Task assigned')),

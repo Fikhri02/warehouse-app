@@ -8,11 +8,11 @@ export 'package:warehouse_app/data/repositories/tasks_repository.dart'
 class AssignTasksNotifier extends AsyncNotifier<List<StaffTask>> {
   @override
   Future<List<StaffTask>> build() async {
-    return ref.watch(tasksRepositoryProvider).getAssignableTasks();
+    return ref.watch(tasksRepositoryProvider).getOpenTasks();
   }
 
-  Future<void> assignTask(StaffTask task) async {
-    await ref.read(tasksRepositoryProvider).assignTask(task);
+  Future<void> assign(String id, String assigneeId) async {
+    await ref.read(tasksRepositoryProvider).assignTask(id, assigneeId);
     ref.invalidateSelf();
   }
 }

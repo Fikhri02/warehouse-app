@@ -5,17 +5,16 @@ import 'package:warehouse_app/core/theme/app_text_styles.dart';
 
 class AlertCard extends StatelessWidget {
   final Alert alert;
+  final VoidCallback? onTap;
 
-  const AlertCard({super.key, required this.alert});
+  const AlertCard({super.key, required this.alert, this.onTap});
 
-  IconData _iconFor(AlertType type) {
-    return switch (type) {
-      AlertType.lowStock => Icons.inventory_2_outlined,
-      AlertType.taskAssigned => Icons.assignment_outlined,
-      AlertType.discrepancy => Icons.warning_amber_outlined,
-      AlertType.taskCompleted => Icons.check_circle_outline,
-    };
-  }
+  IconData _iconFor(AlertType type) => switch (type) {
+        AlertType.lowStock => Icons.inventory_2_outlined,
+        AlertType.taskAssigned => Icons.assignment_outlined,
+        AlertType.countToReview => Icons.fact_check_outlined,
+        AlertType.syncConflict => Icons.sync_problem_outlined,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +34,10 @@ class AlertCard extends StatelessWidget {
       color: alert.isRead ? readBg : unreadBg,
       elevation: alert.isRead ? 0 : 1,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Padding(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,6 +78,7 @@ class AlertCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/features/supervisor/providers/reports_provider.dart';
+import 'package:warehouse_app/features/tasks/widgets/task_card.dart';
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
@@ -98,26 +99,16 @@ class ReportsScreen extends ConsumerWidget {
                       itemBuilder: (context, i) {
                         final task = tasks[i];
                         return ListTile(
-                          leading: Icon(
-                            task.type == TaskType.stockCount
-                                ? Icons.inventory_outlined
-                                : Icons.local_shipping_outlined,
-                            color: AppColors.primary,
-                          ),
-                          title: Text(
-                            task.type == TaskType.stockCount
-                                ? 'Stock Count'
-                                : 'Stock Receive',
-                            style: AppTextStyles.bodyMedium,
-                          ),
+                          leading: Icon(taskIcon(task.type), color: AppColors.primary),
+                          title: Text(task.title, style: AppTextStyles.bodyMedium),
                           subtitle: Text(
-                            task.location,
+                            [task.type.label, if (task.locationCode != null) task.locationCode!, if (task.assigneeName != null) task.assigneeName!]
+                                .join(' · '),
                             style: AppTextStyles.bodySmall,
                           ),
                           trailing: Text(
                             'Done',
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: AppColors.success),
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
                           ),
                         );
                       },

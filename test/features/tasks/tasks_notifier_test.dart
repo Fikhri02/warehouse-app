@@ -20,23 +20,9 @@ void main() {
     );
   }
 
-  final sampleTasks = [
-    StaffTask(
-      id: 't1',
-      type: TaskType.stockCount,
-      location: 'Zone A',
-      dueAt: DateTime(2026, 4, 15, 14),
-      status: TaskStatus.pending,
-      assignedTo: 'worker-1',
-    ),
-    StaffTask(
-      id: 't2',
-      type: TaskType.stockReceive,
-      location: 'Dock 3',
-      dueAt: DateTime(2026, 4, 15, 16),
-      status: TaskStatus.inProgress,
-      assignedTo: 'worker-1',
-    ),
+  const sampleTasks = [
+    StaffTask(id: 't1', title: 'Count zone A', type: TaskType.stockCount, status: TaskStatus.pending, assigneeId: 'worker-1'),
+    StaffTask(id: 't2', title: 'Receive at dock 3', type: TaskType.stockReceive, status: TaskStatus.inProgress, assigneeId: 'worker-1'),
   ];
 
   test('loads tasks on build', () async {

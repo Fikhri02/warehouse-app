@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warehouse_app/core/models/staff_task.dart';
 import 'package:warehouse_app/core/models/count_records.dart';
 import 'package:warehouse_app/features/supervisor/providers/assign_tasks_provider.dart';
 import 'package:warehouse_app/features/supervisor/providers/pending_review_provider.dart';
@@ -18,37 +17,21 @@ class MockStockCountRepository extends Mock implements StockCountRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
-class _FakeStaffTask extends Fake implements StaffTask {}
-
 void main() {
-  setUpAll(() {
-    registerFallbackValue(_FakeStaffTask());
-  });
-
   group('AssignTasksNotifier', () {
-    test('assignTask calls repository and refreshes', () async {
+    test('assign sends the task and person to the repository and reloads', () async {
       final mockRepo = MockTasksRepository();
-      when(() => mockRepo.getAssignableTasks()).thenAnswer((_) async => []);
-      when(() => mockRepo.assignTask(any())).thenAnswer((_) async {});
-
-      final container = ProviderContainer(
-        overrides: [tasksRepositoryProvider.overrideWithValue(mockRepo)],
-      );
+      when(() => mockRepo.getOpenTasks()).thenAnswer((_) async => []);
+      when(() => mockRepo.assignTask('t3', 'u2')).thenAnswer((_) async {});
+      final container = ProviderContainer(overrides: [tasksRepositoryProvider.overrideWithValue(mockRepo)]);
       addTearDown(container.dispose);
 
       await container.read(assignTasksProvider.future);
-      await container.read(assignTasksProvider.notifier).assignTask(
-            StaffTask(
-              id: 'new-task',
-              type: TaskType.stockCount,
-              location: 'Zone C',
-              dueAt: DateTime(2026, 4, 15, 17),
-              status: TaskStatus.pending,
-              assignedTo: 'worker-2',
-            ),
-          );
+      await container.read(assignTasksProvider.notifier).assign('t3', 'u2');
+      await container.read(assignTasksProvider.future); // the reload runs on the next read
 
-      verify(() => mockRepo.assignTask(any())).called(1);
+      verify(() => mockRepo.assignTask('t3', 'u2')).called(1);
+      verify(() => mockRepo.getOpenTasks()).called(2);
     });
   });
 

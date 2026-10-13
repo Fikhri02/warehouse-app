@@ -93,6 +93,7 @@ class _FilterTabs extends StatelessWidget {
       (AlertFilter.all, 'All'),
       (AlertFilter.stock, 'Stock'),
       (AlertFilter.tasks, 'Tasks'),
+      (AlertFilter.sync, 'Sync'),
     ];
     return Row(
       children: tabs.map((t) {

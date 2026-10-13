@@ -12,10 +12,13 @@ class TasksScreen extends ConsumerWidget {
   const TasksScreen({super.key});
 
   void _openTask(BuildContext context, StaffTask task) {
-    if (task.type == TaskType.stockCount) {
-      context.go(AppRoutes.stockCount);
-    } else {
-      context.go(AppRoutes.receiving);
+    switch (task.type) {
+      case TaskType.stockCount:
+        context.go(AppRoutes.stockCount);
+      case TaskType.stockReceive:
+        context.go(AppRoutes.receiving);
+      case TaskType.other:
+        break;
     }
   }
 

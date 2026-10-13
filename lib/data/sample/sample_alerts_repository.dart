@@ -1,49 +1,50 @@
 import 'package:warehouse_app/core/models/alert.dart';
 import 'package:warehouse_app/data/repositories/alerts_repository.dart';
 
+/// Sample data for builds without WARETRACK_API.
 class SampleAlertsRepository implements AlertsRepository {
   final List<Alert> _alerts = [
     Alert(
       id: 'a001',
       type: AlertType.lowStock,
-      title: 'Low Stock Alert',
-      body: 'Aluminium Sheet 2mm (WH-00142) is below minimum threshold — 12 units remaining.',
+      title: 'Low stock: Aluminium Sheet 2mm',
+      body: '12 left in SA1, below 20',
       createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      payload: const {'sku': 'WH-00142', 'total': 12, 'threshold': 20},
     ),
     Alert(
       id: 'a002',
       type: AlertType.taskAssigned,
-      title: 'Task Assigned',
-      body: 'Supervisor assigned you a stock count — Aisle C, Zone 2. Due by 3:00 PM.',
+      title: 'New task',
+      body: 'Count aisle C',
       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      payload: const {'taskId': 't001'},
     ),
     Alert(
       id: 'a003',
-      type: AlertType.taskCompleted,
-      title: 'Task Completed',
-      body: 'Count Session #14 (Aisle B) submitted and accepted by supervisor.',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
+      type: AlertType.countToReview,
+      title: 'Count to review',
+      body: 'Arjun Nair counted 4 line(s) in Aisle B',
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      payload: const {'sessionId': 'c1'},
     ),
     Alert(
       id: 'a004',
-      type: AlertType.discrepancy,
-      title: 'Discrepancy: PO-2041',
-      body: 'Worker flagged 2 items during receiving. Supervisor review required.',
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      type: AlertType.syncConflict,
+      title: 'Task already done',
+      body: '"Count aisle B" was already completed.',
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      isRead: true,
     ),
   ];
 
   @override
-  Future<List<Alert>> getAlerts() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return List.unmodifiable(_alerts);
-  }
+  Future<List<Alert>> getAlerts() async => List.unmodifiable(_alerts);
 
   @override
   Future<void> markRead(String alertId) async {
-    final idx = _alerts.indexWhere((a) => a.id == alertId);
-    if (idx != -1) _alerts[idx] = _alerts[idx].copyWith(isRead: true);
+    final i = _alerts.indexWhere((a) => a.id == alertId);
+    if (i != -1) _alerts[i] = _alerts[i].copyWith(isRead: true);
   }
 
   @override
@@ -51,11 +52,5 @@ class SampleAlertsRepository implements AlertsRepository {
     for (var i = 0; i < _alerts.length; i++) {
       _alerts[i] = _alerts[i].copyWith(isRead: true);
     }
-  }
-
-  @override
-  Future<List<Alert>> getPendingReviews() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _alerts.where((a) => a.type == AlertType.discrepancy && !a.isRead).toList();
   }
 }
