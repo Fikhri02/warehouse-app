@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -88,5 +90,15 @@ void main() {
     await tapCreate(tester);
 
     expect((created.single.type, created.single.assigneeId), (TaskType.other, null));
+  });
+
+  testWidgets('while the team is loading the form says so, not "Connect once"', (tester) async {
+    final team = Completer<List<TeamMember>>();
+    when(() => repo.getTeam()).thenAnswer((_) => team.future);
+    await open(tester);
+
+    expect(find.text('Loading your team…'), findsOneWidget);
+    expect(find.text('Connect once to load your team'), findsNothing);
+    team.complete(const []);
   });
 }

@@ -67,7 +67,8 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final team = ref.watch(teamProvider).valueOrNull ?? const <TeamMember>[];
+    final teamAsync = ref.watch(teamProvider);
+    final team = teamAsync.valueOrNull ?? const <TeamMember>[];
     final places = ref.watch(taskPlacesProvider).valueOrNull ?? const <TaskPlace>[];
     return Scaffold(
       appBar: AppBar(title: const Text('New Task')),
@@ -110,7 +111,11 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
                 initialValue: _assigneeId,
                 decoration: InputDecoration(
                   labelText: 'Assign to (optional)',
-                  helperText: team.isEmpty ? 'Connect once to load your team' : null,
+                  helperText: teamAsync.isLoading
+                      ? 'Loading your team…'
+                      : team.isEmpty
+                          ? 'Connect once to load your team'
+                          : null,
                 ),
                 items: [
                   const DropdownMenuItem<String?>(value: null, child: Text('Nobody yet')),

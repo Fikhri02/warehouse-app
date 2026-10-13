@@ -9,24 +9,36 @@ import 'package:warehouse_app/features/supervisor/providers/assign_tasks_provide
 import 'package:warehouse_app/features/supervisor/widgets/assignee_picker.dart';
 import 'package:warehouse_app/features/tasks/widgets/task_card.dart';
 
-class AssignTasksScreen extends ConsumerWidget {
+class AssignTasksScreen extends ConsumerStatefulWidget {
   const AssignTasksScreen({super.key});
 
-  Future<void> _assign(BuildContext context, WidgetRef ref, StaffTask task) async {
-    final team = await ref.read(teamProvider.future);
-    if (!context.mounted) return;
-    final chosen = await pickAssignee(context, team: team, current: task.assigneeId);
-    if (chosen == null || !context.mounted) return;
+  @override
+  ConsumerState<AssignTasksScreen> createState() => _AssignTasksScreenState();
+}
+
+class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
+  /// A picker is open or about to open (the team may still be loading): further taps wait for it.
+  bool _picking = false;
+
+  Future<void> _assign(StaffTask task) async {
+    if (_picking) return;
+    _picking = true;
     try {
+      final team = await ref.read(teamProvider.future);
+      if (!mounted) return;
+      final chosen = await pickAssignee(context, team: team, current: task.assigneeId);
+      if (chosen == null || !mounted) return;
       await ref.read(assignTasksProvider.notifier).assign(task.id, chosen);
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task assigned')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task assigned')));
     } on StateError catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      _picking = false;
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final tasksAsync = ref.watch(assignTasksProvider);
     // Loads the team while the screen is open, so the picker has it. The task list takes its names from the saved team,
     // so it reloads once a fresh team has arrived.
@@ -72,11 +84,11 @@ class AssignTasksScreen extends ConsumerWidget {
                     ),
                   if (unassigned.isNotEmpty) ...[
                     header('Unassigned'),
-                    for (final t in unassigned) TaskCard(task: t, showAssignee: true, onTap: () => _assign(context, ref, t)),
+                    for (final t in unassigned) TaskCard(task: t, showAssignee: true, onTap: () => _assign(t)),
                   ],
                   if (assigned.isNotEmpty) ...[
                     header('Assigned'),
-                    for (final t in assigned) TaskCard(task: t, showAssignee: true, onTap: () => _assign(context, ref, t)),
+                    for (final t in assigned) TaskCard(task: t, showAssignee: true, onTap: () => _assign(t)),
                   ],
                 ],
               ),

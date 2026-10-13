@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:warehouse_app/core/models/staff_task.dart';
@@ -16,15 +17,20 @@ class ApiTasksRepository implements TasksRepository {
     required AppDatabase db,
     required UserSession? Function() session,
     required void Function() onQueued,
+    Duration teamWait = const Duration(seconds: 4),
   })  : _client = client,
         _db = db,
         _session = session,
-        _onQueued = onQueued;
+        _onQueued = onQueued,
+        _teamWait = teamWait;
 
   final ApiClient _client;
   final AppDatabase _db;
   final UserSession? Function() _session;
   final void Function() _onQueued;
+
+  /// How long the team picker waits on the server before using the saved list (a weak signal can take 20 s to fail).
+  final Duration _teamWait;
 
   @override
   Future<List<StaffTask>> getMyTasks() async {
@@ -97,7 +103,7 @@ class ApiTasksRepository implements TasksRepository {
     if (session.role == UserRole.supervisor) {
       // Only supervisors may list the people; a fresh list replaces the saved one.
       try {
-        final listed = (await _client.get('/warehouses/$warehouseId/members') as List).cast<Map<String, dynamic>>();
+        final listed = (await _client.get('/warehouses/$warehouseId/members').timeout(_teamWait) as List).cast<Map<String, dynamic>>();
         await _db.serverMirrorDao.replaceMembers(warehouseId, [
           for (final m in listed)
             WarehouseMembersCompanion.insert(
@@ -110,6 +116,8 @@ class ApiTasksRepository implements TasksRepository {
         ]);
       } on ApiOfflineException {
         // Offline: the list saved last time.
+      } on TimeoutException {
+        // A weak signal: the list saved last time rather than a long wait.
       } on ApiException {
         // The server is having trouble: the list saved last time.
       } on SessionExpiredException {

@@ -49,6 +49,7 @@ void main() {
   late ApiTasksRepository repo;
   late int kicks;
   late bool online;
+  late bool slow;
   late List<Map<String, dynamic>> serverMembers;
 
   setUp(() async {
@@ -56,6 +57,7 @@ void main() {
     session = arjun;
     kicks = 0;
     online = true;
+    slow = false;
     serverMembers = [
       {'userId': 'u1', 'displayName': 'Arjun Nair', 'email': 'a@w', 'role': 'Worker', 'isActive': true},
       {'userId': 'u2', 'displayName': 'Mei Ling Tan', 'email': 'm@w', 'role': 'Worker', 'isActive': true},
@@ -67,11 +69,13 @@ void main() {
       tokens: await signedInTokens(),
       httpClient: MockClient((r) async {
         if (!online) throw http.ClientException('offline');
+        if (slow) await Future<void>.delayed(const Duration(seconds: 2));
         expect(r.url.path, '/api/warehouses/$w/members');
         return jsonResponse(serverMembers);
       }),
     );
-    repo = ApiTasksRepository(client: client, db: db, session: () => session, onQueued: () => kicks++);
+    repo = ApiTasksRepository(
+        client: client, db: db, session: () => session, onQueued: () => kicks++, teamWait: const Duration(milliseconds: 100));
     final dao = db.serverMirrorDao;
     await dao.upsertLocation(WarehouseLocationsCompanion.insert(id: 'bin-1', warehouseId: w, code: 'A-01-01', type: 'Bin'));
     await dao.replaceMembers(w, [
@@ -187,5 +191,16 @@ void main() {
     await repo.createTask(const NewTask(id: 'nobody', title: 'Task nobody', type: TaskType.stockCount));
 
     expect((await repo.getOpenTasks()).where((t) => t.id == 'nobody'), hasLength(1));
+  });
+
+  test('on a weak connection the saved team comes back quickly instead of waiting on the server', () async {
+    session = hafiz;
+    slow = true;
+
+    final watch = Stopwatch()..start();
+    final team = await repo.getTeam();
+
+    expect(watch.elapsed, lessThan(const Duration(seconds: 1)));
+    expect(team.map((m) => m.name), ['Mei Ling Tan']); // the list saved last time
   });
 }

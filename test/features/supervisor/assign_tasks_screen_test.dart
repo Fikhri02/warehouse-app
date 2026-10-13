@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -84,5 +86,18 @@ void main() {
 
     expect(find.text('Someone else'), findsNothing);
     expect(find.text('Arjun Nair'), findsOneWidget);
+  });
+
+  testWidgets('tapping a task again while the team is still loading opens one picker, not two', (tester) async {
+    final team = Completer<List<TeamMember>>();
+    when(() => repo.getTeam()).thenAnswer((_) => team.future);
+    await open(tester);
+
+    await tester.tap(find.text('Tidy dock 2'));
+    await tester.tap(find.text('Tidy dock 2'));
+    team.complete(const [TeamMember(id: 'u2', name: 'Mei Ling Tan', role: UserRole.worker)]);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Assign to'), findsOneWidget);
   });
 }
