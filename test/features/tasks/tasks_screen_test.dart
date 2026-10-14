@@ -6,6 +6,7 @@ import 'package:warehouse_app/core/models/staff_task.dart';
 import 'package:warehouse_app/core/models/user_session.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/data/repositories/tasks_repository.dart';
+import 'package:warehouse_app/data/sync/sync_provider.dart';
 import 'package:warehouse_app/features/tasks/screens/tasks_screen.dart';
 
 class MockTasksRepository extends Mock implements TasksRepository {}
@@ -55,5 +56,29 @@ void main() {
     await open(tester, openTaskId: 'gone');
 
     expect(find.text('No longer available'), findsOneWidget);
+  });
+
+  testWidgets('a sync in the background keeps the list where it is, with no spinner', (tester) async {
+    when(() => repo.getMyTasks()).thenAnswer((_) async => [
+          for (var i = 0; i < 40; i++)
+            StaffTask(id: 't$i', title: 'Task $i', type: TaskType.other, status: TaskStatus.pending, assigneeId: 'u1'),
+        ]);
+    final container = ProviderContainer(overrides: [
+      tasksRepositoryProvider.overrideWithValue(repo),
+      authBootstrapStateProvider.overrideWithValue(const AuthBootstrapState.hydrated(arjun)),
+    ]);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: TasksScreen())));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -1500));
+    await tester.pumpAndSettle();
+    final offset = tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels;
+
+    container.read(pulledProvider.notifier).state++;
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpAndSettle();
+    expect(tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels, offset);
   });
 }

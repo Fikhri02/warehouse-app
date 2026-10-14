@@ -56,15 +56,31 @@ class SyncRetry {
   final bool Function() _canPull;
   final DateTime Function() _now;
   final Duration _pullEvery;
-  DateTime? _lastPulled;
 
-  /// A complete pull just finished, whatever started it: the [pullEvery] wait counts from here.
-  void pulled() => _lastPulled = _now();
+  /// When the app last checked: the start of a sync this timer began (finished or not, so a server that can't be
+  /// reached is tried every [pullEvery], not every minute), or the end of a complete pull something else started.
+  DateTime? _lastChecked;
+  bool _syncing = false;
+
+  /// A complete pull just finished. One this timer started already counts from when it began.
+  void pulled() {
+    if (!_syncing) _lastChecked = _now();
+  }
 
   Future<void> tick() async {
-    if (await _pending() > 0) return _sync();
-    final last = _lastPulled;
-    if (_canPull() && (last == null || _now().difference(last) >= _pullEvery)) await _sync();
+    if (await _pending() > 0) return _run();
+    final last = _lastChecked;
+    if (_canPull() && (last == null || _now().difference(last) >= _pullEvery)) await _run();
+  }
+
+  Future<void> _run() async {
+    _lastChecked = _now();
+    _syncing = true;
+    try {
+      await _sync();
+    } finally {
+      _syncing = false;
+    }
   }
 }
 

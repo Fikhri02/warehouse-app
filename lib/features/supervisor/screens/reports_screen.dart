@@ -36,6 +36,8 @@ class ReportsScreen extends ConsumerWidget {
           ],
         ),
         body: reportsAsync.when(
+          // A sync in the background reloads the list: keep showing it (and where it is scrolled) meanwhile.
+          skipLoadingOnReload: true,
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Error: $e')),
           data: (state) {
