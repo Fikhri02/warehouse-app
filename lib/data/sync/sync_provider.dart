@@ -34,29 +34,54 @@ final syncCoordinatorProvider = Provider<SyncCoordinator>((ref) => SyncCoordinat
       onPulled: () => ref.read(pulledProvider.notifier).state++,
     ));
 
-/// Tries again while changes wait. A dead zone or a busy server often brings no connectivity event, so a paused
-/// outbox would otherwise wait for one forever.
+/// Tries again while changes wait — a dead zone or a busy server often brings no connectivity event, so a paused
+/// outbox would otherwise wait for one forever. While the app is open and online ([canPull]) it also syncs once
+/// [pullEvery] has passed since the last complete pull, so a task assigned or an alert raised meanwhile shows up
+/// without a pull to refresh (until push arrives in Plan 3e).
 class SyncRetry {
-  SyncRetry({required Future<int> Function() pending, required Future<void> Function() sync})
-      : _pending = pending,
-        _sync = sync;
+  SyncRetry({
+    required Future<int> Function() pending,
+    required Future<void> Function() sync,
+    bool Function()? canPull,
+    DateTime Function()? now,
+    Duration pullEvery = const Duration(minutes: 5),
+  })  : _pending = pending,
+        _sync = sync,
+        _canPull = canPull ?? (() => false),
+        _now = now ?? DateTime.now,
+        _pullEvery = pullEvery;
 
   final Future<int> Function() _pending;
   final Future<void> Function() _sync;
+  final bool Function() _canPull;
+  final DateTime Function() _now;
+  final Duration _pullEvery;
+  DateTime? _lastPulled;
+
+  /// A complete pull just finished, whatever started it: the [pullEvery] wait counts from here.
+  void pulled() => _lastPulled = _now();
 
   Future<void> tick() async {
-    if (await _pending() > 0) await _sync();
+    if (await _pending() > 0) return _sync();
+    final last = _lastPulled;
+    if (_canPull() && (last == null || _now().difference(last) >= _pullEvery)) await _sync();
   }
 }
 
 /// Syncs when the phone comes back online, when the app returns to the foreground, every minute while changes
-/// wait, and whenever a warehouse is chosen (sign-in, restart, switch).
+/// wait, every 5 minutes while the app is open and online, and whenever a warehouse is chosen (sign-in, restart,
+/// switch).
 /// Attach this provider in WarehouseApp.build() to activate it.
 final syncWatcherProvider = Provider<void>((ref) {
   final retry = SyncRetry(
     pending: () => ref.read(appDatabaseProvider).syncQueueDao.countPending(),
     sync: () => ref.read(syncCoordinatorProvider).syncNow(),
+    canPull: () =>
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+        ref.read(isOnlineProvider) &&
+        ref.read(authNotifierProvider).valueOrNull?.warehouseId != null,
   );
+  ref.listen<int>(pulledProvider, (_, __) => retry.pulled());
   final timer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(retry.tick()));
   final lifecycle = AppLifecycleListener(onResume: () => unawaited(ref.read(syncCoordinatorProvider).syncNow()));
   ref.onDispose(() {
