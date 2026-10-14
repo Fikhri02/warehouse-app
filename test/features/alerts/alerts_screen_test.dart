@@ -42,7 +42,7 @@ void main() {
         ]);
     when(() => alerts.markRead(any())).thenAnswer((_) async {});
     when(() => tasks.getTask('t1')).thenAnswer((_) async =>
-        const StaffTask(id: 't1', title: 'Count aisle C', type: TaskType.stockCount, status: TaskStatus.pending));
+        const StaffTask(id: 't1', title: 'Count aisle C', type: TaskType.stockCount, status: TaskStatus.pending, assigneeId: 'u9'));
     when(() => counts.getCountsToReview()).thenAnswer((_) async =>
         const [CountSummary(id: 'c1', title: 'Aisle A', lineCount: 2, progress: CountProgress.waitingReview)]);
   });
@@ -125,5 +125,27 @@ void main() {
 
     expect(find.text('Task already done'), findsOneWidget);
     expect(find.text('New task'), findsNothing);
+  });
+
+  testWidgets('a task alert for a task since given to someone else says so and stays', (tester) async {
+    when(() => tasks.getTask('t1')).thenAnswer((_) async =>
+        const StaffTask(id: 't1', title: 'Count aisle C', type: TaskType.stockCount, status: TaskStatus.pending, assigneeId: 'u7'));
+    await open(tester);
+
+    await tester.tap(find.text('New task'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No longer available'), findsOneWidget);
+    expect(find.text('tasks t1'), findsNothing);
+  });
+
+  testWidgets('tapping an alert twice quickly opens it once', (tester) async {
+    await open(tester);
+
+    await tester.tap(find.text('Count to review'));
+    await tester.tap(find.text('Count to review'));
+    await tester.pumpAndSettle();
+
+    verify(() => counts.getCountsToReview()).called(1);
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/models/staff_task.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 
@@ -25,3 +26,16 @@ final activeTaskProvider = NotifierProvider<ActiveTaskNotifier, StaffTask?>(Acti
 /// Where a task's work happens. Going anywhere else forgets the task (wired in app_router.dart).
 bool keepsActiveTask(String path) =>
     path.startsWith(AppRoutes.stockCount) || path.startsWith(AppRoutes.receiving) || path.startsWith(AppRoutes.tasks);
+
+/// Calls [forget] whenever the screen on top — a pushed one included — is outside counting, receiving and My Tasks.
+/// Returns the function that stops watching.
+void Function() forgetTaskOutsideItsWork(GoRouter router, void Function() forget) {
+  void check() {
+    final config = router.routerDelegate.currentConfiguration;
+    if (config.isEmpty) return;
+    if (!keepsActiveTask(config.last.matchedLocation)) forget();
+  }
+
+  router.routerDelegate.addListener(check);
+  return () => router.routerDelegate.removeListener(check);
+}

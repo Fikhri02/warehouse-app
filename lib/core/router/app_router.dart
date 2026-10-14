@@ -263,15 +263,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-  // Leaving counting, receiving and My Tasks forgets the task a person went to work on, so a later count that has
-  // nothing to do with it is not offered "Mark done?".
-  void forgetOutsideTaskWork() {
-    if (!keepsActiveTask(router.routerDelegate.currentConfiguration.uri.path)) {
-      ref.read(activeTaskProvider.notifier).forget();
-    }
-  }
-
-  router.routerDelegate.addListener(forgetOutsideTaskWork);
-  ref.onDispose(() => router.routerDelegate.removeListener(forgetOutsideTaskWork));
+  // Leaving counting, receiving and My Tasks — or opening another screen on top of them — forgets the task a person
+  // went to work on, so a later count that has nothing to do with it is not offered "Mark done?".
+  ref.onDispose(forgetTaskOutsideItsWork(router, () => ref.read(activeTaskProvider.notifier).forget()));
   return router;
 });

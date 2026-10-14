@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warehouse_app/core/models/staff_task.dart';
 import 'package:warehouse_app/features/tasks/providers/active_task_provider.dart';
@@ -26,5 +28,27 @@ void main() {
     expect(keepsActiveTask('/tasks'), isTrue);
     expect(keepsActiveTask('/dashboard'), isFalse);
     expect(keepsActiveTask('/delivery-orders'), isFalse);
+  });
+
+  testWidgets('a screen opened on top of counting forgets the task; moving within counting keeps it', (tester) async {
+    var forgotten = 0;
+    final router = GoRouter(initialLocation: '/stock-count', routes: [
+      GoRoute(path: '/stock-count', builder: (_, __) => const Text('counting'), routes: [
+        GoRoute(path: 'scan', builder: (_, __) => const Text('scanning')),
+      ]),
+      GoRoute(path: '/alerts', builder: (_, __) => const Text('alerts')),
+    ]);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    final stop = forgetTaskOutsideItsWork(router, () => forgotten++);
+    addTearDown(stop);
+
+    router.push('/stock-count/scan');
+    await tester.pumpAndSettle();
+    expect(forgotten, 0);
+
+    router.push('/alerts');
+    await tester.pumpAndSettle();
+    expect(forgotten, 1);
   });
 }

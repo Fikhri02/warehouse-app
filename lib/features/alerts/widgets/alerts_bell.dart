@@ -24,3 +24,15 @@ class AlertsBell extends ConsumerWidget {
     );
   }
 }
+
+/// How many alerts are unread, for the menu's Alerts row. Nothing when all are read.
+class UnreadAlertsCount extends ConsumerWidget {
+  const UnreadAlertsCount({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(alertsProvider).valueOrNull?.unreadCount ?? 0;
+    if (unread == 0) return const SizedBox.shrink();
+    return Badge(backgroundColor: AppColors.unread, label: Text(unread > 99 ? '99+' : '$unread'));
+  }
+}

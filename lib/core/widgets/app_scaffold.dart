@@ -7,6 +7,7 @@ import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
+import 'package:warehouse_app/features/alerts/widgets/alerts_bell.dart';
 import 'offline_banner.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
@@ -202,7 +203,8 @@ class _AppDrawer extends ConsumerWidget {
                 const _DrawerItem(Icons.move_to_inbox_outlined, 'Stock Receive',
                     AppRoutes.receiving),
                 const _DrawerItem(
-                    Icons.notifications_outlined, 'Alerts', AppRoutes.alerts),
+                    Icons.notifications_outlined, 'Alerts', AppRoutes.alerts,
+                    trailing: UnreadAlertsCount()),
                 const _DrawerItem(
                     Icons.checklist_outlined, 'My Tasks', AppRoutes.tasks),
                 if (isSupervisor) ...[
@@ -239,8 +241,9 @@ class _DrawerItem extends StatelessWidget {
   final String label;
   final String route;
   final bool useBrandIcon;
+  final Widget? trailing;
   const _DrawerItem(this.icon, this.label, this.route,
-      {this.useBrandIcon = false});
+      {this.useBrandIcon = false, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +268,7 @@ class _DrawerItem extends StatelessWidget {
           style: AppTextStyles.body.copyWith(
               color: active ? activeColor : AppColors.textPrimary(brightness),
               fontWeight: active ? FontWeight.w600 : FontWeight.normal)),
+      trailing: trailing,
       tileColor: active ? activeColor.withValues(alpha: 0.12) : null,
       onTap: () {
         Navigator.pop(context);

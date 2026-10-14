@@ -27,7 +27,7 @@ class _AssignTasksScreenState extends ConsumerState<AssignTasksScreen> {
       final team = await ref.read(teamProvider.future);
       if (!mounted) return;
       final chosen = await pickAssignee(context, team: team, current: task.assigneeId);
-      if (chosen == null || !mounted) return;
+      if (chosen == null || chosen == task.assigneeId || !mounted) return; // same person: nothing to change
       await ref.read(assignTasksProvider.notifier).assign(task.id, chosen);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task assigned')));
     } on StateError catch (e) {

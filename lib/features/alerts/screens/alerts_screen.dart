@@ -9,11 +9,30 @@ import 'package:warehouse_app/features/alerts/open_alert.dart';
 import 'package:warehouse_app/features/alerts/providers/alerts_provider.dart';
 import 'package:warehouse_app/features/alerts/widgets/alert_card.dart';
 
-class AlertsScreen extends ConsumerWidget {
+class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AlertsScreen> createState() => _AlertsScreenState();
+}
+
+class _AlertsScreenState extends ConsumerState<AlertsScreen> {
+  /// An alert is opening, or the screen it opened is still showing: further taps are ignored, so a double tap opens
+  /// one screen.
+  bool _opening = false;
+
+  Future<void> _open(Alert alert) async {
+    if (_opening) return;
+    _opening = true;
+    try {
+      await openAlert(context, ref, alert);
+    } finally {
+      _opening = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final alertsAsync = ref.watch(alertsProvider);
     final brightness = Theme.of(context).brightness;
 
@@ -67,7 +86,7 @@ class AlertsScreen extends ConsumerWidget {
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: items.length,
-                      itemBuilder: (context, i) => AlertCard(alert: items[i], onTap: () => openAlert(context, ref, items[i])),
+                      itemBuilder: (context, i) => AlertCard(alert: items[i], onTap: () => _open(items[i])),
                     ),
             );
           },

@@ -100,4 +100,16 @@ void main() {
 
     expect(find.text('Assign to'), findsOneWidget);
   });
+
+  testWidgets('keeping the same person closes the picker without claiming a change', (tester) async {
+    await open(tester);
+
+    await tester.tap(find.text('Receive PO-2041')); // already with Arjun Nair
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Assign'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => repo.assignTask(any(), any()));
+    expect(find.text('Task assigned'), findsNothing);
+  });
 }
