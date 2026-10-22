@@ -25,6 +25,7 @@ dependencies:
   vibration: ^3.1.8
   http: ^1.6.0
   uuid: ^4.6.0
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -47,7 +48,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/branding/wa_logo_main.png"
-  background_color: "#01483E"
-  adaptive_icon_background: "#01483E"
-  adaptive_icon_foreground: "assets/branding/wa_logo_main.png"
+  image_path: "assets/branding/atura_icon.png"
+  background_color: "#003439"
+  adaptive_icon_background: "#003439"
+  adaptive_icon_foreground: "assets/branding/atura_icon_foreground.png"

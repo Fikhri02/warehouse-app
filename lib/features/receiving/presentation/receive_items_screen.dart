@@ -797,7 +797,7 @@ class _ProceedWarningDialogState extends State<_ProceedWarningDialog> {
           child: const Text('Back'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.warning),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.warning, foregroundColor: Colors.white),
           onPressed: () => Navigator.of(context).pop(true),
           child: const Text('Proceed Anyway'),
         ),

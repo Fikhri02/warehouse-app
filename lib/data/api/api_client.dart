@@ -81,7 +81,7 @@ class ApiClient {
     try {
       return jsonDecode(body);
     } on FormatException {
-      throw const ApiException(status: 502, title: 'WareTrack sent an answer this app cannot read.');
+      throw const ApiException(status: 502, title: 'Atura sent an answer this app cannot read.');
     }
   }
 

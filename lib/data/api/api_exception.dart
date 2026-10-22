@@ -44,7 +44,7 @@ class ApiException implements Exception {
     for (final messages in errors.values) {
       if (messages.isNotEmpty) return messages.first;
     }
-    return title ?? 'WareTrack refused this (HTTP $status).';
+    return title ?? 'Atura refused this (HTTP $status).';
   }
 
   Map<String, dynamic> toJson() => {'status': status, 'code': code, 'title': title, 'detail': detail, 'errors': errors};
@@ -60,7 +60,7 @@ class ApiOfflineException implements Exception {
   final Object? cause;
 
   @override
-  String toString() => "Couldn't reach WareTrack. Check your connection and try again.";
+  String toString() => "Couldn't reach Atura. Check your connection and try again.";
 }
 
 /// The refresh token was refused: the person has to sign in again.

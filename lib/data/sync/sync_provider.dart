@@ -151,7 +151,7 @@ final syncIssuesProvider = StreamProvider<List<SyncIssue>>((ref) {
             message: _naming(
               item,
               item.lastError == null
-                  ? 'WareTrack refused this change.'
+                  ? 'Atura refused this change.'
                   : ApiException.fromJson(jsonDecode(item.lastError!) as Map<String, dynamic>).message,
             ),
           ),

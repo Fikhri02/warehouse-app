@@ -4,6 +4,7 @@ import 'package:warehouse_app/core/biometrics.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
+import 'package:warehouse_app/core/widgets/atura_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -45,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       messenger.showSnackBar(const SnackBar(content: Text('Sign in with your password, then turn on biometric login in Profile.')));
       return;
     }
-    if (await ref.read(biometricAuthProvider).authenticate('Unlock WareTrack')) {
+    if (await ref.read(biometricAuthProvider).authenticate('Unlock Atura')) {
       ref.read(authNotifierProvider.notifier).unlock();
     }
   }
@@ -65,24 +66,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Container(
             color: AppColors.primary,
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(24, 60, 24, 28),
+            padding: const EdgeInsets.fromLTRB(24, 76, 24, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 68,
-                  height: 68,
-                  alignment: Alignment.centerLeft,
-                  child: Image.asset(
-                    'assets/branding/logo_mark_white.png',
-                    width: 68,
-                    height: 68,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text('WareTrack',
-                    style: AppTextStyles.display.copyWith(color: Colors.white)),
-                const SizedBox(height: 4),
+                const AturaWordmark(height: 48, color: Colors.white),
+                const SizedBox(height: 8),
                 Text('Warehouse Management',
                     style:
                         AppTextStyles.caption.copyWith(color: Colors.white60)),

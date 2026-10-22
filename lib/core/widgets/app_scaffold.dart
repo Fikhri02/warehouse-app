@@ -8,6 +8,7 @@ import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/features/alerts/widgets/alerts_bell.dart';
+import 'atura_logo.dart';
 import 'offline_banner.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
@@ -289,18 +290,14 @@ class _BrandHomeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final useBrightDarkActive = active && brightness == Brightness.dark;
-    return Image.asset(
-      active
-          ? 'assets/branding/logo_icon_original.png'
-          : brightness == Brightness.dark
-              ? 'assets/branding/logo_icon_original_white_outline.png'
-              : 'assets/branding/logo_icon_original_grey_outline.png',
-      width: size,
-      height: size,
-      color: useBrightDarkActive ? AppColors.darkAccent : null,
-      colorBlendMode: useBrightDarkActive ? BlendMode.srcIn : null,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // The A's slits are too thin to outline at tab size, so inactive is the filled mark in grey.
+    final color = active
+        ? (isDark ? AppColors.darkAccent : AppColors.primary)
+        : (isDark ? AppColors.darkSubtitle : AppColors.subtitle);
+    return SizedBox.square(
+      dimension: size,
+      child: Center(child: AturaMark(width: size, color: color)),
     );
   }
 }

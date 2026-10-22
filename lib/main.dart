@@ -144,7 +144,7 @@ class _WarehouseAppState extends ConsumerState<WarehouseApp> {
     final router = ref.watch(appRouterProvider);
     final settings = ref.watch(profileSettingsProvider);
     return MaterialApp.router(
-      title: 'WareTrack',
+      title: 'Atura',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

@@ -58,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                               Text(
                                 'warehouse',
                                 style: AppTextStyles.headlineMedium.copyWith(
-                                  color: AppColors.button,
+                                  color: AppColors.softMint,
                                 ),
                               ),
                             ],
@@ -80,6 +80,11 @@ class WelcomeScreen extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
+                              // Always on a dark teal backdrop: the light-mode teal button vanishes here.
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.darkAccent,
+                                foregroundColor: AppColors.onDarkAccent,
+                              ),
                               onPressed: () => context.push(AppRoutes.login),
                               child: const Text('Get Started'),
                             ),

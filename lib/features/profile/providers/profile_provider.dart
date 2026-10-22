@@ -47,7 +47,7 @@ class ProfileSettingsNotifier extends Notifier<ProfileSettings> {
     final turningOn = !state.biometricEnabled;
     if (turningOn) {
       final biometrics = ref.read(biometricAuthProvider);
-      if (!await biometrics.canCheck() || !await biometrics.authenticate('Turn on biometric login for WareTrack')) return false;
+      if (!await biometrics.canCheck() || !await biometrics.authenticate('Turn on biometric login for Atura')) return false;
     }
     await ref.read(settingsStoreProvider).write('settings.biometric', '$turningOn');
     state = state.copyWith(biometricEnabled: turningOn);

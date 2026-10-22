@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
+  // Atura brand: deep teal #003439 · soft mint #54D3B4 · active mint #00C896 · charcoal #111111
   static const Color primary = Color(0xFF003439);
-  // static const Color primary = Color(0xFF01483E);
+  static const Color softMint = Color(0xFF54D3B4);
 
-  static const Color primaryDark = Color(0xFF003028);
-  static const Color button = Color(0xFF54D3B4);
-  static const Color onButton = primaryDark;
+  // Light-mode solid buttons: brighter teal, white text (5.32:1). White on mint fails (1.85:1).
+  static const Color button = Color(0xFF00796B);
+  static const Color onButton = Colors.white;
 
   // Light mode
   static const Color background = Color(0xFFF0F4F3);
@@ -23,6 +24,7 @@ class AppColors {
   static const Color darkBackground = Color(0xFF111111);
   static const Color darkSurface = Color(0xFF1E1E1E);
   static const Color darkAccent = Color(0xFF00C896);
+  static const Color onDarkAccent = Color(0xFF06201D);
   static const Color darkOnSurface = Color(0xFFEEEEEE);
   static const Color darkSubtitle = Color(0xFFAAAAAA);
   static const Color darkBorder = Color(0xFF333333);
@@ -30,7 +32,7 @@ class AppColors {
   // Semantic
   static const Color error = Color(0xFFC62828);
   static const Color success = Color(0xFF2E7D32);
-  static const Color warning = Color(0xFFFF8F00);
+  static const Color warning = Color(0xFFB45309);
   static const Color unread = Color(0xFFE53935);
   static const Color info = Color(0xFF1565C0);
 

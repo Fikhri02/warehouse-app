@@ -84,7 +84,7 @@ class AppTheme {
         useMaterial3: true,
         colorScheme: const ColorScheme.dark(
           primary: AppColors.darkAccent,
-          onPrimary: AppColors.darkBackground,
+          onPrimary: AppColors.onDarkAccent,
           surface: AppColors.darkSurface,
           onSurface: AppColors.darkOnSurface,
           error: AppColors.error,
@@ -92,7 +92,6 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.darkBackground,
         dividerColor: AppColors.darkBorder,
         appBarTheme: const AppBarTheme(
-          // backgroundColor: AppColors.primaryDark,
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.onPrimary,
           elevation: 0,
@@ -134,8 +133,8 @@ class AppTheme {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.button,
-            foregroundColor: AppColors.darkBackground,
+            backgroundColor: AppColors.darkAccent,
+            foregroundColor: AppColors.onDarkAccent,
             minimumSize: const Size(double.infinity, 48),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

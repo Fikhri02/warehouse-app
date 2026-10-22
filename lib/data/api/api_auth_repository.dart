@@ -31,7 +31,7 @@ class ApiAuthRepository implements AuthRepository {
     } on ApiException catch (e) {
       throw AuthFailure(e.status == 401 ? 'Wrong email or password.' : e.message);
     } on ApiOfflineException {
-      throw const AuthFailure("Couldn't reach WareTrack. Check your connection and try again.");
+      throw const AuthFailure("Couldn't reach Atura. Check your connection and try again.");
     }
     final user = json['user'] as Map<String, dynamic>;
     final session = _sessionFrom(user, json['accessToken'] as String, await _tokens.readWarehouseId());
