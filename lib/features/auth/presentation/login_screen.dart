@@ -21,24 +21,48 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
   bool _showPassword = false;
+  bool _keyboardWasOpen = false;
+
+  /// Typing into either field raises the form to fill the screen.
+  bool get _formRaised => _emailFocus.hasFocus || _passwordFocus.hasFocus;
 
   @override
   void initState() {
     super.initState();
+    _emailFocus.addListener(_onFocusChange);
+    _passwordFocus.addListener(_onFocusChange);
+    WidgetsBinding.instance.addObserver(this);
     // Biometric login is on and a session is stored: ask straight away.
     if (ref.read(lockedSessionProvider) != null) Future.microtask(_biometricSignIn);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _onFocusChange() => setState(() {});
+
+  /// The keyboard closed without a tap outside (Android back): lower the form with it.
+  @override
+  void didChangeMetrics() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final open = views.first.viewInsets.bottom > 0;
+    if (_keyboardWasOpen && !open && _formRaised) FocusManager.instance.primaryFocus?.unfocus();
+    _keyboardWasOpen = open;
   }
 
   Future<void> _signIn() async {
@@ -61,6 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
     final brightness = theme.brightness;
     final screenHeight = MediaQuery.sizeOf(context).height;
+    final topInset = MediaQuery.paddingOf(context).top;
     final accent = brightness == Brightness.dark ? AppColors.darkAccent : AppColors.primary;
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.isLoading;
@@ -71,128 +96,154 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        body: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primary, Color(0xFF00504A)],
+        body: GestureDetector(
+          // A tap outside the fields closes the keyboard and lowers the form.
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, Color(0xFF00504A)],
+              ),
             ),
-          ),
-          // Header 40%, form 60%, measured from the screen rather than the body so the header keeps its height when
-          // the keyboard opens and the form scrolls instead.
-          child: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            child: Stack(
-              children: [
-                // Behind everything: the headline and the form both sit in front of it.
-                Positioned(
-                  right: -12, // runs off the right edge
-                  top: screenHeight * 0.4 + _artRest - _artHeight,
-                  height: _artHeight,
-                  child: const ExcludeSemantics(
-                    child: Image(
-                      image: AssetImage('assets/branding/login_hero_art.png'),
-                      fit: BoxFit.fitHeight,
-                    ),
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // At rest the form takes the bottom 60% and nothing scrolls. Raised, it fills the screen from just
+                // under the status bar down to the keyboard; only then can its contents scroll.
+                final raisedHeight = constraints.maxHeight - topInset - 8;
+                final restHeight = screenHeight * 0.6;
+                return Stack(
                   children: [
-                    SizedBox(height: screenHeight * 0.4, child: const _Hero()),
-                    ClipPath(
-                      clipper: _SheetClipper(),
-                      child: Container(
-                        constraints: BoxConstraints(minHeight: screenHeight * 0.6),
-                        color: theme.scaffoldBackgroundColor,
-                        child: SafeArea(
-                          top: false,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
-                            child: Form(
-                              key: _formKey,
-                              child: AutofillGroup(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text('Sign in',
-                                        style: AppTextStyles.display.copyWith(
-                                            color: AppColors.textPrimary(brightness), fontSize: 26, height: 1.2)),
-                                    Text('Use your warehouse account',
-                                        style: AppTextStyles.body
-                                            .copyWith(color: AppColors.textSecondary(brightness), height: 1.3)),
-                                    const SizedBox(height: 20),
-                                    const _FieldLabel('Email'),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _emailController,
-                                      keyboardType: TextInputType.emailAddress,
-                                      textInputAction: TextInputAction.next,
-                                      autofillHints: const [AutofillHints.email],
-                                      autocorrect: false,
-                                      validator: (v) => (v == null || v.isEmpty) ? 'Enter your email' : null,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const _FieldLabel('Password'),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _passwordController,
-                                      obscureText: !_showPassword,
-                                      textInputAction: TextInputAction.done,
-                                      autofillHints: const [AutofillHints.password],
-                                      onFieldSubmitted: (_) => isLoading ? null : _signIn(),
-                                      decoration: InputDecoration(
-                                        suffixIcon: IconButton(
-                                          tooltip: _showPassword ? 'Hide password' : 'Show password',
-                                          icon: Icon(_showPassword
-                                              ? Icons.visibility_off_outlined
-                                              : Icons.visibility_outlined),
-                                          color: AppColors.textSecondary(brightness),
-                                          onPressed: () => setState(() => _showPassword = !_showPassword),
-                                        ),
+                    // Behind everything: the headline and the form both sit in front of it.
+                    Positioned(
+                      right: -12, // runs off the right edge
+                      top: screenHeight * 0.4 + _artRest - _artHeight,
+                      height: _artHeight,
+                      child: const ExcludeSemantics(
+                        child: Image(
+                          image: AssetImage('assets/branding/login_hero_art.png'),
+                          fit: BoxFit.fitHeight,
+                        ),
+                      ),
+                    ),
+                    Positioned(top: 0, left: 0, right: 0, height: screenHeight * 0.4, child: const _Hero()),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(end: _formRaised ? 1 : 0),
+                        duration:
+                            MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
+                        curve: const Cubic(0.23, 1, 0.32, 1),
+                        builder: (context, t, child) {
+                          final height = (restHeight + (raisedHeight - restHeight) * t).clamp(0.0, raisedHeight);
+                          return ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: height, maxHeight: raisedHeight),
+                            child: child,
+                          );
+                        },
+                        child: ClipPath(
+                          clipper: _SheetClipper(),
+                          child: ColoredBox(
+                            color: theme.scaffoldBackgroundColor,
+                            child: SingleChildScrollView(
+                              physics: const ClampingScrollPhysics(),
+                              child: SafeArea(
+                                top: false,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
+                                  child: Form(
+                                    key: _formKey,
+                                    child: AutofillGroup(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text('Sign in',
+                                              style: AppTextStyles.display.copyWith(
+                                                  color: AppColors.textPrimary(brightness), fontSize: 26, height: 1.2)),
+                                          Text('Use your warehouse account',
+                                              style: AppTextStyles.body
+                                                  .copyWith(color: AppColors.textSecondary(brightness), height: 1.3)),
+                                          const SizedBox(height: 20),
+                                          const _FieldLabel('Email'),
+                                          const SizedBox(height: 8),
+                                          TextFormField(
+                                            controller: _emailController,
+                                            focusNode: _emailFocus,
+                                            keyboardType: TextInputType.emailAddress,
+                                            textInputAction: TextInputAction.next,
+                                            autofillHints: const [AutofillHints.email],
+                                            autocorrect: false,
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Enter your email' : null,
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const _FieldLabel('Password'),
+                                          const SizedBox(height: 8),
+                                          TextFormField(
+                                            controller: _passwordController,
+                                            focusNode: _passwordFocus,
+                                            obscureText: !_showPassword,
+                                            textInputAction: TextInputAction.done,
+                                            autofillHints: const [AutofillHints.password],
+                                            onFieldSubmitted: (_) => isLoading ? null : _signIn(),
+                                            decoration: InputDecoration(
+                                              suffixIcon: IconButton(
+                                                tooltip: _showPassword ? 'Hide password' : 'Show password',
+                                                icon: Icon(_showPassword
+                                                    ? Icons.visibility_off_outlined
+                                                    : Icons.visibility_outlined),
+                                                color: AppColors.textSecondary(brightness),
+                                                onPressed: () => setState(() => _showPassword = !_showPassword),
+                                              ),
+                                            ),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
+                                          ),
+                                          const SizedBox(height: 20),
+                                          if (errorMessage != null) ...[
+                                            Text(errorMessage,
+                                                style: AppTextStyles.body.copyWith(color: AppColors.error)),
+                                            const SizedBox(height: 8),
+                                          ],
+                                          ElevatedButton(
+                                            onPressed: isLoading ? null : _signIn,
+                                            child: isLoading
+                                                ? SizedBox(
+                                                    height: 18,
+                                                    width: 18,
+                                                    child: CircularProgressIndicator(
+                                                        strokeWidth: 2, color: theme.colorScheme.onPrimary),
+                                                  )
+                                                : const Text('Sign in'),
+                                          ),
+                                          if (canUseFingerprint) ...[
+                                            const SizedBox(height: 12),
+                                            OutlinedButton.icon(
+                                              onPressed: isLoading ? null : _biometricSignIn,
+                                              style: OutlinedButton.styleFrom(
+                                                minimumSize: const Size(double.infinity, 48),
+                                                foregroundColor: accent,
+                                                side: BorderSide(color: accent),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                textStyle: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
+                                              ),
+                                              icon: const Icon(Icons.fingerprint),
+                                              label: const Text('Use fingerprint'),
+                                            ),
+                                          ],
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            'Need access? Contact your supervisor.',
+                                            textAlign: TextAlign.center,
+                                            style: AppTextStyles.body
+                                                .copyWith(color: AppColors.textSecondary(brightness), height: 1.3),
+                                          ),
+                                        ],
                                       ),
-                                      validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
                                     ),
-                                    const SizedBox(height: 20),
-                                    if (errorMessage != null) ...[
-                                      Text(errorMessage, style: AppTextStyles.body.copyWith(color: AppColors.error)),
-                                      const SizedBox(height: 8),
-                                    ],
-                                    ElevatedButton(
-                                      onPressed: isLoading ? null : _signIn,
-                                      child: isLoading
-                                          ? SizedBox(
-                                              height: 18,
-                                              width: 18,
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 2, color: theme.colorScheme.onPrimary),
-                                            )
-                                          : const Text('Sign in'),
-                                    ),
-                                    if (canUseFingerprint) ...[
-                                      const SizedBox(height: 12),
-                                      OutlinedButton.icon(
-                                        onPressed: isLoading ? null : _biometricSignIn,
-                                        style: OutlinedButton.styleFrom(
-                                          minimumSize: const Size(double.infinity, 48),
-                                          foregroundColor: accent,
-                                          side: BorderSide(color: accent),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                          textStyle: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
-                                        ),
-                                        icon: const Icon(Icons.fingerprint),
-                                        label: const Text('Use fingerprint'),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 20),
-                                    Text(
-                                      'Need access? Contact your supervisor.',
-                                      textAlign: TextAlign.center,
-                                      style: AppTextStyles.body
-                                          .copyWith(color: AppColors.textSecondary(brightness), height: 1.3),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -201,8 +252,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),

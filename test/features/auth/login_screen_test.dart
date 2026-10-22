@@ -74,6 +74,34 @@ void main() {
     expect(find.text('Use fingerprint'), findsOneWidget);
   });
 
+  testWidgets('nothing is focused on first load, so the form starts lowered', (tester) async {
+    when(() => mockRepo.getStoredSession()).thenAnswer((_) async => null);
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+    for (final field in tester.widgetList<EditableText>(find.byType(EditableText))) {
+      expect(field.focusNode.hasFocus, isFalse);
+    }
+  });
+
+  testWidgets('focusing a field raises the form, a tap outside lowers it', (tester) async {
+    tester.view.physicalSize = const Size(1179, 2556); // iPhone-sized, so the form has room to rise
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    when(() => mockRepo.getStoredSession()).thenAnswer((_) async => null);
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+    double formTop() => tester.getTopLeft(find.byType(Form)).dy;
+    final atRest = formTop();
+
+    await tester.tap(find.byType(TextFormField).first);
+    await tester.pumpAndSettle();
+    expect(formTop(), lessThan(atRest - 100));
+
+    await tester.tapAt(const Offset(20, 120)); // an empty spot on the raised form
+    await tester.pumpAndSettle();
+    expect(formTop(), closeTo(atRest, 1));
+  });
+
   testWidgets('the password can be shown and hidden', (tester) async {
     when(() => mockRepo.getStoredSession()).thenAnswer((_) async => null);
     await tester.pumpWidget(buildSubject());
