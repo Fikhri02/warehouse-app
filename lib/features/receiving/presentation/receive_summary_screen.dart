@@ -128,7 +128,7 @@ class ReceiveSummaryScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               'Review before signing',
-              style: AppTextStyles.caption.copyWith(color: Colors.white70),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary(Theme.of(context).brightness)),
             ),
           ),
         ),

@@ -29,9 +29,6 @@ class DeliveryOrdersListScreen extends ConsumerWidget {
             title: const Text('Delivery Orders'),
             bottom: const TabBar(
               tabs: [Tab(text: 'Active'), Tab(text: 'Completed')],
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white60,
             ),
           ),
           body: const SafeArea(

@@ -18,7 +18,7 @@ class AlertsBell extends ConsumerWidget {
         isLabelVisible: unread > 0,
         backgroundColor: AppColors.unread,
         label: Text(unread > 99 ? '99+' : '$unread'),
-        child: const Icon(Icons.notifications_outlined, color: Colors.white),
+        child: const Icon(Icons.notifications_outlined), // takes the header's icon colour
       ),
       onPressed: () => context.push(AppRoutes.alerts),
     );

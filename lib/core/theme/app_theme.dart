@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 
@@ -16,10 +17,21 @@ class AppTheme {
         ),
         scaffoldBackgroundColor: AppColors.background,
         dividerColor: AppColors.divider,
+        // Headers on the light ground with deep-teal text and icons, seamless with the page; a soft shadow appears
+        // only once content scrolls under them. The status bar's icons turn dark to match.
         appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.onPrimary,
+          backgroundColor: AppColors.background,
+          foregroundColor: AppColors.primary,
+          surfaceTintColor: Colors.transparent,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
           elevation: 0,
+          scrolledUnderElevation: 2,
+          shadowColor: Color(0x33000000),
+        ),
+        tabBarTheme: const TabBarThemeData(
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.subtitle,
+          indicatorColor: AppColors.primary,
         ),
         iconTheme: const IconThemeData(color: AppColors.onBackground),
         textTheme: const TextTheme(
@@ -94,7 +106,13 @@ class AppTheme {
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.onPrimary,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
           elevation: 0,
+        ),
+        tabBarTheme: const TabBarThemeData(
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          indicatorColor: Colors.white,
         ),
         iconTheme: const IconThemeData(color: AppColors.darkOnSurface),
         textTheme: const TextTheme(

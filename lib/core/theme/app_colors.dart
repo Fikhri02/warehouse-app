@@ -12,7 +12,7 @@ class AppColors {
   static const Color onButton = Colors.white;
 
   // Light mode
-  static const Color background = Color(0xFFF0F4F3);
+  static const Color background = Color(0xFFEDF2F1); // the brand sheet's light-theme ground
   static const Color surface = Colors.white;
   static const Color onPrimary = Colors.white;
   static const Color onBackground = Color(0xFF222222);

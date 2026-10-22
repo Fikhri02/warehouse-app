@@ -26,7 +26,6 @@ class ChooseWarehouseScreen extends ConsumerWidget {
           if (!switching)
             TextButton(
               onPressed: () => ref.read(authNotifierProvider.notifier).logout(),
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
               child: const Text('Sign out'),
             ),
         ],

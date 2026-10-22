@@ -44,9 +44,6 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
         bottom: TabBar(
           controller: _tabs,
           tabs: const [Tab(text: 'Pending'), Tab(text: 'Completed')],
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
         ),
       ),
       body: SafeArea(

@@ -102,7 +102,7 @@ class _PoDetailsBodyState extends State<_PoDetailsBody> {
             const Text('PO Details'),
             Text(
               order.displayNumber,
-              style: AppTextStyles.caption.copyWith(color: Colors.white70),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary(Theme.of(context).brightness)),
             ),
           ],
         ),

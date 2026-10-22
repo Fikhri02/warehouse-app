@@ -53,7 +53,8 @@ class _CreateCountSessionScreenState
         state.deadline != null &&
         state.deadline!.isBefore(DateTime.now());
     final hasLocationError = _submitted && state.locationId == null;
-    final saveIndicator = _saveIndicatorData(state);
+    final saveIndicator =
+        _saveIndicatorData(state, Theme.of(context).brightness);
 
     return Scaffold(
       appBar: AppBar(
@@ -70,13 +71,13 @@ class _CreateCountSessionScreenState
                   key: ValueKey(saveIndicator.label),
                   children: [
                     if (saveIndicator.showSpinner)
-                      const SizedBox(
+                      SizedBox(
                         height: 14,
                         width: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white70,
+                            saveIndicator.color,
                           ),
                         ),
                       )
@@ -675,39 +676,45 @@ class _CreateCountSessionScreenState
     return _LocationPermissionUiState.denied;
   }
 
-  _SaveIndicatorData _saveIndicatorData(CreateCountSessionState state) {
+  _SaveIndicatorData _saveIndicatorData(
+    CreateCountSessionState state,
+    Brightness brightness,
+  ) {
+    final muted = AppColors.textSecondary(brightness);
     switch (state.saveStatus) {
       case CreateSessionSaveStatus.saving:
-        return const _SaveIndicatorData(
+        return _SaveIndicatorData(
           label: 'Saving draft',
           icon: Icons.sync,
-          color: Colors.white70,
+          color: muted,
           showSpinner: true,
         );
       case CreateSessionSaveStatus.saved:
-        return const _SaveIndicatorData(
+        return _SaveIndicatorData(
           label: 'Draft saved',
           icon: Icons.check_circle_outline,
-          color: Colors.white70,
+          color: muted,
         );
       case CreateSessionSaveStatus.error:
-        return const _SaveIndicatorData(
+        return _SaveIndicatorData(
           label: 'Draft save failed',
           icon: Icons.error_outline,
-          color: Color(0xFFFFCDD2),
+          color: brightness == Brightness.dark
+              ? const Color(0xFFFFCDD2)
+              : AppColors.error,
         );
       case CreateSessionSaveStatus.idle:
         if (_hasDraftContent(state)) {
-          return const _SaveIndicatorData(
+          return _SaveIndicatorData(
             label: 'Draft saves automatically',
             icon: Icons.drafts_outlined,
-            color: Colors.white70,
+            color: muted,
           );
         }
-        return const _SaveIndicatorData(
+        return _SaveIndicatorData(
           label: 'Optional fields can be filled later',
           icon: Icons.info_outline,
-          color: Colors.white70,
+          color: muted,
         );
     }
   }

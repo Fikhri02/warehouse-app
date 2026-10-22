@@ -54,7 +54,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                   : () => ref.read(alertsProvider.notifier).markAllRead(),
               child: Text(
                 'Mark all read',
-                style: AppTextStyles.bodySmall.copyWith(color: Colors.white),
+                style: AppTextStyles.bodySmall,
               ),
             ),
           ],
@@ -112,6 +112,9 @@ class _FilterTabs extends StatelessWidget {
       (AlertFilter.tasks, 'Tasks'),
       (AlertFilter.sync, 'Sync'),
     ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final on = isDark ? Colors.white : AppColors.primary;
+    final off = isDark ? Colors.white60 : AppColors.subtitle;
     return Row(
       children: tabs.map((t) {
         final selected = current == t.$1;
@@ -124,7 +127,7 @@ class _FilterTabs extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: selected ? Colors.white : Colors.transparent,
+                    color: selected ? on : Colors.transparent,
                     width: 2,
                   ),
                 ),
@@ -132,7 +135,7 @@ class _FilterTabs extends StatelessWidget {
               child: Text(
                 t.$2,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: selected ? Colors.white : Colors.white60,
+                  color: selected ? on : off,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),

@@ -33,7 +33,7 @@ class ReviewCountScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               '${session.location} · ${session.items.length} items',
-              style: AppTextStyles.caption.copyWith(color: Colors.white70),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary(brightness)),
             ),
           ),
         ),

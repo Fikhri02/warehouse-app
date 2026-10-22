@@ -263,6 +263,8 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
     final extra = order.extraItems.length;
     final remaining =
         items.where((i) => i.received == null && !i.flagged).length;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -271,14 +273,12 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
           children: [
             Text(
               order.displayNumber,
-              style: AppTextStyles.body.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
             ),
             Text(
               order.supplier,
-              style: AppTextStyles.caption.copyWith(color: Colors.white70),
+              style: AppTextStyles.caption
+                  .copyWith(color: AppColors.textSecondary(brightness)),
             ),
           ],
         ),
@@ -287,13 +287,15 @@ class _ReceiveItemsScreenState extends ConsumerState<ReceiveItemsScreen> {
             margin: const EdgeInsets.only(right: 12),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: isDark
+                  ? Colors.white24
+                  : AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               '${items.length} items',
               style: AppTextStyles.caption.copyWith(
-                color: Colors.white,
+                color: isDark ? Colors.white : AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),

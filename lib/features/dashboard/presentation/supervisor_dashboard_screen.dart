@@ -5,7 +5,8 @@ import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
-import 'package:warehouse_app/features/alerts/widgets/alerts_bell.dart';
+import 'widgets/dashboard_app_bar.dart';
+import 'widgets/dashboard_greeting.dart';
 import 'widgets/quick_action_card.dart';
 
 class SupervisorDashboardScreen extends ConsumerWidget {
@@ -14,27 +15,15 @@ class SupervisorDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authNotifierProvider).valueOrNull;
-    final firstName = session?.name.split(' ').first ?? 'there';
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Good morning, $firstName',
-                style: AppTextStyles.title.copyWith(color: Colors.white)),
-            Text('SUPERVISOR · ${session?.site ?? ''}',
-                style: AppTextStyles.micro
-                    .copyWith(color: Colors.white60, letterSpacing: 0.5)),
-          ],
-        ),
-        actions: const [AlertsBell()],
-      ),
+      appBar: const DashboardAppBar(),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          DashboardGreeting(session: session),
+          const SizedBox(height: 20),
           Text('Quick Actions',
               style: AppTextStyles.micro.copyWith(
                 color: AppColors.textSecondary(brightness),
