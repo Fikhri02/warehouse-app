@@ -25,7 +25,8 @@ void main() {
       routes: [
         GoRoute(
           path: AppRoutes.welcome,
-          builder: (_, __) => const WelcomeScreen(),
+          // A fixed morning, so the badge reads the same on every run.
+          builder: (_, __) => WelcomeScreen(clock: () => DateTime(2026, 10, 22, 7, 58)),
         ),
         GoRoute(
           path: AppRoutes.login,
@@ -45,39 +46,50 @@ void main() {
     );
   }
 
-  testWidgets('renders welcome content with get started button',
-      (tester) async {
+  testWidgets('shows the badge with the time, date, shift and photo slot, and one way in', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Get Started'), findsOneWidget);
-    expect(find.text('Move inventory with fewer taps.'), findsOneWidget);
+    expect(find.text("Morning shift?\nWe've got you."), findsOneWidget);
+    expect(find.text('7:58'), findsOneWidget);
+    expect(find.text('AM'), findsOneWidget);
+    expect(find.text('Thursday, 22 October'), findsOneWidget);
+    expect(find.text('Morning shift'), findsOneWidget);
+    expect(find.text('A0001'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Start my shift'), findsOneWidget);
   });
 
-  testWidgets('navigates to login screen when get started is pressed',
-      (tester) async {
+  testWidgets('Start my shift opens the sign-in screen', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Get Started'));
+    await tester.tap(find.text('Start my shift'));
     await tester.pumpAndSettle();
 
     expect(find.byType(TextFormField), findsNWidgets(2));
     expect(find.widgetWithText(ElevatedButton, 'Sign in'), findsOneWidget);
   });
 
-  testWidgets('back from login returns to welcome screen', (tester) async {
+  testWidgets('back from sign-in returns to the welcome screen', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Get Started'));
+    await tester.tap(find.text('Start my shift'));
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNWidgets(2));
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
-    expect(find.text('Get Started'), findsOneWidget);
-    expect(find.text('Move inventory with fewer taps.'), findsOneWidget);
+    expect(find.text("Morning shift?\nWe've got you."), findsOneWidget);
+  });
+
+  test('the shift follows the time of day', () {
+    expect(shiftFor(DateTime(2026, 10, 22, 5, 59)).$1, 'Night shift');
+    expect(shiftFor(DateTime(2026, 10, 22, 6)).$1, 'Morning shift');
+    expect(shiftFor(DateTime(2026, 10, 22, 13, 59)).$1, 'Morning shift');
+    expect(shiftFor(DateTime(2026, 10, 22, 14)).$1, 'Afternoon shift');
+    expect(shiftFor(DateTime(2026, 10, 22, 21, 59)).$1, 'Afternoon shift');
+    expect(shiftFor(DateTime(2026, 10, 22, 22)).$1, 'Night shift');
   });
 }

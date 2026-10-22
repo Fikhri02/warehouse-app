@@ -44,6 +44,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/branding/
+  fonts:
+    # Variable font (weights 200-800); set the weight with FontVariation('wght', n) as well as fontWeight.
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans[wght].ttf
 
 flutter_launcher_icons:
   android: true
