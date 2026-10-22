@@ -63,7 +63,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TextFormField), findsNWidgets(2));
-    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Sign in'), findsOneWidget);
   });
 
   testWidgets('back from login returns to welcome screen', (tester) async {

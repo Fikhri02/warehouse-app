@@ -19,6 +19,14 @@ class FakeBiometrics implements BiometricAuth {
   Future<bool> authenticate(String reason) async => true;
 }
 
+class DeclinedBiometrics implements BiometricAuth {
+  @override
+  Future<bool> canCheck() async => true;
+
+  @override
+  Future<bool> authenticate(String reason) async => false;
+}
+
 void main() {
   late MockAuthRepository mockRepo;
 
@@ -41,21 +49,47 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNWidgets(2));
-    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Sign in'), findsOneWidget);
   });
 
-  testWidgets('renders biometric button with label', (tester) async {
+  testWidgets('no fingerprint button until biometric login is on', (tester) async {
     when(() => mockRepo.getStoredSession()).thenAnswer((_) async => null);
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
-    expect(find.text('Biometric'), findsOneWidget);
+    expect(find.text('Use fingerprint'), findsNothing);
+  });
+
+  testWidgets('a declined fingerprint leaves the button to try again', (tester) async {
+    const locked = UserSession(userId: 'u1', name: 'Arjun Nair', email: 'arjun@waretrack.local', site: 'Shah Alam DC', role: UserRole.worker, token: 't');
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(mockRepo),
+        authBootstrapStateProvider.overrideWithValue(const AuthBootstrapState.hydrated(null)),
+        lockedSessionProvider.overrideWith((_) => locked),
+        biometricAuthProvider.overrideWithValue(DeclinedBiometrics()),
+      ],
+      child: MaterialApp(theme: AppTheme.light, home: const LoginScreen()),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Use fingerprint'), findsOneWidget);
+  });
+
+  testWidgets('the password can be shown and hidden', (tester) async {
+    when(() => mockRepo.getStoredSession()).thenAnswer((_) async => null);
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+    EditableText password() => tester.widget<EditableText>(find.descendant(of: find.byType(TextFormField).last, matching: find.byType(EditableText)));
+    expect(password().obscureText, isTrue);
+    await tester.tap(find.byTooltip('Show password'));
+    await tester.pump();
+    expect(password().obscureText, isFalse);
   });
 
   testWidgets('shows error when email is empty on submit', (tester) async {
     when(() => mockRepo.getStoredSession()).thenAnswer((_) async => null);
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign In'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
     await tester.pumpAndSettle();
     expect(find.text('Enter your email'), findsOneWidget);
   });
@@ -70,7 +104,7 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).first, 'bad@test.com');
     await tester.enterText(find.byType(TextFormField).last, 'wrongpassword');
-    await tester.tap(find.text('Sign In'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Invalid credentials'), findsOneWidget);
