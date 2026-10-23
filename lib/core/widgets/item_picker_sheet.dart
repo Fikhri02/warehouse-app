@@ -244,7 +244,7 @@ class _CatalogRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   item.sku,
-                  style: AppTextStyles.caption.copyWith(
+                  style: AppTextStyles.code.copyWith(
                     color: AppColors.textSecondary(brightness),
                   ),
                 ),

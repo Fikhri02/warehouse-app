@@ -597,8 +597,7 @@ class _ItemRow extends StatelessWidget {
                 ),
                 Text(
                   item.itemCode,
-                  style:
-                      AppTextStyles.micro.copyWith(color: AppColors.subtitle),
+                  style: AppTextStyles.code.copyWith(color: AppColors.subtitle),
                 ),
               ],
             ),

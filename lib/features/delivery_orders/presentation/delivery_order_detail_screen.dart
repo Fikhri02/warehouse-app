@@ -271,7 +271,7 @@ class _ItemsCard extends StatelessWidget {
                           items[index].locationCode == null
                               ? items[index].itemSku
                               : '${items[index].itemSku} · ${items[index].locationCode}',
-                          style: AppTextStyles.caption.copyWith(
+                          style: AppTextStyles.code.copyWith(
                             color: AppColors.textSecondary(brightness),
                           ),
                         ),

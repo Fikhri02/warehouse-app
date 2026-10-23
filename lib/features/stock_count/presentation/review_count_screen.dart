@@ -65,7 +65,7 @@ class ReviewCountScreen extends ConsumerWidget {
                                       .copyWith(fontWeight: FontWeight.w600)),
                               const SizedBox(height: 2),
                               Text(item.itemCode,
-                                  style: AppTextStyles.caption.copyWith(
+                                  style: AppTextStyles.code.copyWith(
                                     color: AppColors.textSecondary(brightness),
                                   )),
                               const SizedBox(height: 2),

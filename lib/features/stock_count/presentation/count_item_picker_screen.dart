@@ -71,7 +71,7 @@ class _CountItemPickerScreenState extends ConsumerState<CountItemPickerScreen> {
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, i) => ListTile(
                           title: Text(items[i].name, style: AppTextStyles.bodyMedium),
-                          subtitle: Text(items[i].sku),
+                          subtitle: Text(items[i].sku, style: AppTextStyles.code),
                           trailing: items[i].id == chosen?.id ? const Icon(Icons.check, color: AppColors.primary) : null,
                           onTap: () => setState(() {
                             _chosen = items[i];

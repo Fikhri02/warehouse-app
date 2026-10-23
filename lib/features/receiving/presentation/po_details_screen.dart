@@ -332,7 +332,7 @@ class _PoDetailsBodyState extends State<_PoDetailsBody> {
                                     ),
                                     Text(
                                       item.itemCode,
-                                      style: AppTextStyles.micro.copyWith(
+                                      style: AppTextStyles.code.copyWith(
                                         color: AppColors.subtitle,
                                       ),
                                     ),

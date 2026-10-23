@@ -8,6 +8,7 @@ class AppTheme {
 
   static ThemeData get light => ThemeData(
         useMaterial3: true,
+        fontFamily: AppTextStyles.sans,
         colorScheme: const ColorScheme.light(
           primary: AppColors.primary,
           onPrimary: AppColors.onPrimary,
@@ -94,6 +95,7 @@ class AppTheme {
 
   static ThemeData get dark => ThemeData(
         useMaterial3: true,
+        fontFamily: AppTextStyles.sans,
         colorScheme: const ColorScheme.dark(
           primary: AppColors.darkAccent,
           onPrimary: AppColors.onDarkAccent,
