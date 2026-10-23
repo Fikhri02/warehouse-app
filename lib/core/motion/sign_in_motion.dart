@@ -16,3 +16,9 @@ const kCheckInRise = Duration(milliseconds: 400);
 
 /// With reduced motion, every step on the way in is a plain cross-fade of this length.
 const kReducedMotionFade = Duration(milliseconds: 150);
+
+/// The greeting after the check-in: it fades in, holds (a tap cuts the hold short), then glides into Home's own
+/// greeting.
+const kGreetingIn = Duration(milliseconds: 300);
+const kGreetingHold = Duration(milliseconds: 900);
+const kGreetingGlide = Duration(milliseconds: 450);

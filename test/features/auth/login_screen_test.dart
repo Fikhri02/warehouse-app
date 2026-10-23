@@ -158,6 +158,13 @@ void main() {
     expect(container.read(lockedSessionProvider), isNull);
   });
 
+  /// Advances [duration] a frame at a time, so animations that start after one another all get to run.
+  Future<void> pumpFrames(WidgetTester tester, Duration duration) async {
+    for (var t = Duration.zero; t < duration; t += const Duration(milliseconds: 16)) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+  }
+
   group('check-in', () {
     const worker = UserSession(userId: 'u2', name: 'John Doe', email: 'worker@warehouse.com', site: 'Warehouse A', role: UserRole.worker, token: 't');
 
@@ -204,6 +211,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(container.read(entryHeldProvider), isFalse);
       expect(container.read(authNotifierProvider).valueOrNull?.userId, 'u2');
+    });
+
+    testWidgets('the form stays on screen while the button folds into the check', (tester) async {
+      when(() => mockRepo.login(any(), any())).thenAnswer((_) async => worker);
+      final container = containerWith();
+      await tester.pumpWidget(subject(container));
+      await tester.pumpAndSettle();
+      await fillIn(tester);
+      await tester.pumpAndSettle(); // typing raised the sheet
+      final screen = tester.getSize(find.byType(LoginScreen));
+      final titleAtRest = tester.getTopLeft(find.text('Sign in').first);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250)); // folded into the check, before the rise
+      expect(tester.getSize(find.byType(Stack).first), screen); // nothing collapses the layout
+      expect(tester.getTopLeft(find.text('Sign in').first), titleAtRest);
+      await tester.pumpAndSettle();
     });
 
     testWidgets('a failed sign-in lets go at once and keeps the button', (tester) async {
@@ -313,6 +338,46 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('after the check-in the greeting fades in, then glides into Home\'s spot before letting go', (tester) async {
+      when(() => mockRepo.login(any(), any())).thenAnswer((_) async => worker);
+      final container = containerWith();
+      await tester.pumpWidget(subject(container));
+      await tester.pumpAndSettle();
+      await fillIn(tester);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
+      await tester.pump();
+      await pumpFrames(tester, const Duration(milliseconds: 850)); // the check-in
+      await pumpFrames(tester, const Duration(milliseconds: 600)); // the greeting has faded in
+      final greeting = find.textContaining(', John');
+      expect(greeting, findsOneWidget);
+      expect(find.text('Worker · Warehouse A'), findsOneWidget);
+      expect(container.read(entryHeldProvider), isTrue);
+
+      await tester.pumpAndSettle();
+      expect(container.read(entryHeldProvider), isFalse);
+      // Where Home's own greeting sits: under a 56pt app bar, inside 16pt of padding.
+      expect(tester.getTopLeft(greeting), const Offset(16, 72));
+    });
+
+    testWidgets('a tap skips the greeting', (tester) async {
+      when(() => mockRepo.login(any(), any())).thenAnswer((_) async => worker);
+      final container = containerWith();
+      await tester.pumpWidget(subject(container));
+      await tester.pumpAndSettle();
+      await fillIn(tester);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
+      await tester.pump();
+      await pumpFrames(tester, const Duration(milliseconds: 850));
+      await pumpFrames(tester, const Duration(milliseconds: 400));
+      expect(find.textContaining(', John'), findsOneWidget);
+      await tester.tapAt(const Offset(200, 500));
+      await pumpFrames(tester, const Duration(milliseconds: 550)); // the glide only; the 900ms hold is cut
+      expect(container.read(entryHeldProvider), isFalse);
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('with reduced motion nothing is held', (tester) async {
       when(() => mockRepo.login(any(), any())).thenAnswer((_) async => worker);
       final container = containerWith();
@@ -326,6 +391,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(seen, isNot(contains(true)));
       expect(find.byKey(LoginScreen.checkInKey), findsNothing);
+      expect(find.textContaining(', John'), findsNothing);
       expect(container.read(authNotifierProvider).valueOrNull?.userId, 'u2');
     });
   });

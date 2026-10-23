@@ -11,7 +11,9 @@ import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
 import 'package:warehouse_app/core/theme/app_text_styles.dart';
 import 'package:warehouse_app/core/widgets/atura_logo.dart';
+import 'package:warehouse_app/core/models/user_session.dart';
 import 'package:warehouse_app/features/auth/presentation/sign_in_geometry.dart';
+import 'package:warehouse_app/features/dashboard/presentation/widgets/dashboard_greeting.dart';
 import 'package:warehouse_app/features/profile/providers/profile_provider.dart';
 
 /// How far the right side of the form's top edge sits below its left; the hero art rests in that dip.
@@ -31,7 +33,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingObserver, TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -52,6 +54,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingOb
   late final AnimationController _checkIn =
       AnimationController(vsync: this, duration: kCheckInFold + kCheckInPause + kCheckInRise);
   static final _foldEnd = kCheckInFold.inMilliseconds / (kCheckInFold + kCheckInPause + kCheckInRise).inMilliseconds;
+  late final AnimationController _greet =
+      AnimationController(vsync: this, duration: kGreetingIn + kGreetingHold + kGreetingGlide);
+  static final _greetInEnd =
+      kGreetingIn.inMilliseconds / (kGreetingIn + kGreetingHold + kGreetingGlide).inMilliseconds;
+  static final _greetGlideStart =
+      (kGreetingIn + kGreetingHold).inMilliseconds / (kGreetingIn + kGreetingHold + kGreetingGlide).inMilliseconds;
   static final _riseStart =
       (kCheckInFold + kCheckInPause).inMilliseconds / (kCheckInFold + kCheckInPause + kCheckInRise).inMilliseconds;
 
@@ -75,6 +83,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingOb
     // Never leave the router waiting on a screen that is gone.
     if (_hold.state) Future.microtask(() => _hold.state = false);
     _checkIn.dispose();
+    _greet.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _emailFocus.dispose();
     _passwordFocus.dispose();
@@ -146,9 +155,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingOb
       _checkIn.value = 0;
       setState(() => _submitting = false);
     } else {
+      await _playGreeting();
+      if (!mounted) return;
       _arrival.state = true; // Home arrives in steps, this once
     }
     _hold.state = false;
+  }
+
+  /// "Good morning, John" fades in on the covered screen, holds, then glides up into Home's own greeting.
+  Future<void> _playGreeting() async {
+    await _greet.animateTo(_greetInEnd);
+    if (!mounted) return;
+    try {
+      await _greet.animateTo(_greetGlideStart).orCancel; // the hold: nothing moves
+    } on TickerCanceled {
+      // Cut short by a tap, or the screen went away.
+    }
+    if (!mounted) return;
+    _greet.value = math.max(_greet.value, _greetGlideStart);
+    await _greet.forward();
+  }
+
+  /// A tap ends the greeting's hold early; the glide into Home still plays.
+  void _skipGreeting() {
+    final v = _greet.value;
+    if (_greet.isAnimating && v >= _greetInEnd && v < _greetGlideStart) _greet.stop();
   }
 
   @override
@@ -169,13 +200,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingOb
         ? kAlwaysCompleteAnimation
         : ModalRoute.of(context)?.animation ?? kAlwaysCompleteAnimation;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+    return AnimatedBuilder(
+      animation: _checkIn,
+      // Light icons over the teal; dark ones once the sheet has covered it in light mode, for the greeting.
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: brightness == Brightness.light && _checkIn.value > (1 + _riseStart) / 2
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light,
+        child: child!,
+      ),
       child: Scaffold(
         body: GestureDetector(
           // A tap outside the fields closes the keyboard and lowers the form.
           behavior: HitTestBehavior.opaque,
-          onTap: () => FocusScope.of(context).unfocus(),
+          onTap: () {
+            FocusScope.of(context).unfocus();
+            _skipGreeting();
+          },
           child: DecoratedBox(
             decoration: const BoxDecoration(gradient: kSignInGradient),
             child: LayoutBuilder(
@@ -393,6 +434,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingOb
                         ),
                       ),
                     ),
+                    if (authState.valueOrNull case final session?)
+                      _Greeting(
+                        session: session,
+                        animation: _greet,
+                        inEnd: _greetInEnd,
+                        glideStart: _greetGlideStart,
+                        from: Offset(24, constraints.maxHeight * 0.4),
+                        to: Offset(16, topInset + kToolbarHeight + 16),
+                      ),
                   ],
                 );
               },
@@ -400,6 +450,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with WidgetsBindingOb
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Home's own greeting, shown a third larger on the covered screen, then gliding to where Home will show it — so when
+/// Home arrives its greeting is already in place. Someone who still has to choose a warehouse is not going to Home
+/// next, so for them it fades out instead of gliding.
+class _Greeting extends StatelessWidget {
+  final UserSession session;
+  final Animation<double> animation;
+  final double inEnd, glideStart;
+  final Offset from, to;
+  const _Greeting({
+    required this.session,
+    required this.animation,
+    required this.inEnd,
+    required this.glideStart,
+    required this.from,
+    required this.to,
+  });
+
+  static const double _scale = 4 / 3;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        // Always a Positioned: an unpositioned child would make the Stack size itself to it and collapse the screen.
+        if (animation.value == 0) return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
+        final fade = Interval(0, inEnd, curve: kSignInCurve).transform(animation.value);
+        final glide = Interval(glideStart, 1, curve: kSignInCurve).transform(animation.value);
+        final staying = !session.needsWarehouse;
+        final at = staying ? Offset.lerp(from, to, glide)! : from;
+        return Positioned(
+          left: at.dx,
+          top: at.dy + 8 * (1 - fade),
+          child: Opacity(
+            opacity: staying ? fade : fade * (1 - glide),
+            child: Transform.scale(
+              scale: staying ? lerpDouble(_scale, 1, glide)! : _scale,
+              alignment: Alignment.topLeft,
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: DashboardGreeting(session: session),
     );
   }
 }

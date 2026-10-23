@@ -45,15 +45,18 @@ void main() {
     expect(find.byKey(LoginScreen.checkInKey), findsOneWidget);
     expect(find.byType(WorkerDashboardScreen), findsNothing);
 
-    for (var i = 0; i < 100 && find.byType(WorkerDashboardScreen).evaluate().isEmpty; i++) {
-      await tester.pump(const Duration(milliseconds: 16));
+    for (var i = 0; i < 300 && find.byType(WorkerDashboardScreen).evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 16)); // the check-in, then the greeting
     }
-    expect(greetingOpacity(tester), lessThan(1)); // Home arrives in steps after the check-in
+    // Home's greeting is already where Sign in's greeting glided to; the rest of Home arrives in steps.
+    final homeGreeting = find.descendant(of: find.byType(WorkerDashboardScreen), matching: find.textContaining(', John'));
+    expect(tester.getTopLeft(homeGreeting), const Offset(16, 72));
+    expect(cardsOpacity(tester), lessThan(1));
 
     await tester.pumpAndSettle();
     expect(find.byType(WorkerDashboardScreen), findsOneWidget);
     expect(find.byType(LoginScreen), findsNothing);
-    expect(greetingOpacity(tester), 1);
+    expect(cardsOpacity(tester), 1);
   });
 
   testWidgets('coming back to Home any other way does not replay the arrival', (tester) async {
@@ -77,11 +80,11 @@ void main() {
     for (var i = 0; i < 100 && find.byType(WorkerDashboardScreen).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    expect(greetingOpacity(tester), 1);
+    expect(cardsOpacity(tester), 1);
     await tester.pumpAndSettle();
   });
 }
 
-double greetingOpacity(WidgetTester tester) => tester
-    .widget<Opacity>(find.ancestor(of: find.textContaining('Good morning'), matching: find.byType(Opacity)).first)
+double cardsOpacity(WidgetTester tester) => tester
+    .widget<Opacity>(find.ancestor(of: find.text('Quick Actions'), matching: find.byType(Opacity)).first)
     .opacity;

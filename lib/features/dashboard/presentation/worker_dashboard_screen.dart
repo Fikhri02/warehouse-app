@@ -23,7 +23,8 @@ class WorkerDashboardScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          StaggeredEntrance(order: 0, child: DashboardGreeting(session: session)),
+          // Not staggered: after a sign-in, Sign in's greeting has already glided into this spot.
+          DashboardGreeting(session: session),
           const SizedBox(height: 20),
           StaggeredEntrance(
             order: 1,
