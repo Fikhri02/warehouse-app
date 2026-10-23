@@ -45,6 +45,14 @@ class AppColors {
   static Color surfaceFor(Brightness brightness) =>
       brightness == Brightness.dark ? darkSurface : surface;
 
+  /// Status words set as text on a card ("Due today"); the base warning fails on dark surfaces.
+  static Color warningText(Brightness brightness) =>
+      brightness == Brightness.dark ? const Color(0xFFFBBF24) : warning;
+
+  /// Status words set as text on a card ("Overdue"); the base error fails on dark surfaces.
+  static Color errorText(Brightness brightness) =>
+      brightness == Brightness.dark ? const Color(0xFFF87171) : error;
+
   static Color warningSurface(Brightness brightness) =>
       brightness == Brightness.dark
           ? const Color(0xFF3A2A0A)
