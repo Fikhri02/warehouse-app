@@ -137,26 +137,124 @@ class _BottomBar extends StatelessWidget {
       ),
     ];
     final idx = items.indexWhere((i) => currentLocation.startsWith(i.route));
+    final currentIndex = idx < 0 ? navigationShell.currentIndex : idx;
+    final isDark = brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.darkAccent : AppColors.primary;
 
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      showUnselectedLabels: true,
-      currentIndex: idx < 0 ? navigationShell.currentIndex : idx,
-      onTap: (i) => navigationShell.goBranch(
-        i,
-        initialLocation: i == navigationShell.currentIndex,
+    // Floats above the page, so it carries a shadow; the dark bar takes the dark surface to stand off the ground.
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: ShapeDecoration(
+            color: isDark ? AppColors.darkSurface : AppColors.surface,
+            shape: const StadiumBorder(),
+            shadows: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: _BarTab(
+                    item: items[i],
+                    active: i == currentIndex,
+                    activeColor: activeColor,
+                    inactiveColor: AppColors.textSecondary(brightness),
+                    onTap: () => navigationShell.goBranch(
+                      i,
+                      initialLocation: i == navigationShell.currentIndex,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
-      selectedItemColor: brightness == Brightness.dark
-          ? AppColors.darkAccent
-          : AppColors.primary,
-      unselectedItemColor: AppColors.textSecondary(brightness),
-      items: items
-          .map((i) => BottomNavigationBarItem(
-                icon: i.icon,
-                activeIcon: i.activeIcon,
-                label: i.label,
-              ))
-          .toList(),
+    );
+  }
+}
+
+class _BarTab extends StatelessWidget {
+  final _BarItem item;
+  final bool active;
+  final Color activeColor;
+  final Color inactiveColor;
+  final VoidCallback onTap;
+  const _BarTab({
+    required this.item,
+    required this.active,
+    required this.activeColor,
+    required this.inactiveColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? activeColor : inactiveColor;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final duration =
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 150);
+
+    return Semantics(
+      button: true,
+      selected: active,
+      label: item.label,
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          // The selected tab is marked by the accent colour and its label, with no fill behind it.
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Unselected tabs drop the label and grow the icon to fill the space.
+                AnimatedScale(
+                  scale: active ? 1 : 1.25,
+                  duration: duration,
+                  curve: Curves.easeOut,
+                  child: IconTheme(
+                    data: IconThemeData(color: color, size: 24),
+                    child: active ? (item.activeIcon ?? item.icon) : item.icon,
+                  ),
+                ),
+                AnimatedSize(
+                  duration: duration,
+                  curve: Curves.easeOut,
+                  child: active
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            item.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
