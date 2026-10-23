@@ -69,4 +69,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Continue receiving'), findsNothing);
   });
+
+  testWidgets('opening one order closes the one already open', (tester) async {
+    final repo = MockReceivingRepository();
+    when(() => repo.getPurchaseOrders()).thenAnswer((_) async => const [
+          PurchaseOrder(
+            id: 'PO-1',
+            supplier: 'Acme Supplies',
+            status: PoStatus.inProgress,
+            lineItems: [PoLineItem(itemCode: 'A', itemName: 'Aluminium Sheet', expected: 50, received: 5)],
+          ),
+          PurchaseOrder(
+            id: 'PO-2',
+            supplier: 'Metro Parts',
+            status: PoStatus.inProgress,
+            lineItems: [PoLineItem(itemCode: 'P', itemName: 'PVC Pipe', expected: 30, received: 10)],
+          ),
+        ]);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [receivingRepositoryProvider.overrideWithValue(repo)],
+      child: const MaterialApp(home: PoListScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Acme Supplies'));
+    await tester.pumpAndSettle();
+    expect(find.text('Aluminium Sheet'), findsOneWidget);
+
+    await tester.tap(find.text('Metro Parts'));
+    await tester.pumpAndSettle();
+    expect(find.text('PVC Pipe'), findsOneWidget);
+    expect(find.text('Aluminium Sheet'), findsNothing);
+    expect(find.text('Continue receiving'), findsOneWidget);
+  });
 }

@@ -5,6 +5,7 @@ import '../../../core/models/purchase_order.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/scanner_preview_panel.dart';
 import '../providers/receiving_provider.dart';
 
@@ -16,7 +17,7 @@ Color _trackColor(Brightness brightness) => brightness == Brightness.dark
 Color _accent(Brightness brightness) =>
     brightness == Brightness.dark ? AppColors.darkAccent : AppColors.primary;
 
-// An open in-progress row in dark mode sits on deep teal, like the Stock Count card on Home.
+// An open in-progress row sits on deep teal, like the Stock Count card on Home.
 const _tealMuted = Color(0xFFC9DCDA);
 const _tealIdle = Color(0xFF7FA19E);
 const _tealRule = Color(0x24FFFFFF);
@@ -32,6 +33,9 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _searchController = TextEditingController();
+
+  /// The one order shown open; opening another closes it.
+  final _openOrder = ValueNotifier<String?>(null);
   String _search = '';
 
   @override
@@ -44,6 +48,7 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
   void dispose() {
     _tabs.dispose();
     _searchController.dispose();
+    _openOrder.dispose();
     super.dispose();
   }
 
@@ -161,6 +166,7 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
                           emptyAction: _search.isEmpty
                               ? ('Check received', () => _tabs.animateTo(1))
                               : ('Clear search', () => _setSearch('')),
+                          openOrder: _openOrder,
                           ref: ref,
                         ),
                       ),
@@ -174,6 +180,7 @@ class _PoListScreenState extends ConsumerState<PoListScreen>
                           emptyAction: _search.isEmpty
                               ? ('Check to receive', () => _tabs.animateTo(0))
                               : ('Clear search', () => _setSearch('')),
+                          openOrder: _openOrder,
                           ref: ref,
                         ),
                       ),
@@ -229,12 +236,14 @@ class _PoList extends StatelessWidget {
   final List<(String?, List<PurchaseOrder>)> sections;
   final String emptyText;
   final (String, VoidCallback) emptyAction;
+  final ValueNotifier<String?> openOrder;
   final WidgetRef ref;
 
   const _PoList({
     required this.sections,
     required this.emptyText,
     required this.emptyAction,
+    required this.openOrder,
     required this.ref,
   });
 
@@ -273,7 +282,12 @@ class _PoList extends StatelessWidget {
         for (final (label, orders) in visible)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: _PoSection(label: label, orders: orders, ref: ref),
+            child: _PoSection(
+              label: label,
+              orders: orders,
+              openOrder: openOrder,
+              ref: ref,
+            ),
           ),
       ],
     );
@@ -284,10 +298,15 @@ class _PoList extends StatelessWidget {
 class _PoSection extends StatelessWidget {
   final String? label;
   final List<PurchaseOrder> orders;
+  final ValueNotifier<String?> openOrder;
   final WidgetRef ref;
 
-  const _PoSection(
-      {required this.label, required this.orders, required this.ref});
+  const _PoSection({
+    required this.label,
+    required this.orders,
+    required this.openOrder,
+    required this.ref,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -322,7 +341,7 @@ class _PoSection extends StatelessWidget {
                         ? AppColors.darkBorder
                         : AppColors.divider,
                   ),
-                _PoRow(order: orders[i], ref: ref),
+                _PoRow(order: orders[i], openOrder: openOrder, ref: ref),
               ],
             ],
           ),
@@ -335,28 +354,66 @@ class _PoSection extends StatelessWidget {
 /// An in-progress row opens in place to show its lines and Continue receiving; other rows open their order.
 class _PoRow extends StatefulWidget {
   final PurchaseOrder order;
+  final ValueNotifier<String?> openOrder;
   final WidgetRef ref;
 
-  const _PoRow({required this.order, required this.ref});
+  const _PoRow({
+    required this.order,
+    required this.openOrder,
+    required this.ref,
+  });
 
   @override
   State<_PoRow> createState() => _PoRowState();
 }
 
 class _PoRowState extends State<_PoRow> {
-  bool _expanded = false;
-
   PurchaseOrder get order => widget.order;
+
+  bool get _expanded => widget.openOrder.value == order.id;
+
+  void _toggle() => widget.openOrder.value = _expanded ? null : order.id;
+
+  void _onOpenOrderChanged() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    widget.openOrder.addListener(_onOpenOrderChanged);
+  }
+
+  @override
+  void didUpdateWidget(_PoRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.openOrder != widget.openOrder) {
+      oldWidget.openOrder.removeListener(_onOpenOrderChanged);
+      widget.openOrder.addListener(_onOpenOrderChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.openOrder.removeListener(_onOpenOrderChanged);
+    super.dispose();
+  }
 
   void _startReceive() {
     widget.ref.read(activeReceiveNotifierProvider.notifier).startReceive(order);
     context.push(AppRoutes.receivingItems);
   }
 
+  /// An open order sits on deep teal in both modes, so it takes the dark theme's
+  /// colours (mint accent, mint button). The Theme is always there so the open and
+  /// close animations keep their state.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Theme(
+        data: _expanded ? AppTheme.dark : Theme.of(context),
+        child: Builder(builder: _content),
+      );
+
+  Widget _content(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final onTeal = _expanded && brightness == Brightness.dark;
+    final onTeal = _expanded;
     final primaryText =
         onTeal ? Colors.white : AppColors.textPrimary(brightness);
     final secondary = onTeal ? _tealMuted : AppColors.textSecondary(brightness);
@@ -369,7 +426,7 @@ class _PoRowState extends State<_PoRow> {
 
     final header = InkWell(
       onTap: switch (order.status) {
-        PoStatus.inProgress => () => setState(() => _expanded = !_expanded),
+        PoStatus.inProgress => _toggle,
         PoStatus.pending => _startReceive,
         PoStatus.received => () =>
             context.push(AppRoutes.receivingDetails, extra: order.id),
