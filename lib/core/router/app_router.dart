@@ -5,6 +5,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/models/user_session.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/sign_in_geometry.dart';
 import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/dashboard/presentation/supervisor_dashboard_screen.dart';
 import '../../features/dashboard/presentation/worker_dashboard_screen.dart';
@@ -37,6 +38,8 @@ import '../../features/auth/presentation/choose_warehouse_screen.dart';
 import '../../features/stock_count/presentation/count_item_picker_screen.dart';
 import '../../features/stock_count/presentation/count_setup_screen.dart';
 import '../config/app_config.dart';
+import '../motion/arrival.dart';
+import '../motion/sign_in_motion.dart';
 import '../../features/sync/sync_issues_screen.dart';
 import 'app_route_observer.dart';
 import 'auth_redirect.dart';
@@ -54,16 +57,19 @@ class _RouterNotifier extends ChangeNotifier {
   final Ref _ref;
   late final ProviderSubscription<AsyncValue<UserSession?>> _sub;
   late final ProviderSubscription<UserSession?> _lockSub;
+  late final ProviderSubscription<bool> _holdSub;
 
   _RouterNotifier(this._ref) {
     _sub = _ref.listen(authNotifierProvider, (_, __) => notifyListeners());
     _lockSub = _ref.listen(lockedSessionProvider, (_, __) => notifyListeners());
+    _holdSub = _ref.listen(entryHeldProvider, (_, __) => notifyListeners());
   }
 
   @override
   void dispose() {
     _sub.close();
     _lockSub.close();
+    _holdSub.close();
     super.dispose();
   }
 
@@ -72,6 +78,7 @@ class _RouterNotifier extends ChangeNotifier {
       auth: _ref.read(authNotifierProvider),
       location: state.matchedLocation,
       locked: _ref.read(lockedSessionProvider),
+      held: _ref.read(entryHeldProvider),
     );
   }
 }
@@ -95,15 +102,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (_, __) => const LoginScreen(),
+        pageBuilder: (context, state) => signInPage(context, state, const LoginScreen()),
       ),
       GoRoute(
         path: AppRoutes.chooseWarehouse,
         builder: (_, __) => const ChooseWarehouseScreen(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppScaffold(navigationShell: navigationShell),
+        // Straight after the check-in, Home arrives in steps: the page itself does not move (its ground already matches
+        // the risen sign-in sheet) and its sections follow the ArrivalAnimation. Any other way back to Home uses the
+        // normal page transition. Both are always built, one of them on a finished animation, so switching between
+        // them never rebuilds Home from scratch.
+        pageBuilder: (context, state, navigationShell) {
+          final reduced = MediaQuery.disableAnimationsOf(context);
+          final arriving = !reduced && ref.read(arrivalPendingProvider);
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            transitionDuration: reduced
+                ? kReducedMotionFade
+                : arriving
+                    ? kArrival
+                    : const Duration(milliseconds: 300),
+            child: AppScaffold(navigationShell: navigationShell),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              if (reduced) return FadeTransition(opacity: animation, child: child);
+              return Theme.of(context).pageTransitionsTheme.buildTransitions(
+                    ModalRoute.of(context)! as PageRoute<void>,
+                    context,
+                    arriving ? kAlwaysCompleteAnimation : animation,
+                    secondaryAnimation,
+                    ArrivalAnimation(animation: arriving ? animation : kAlwaysCompleteAnimation, child: child),
+                  );
+            },
+          );
+        },
         branches: [
           StatefulShellBranch(
             navigatorKey: _homeNavigatorKey,
@@ -264,7 +296,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
   // Leaving counting, receiving and My Tasks — or opening another screen on top of them — forgets the task a person
-  // went to work on, so a later count that has nothing to do with it is not offered "Mark done?".
-  ref.onDispose(forgetTaskOutsideItsWork(router, () => ref.read(activeTaskProvider.notifier).forget()));
+  // went to work on, so a later count that has nothing to do with it is not offered "Mark done?". The router can
+  // announce a new screen mid-build (a redirect), and providers may not change then: forget once the frame is done.
+  ref.onDispose(forgetTaskOutsideItsWork(router, () => Future.microtask(() => ref.read(activeTaskProvider.notifier).forget())));
   return router;
 });

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:warehouse_app/core/models/user_session.dart';
+import 'package:warehouse_app/core/motion/arrival.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
@@ -21,6 +22,29 @@ class AppScaffold extends ConsumerStatefulWidget {
 
 class _AppScaffoldState extends ConsumerState<AppScaffold> {
   DateTime? _lastBackPressAt;
+  Animation<double>? _arrival;
+
+  /// Once Home has arrived after a sign-in, the next way back to Home uses the normal transition again.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final arrival = ArrivalAnimation.maybeOf(context);
+    if (arrival == _arrival) return;
+    _arrival?.removeStatusListener(_onArrival);
+    _arrival = arrival?..addStatusListener(_onArrival);
+  }
+
+  void _onArrival(AnimationStatus status) {
+    if (status == AnimationStatus.completed && ref.read(arrivalPendingProvider)) {
+      ref.read(arrivalPendingProvider.notifier).state = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _arrival?.removeStatusListener(_onArrival);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,9 +89,13 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
           ],
         ),
         drawer: session == null ? null : _AppDrawer(session: session),
-        bottomNavigationBar: _BottomBar(
-          currentLocation: location,
-          navigationShell: widget.navigationShell,
+        bottomNavigationBar: StaggeredEntrance(
+          order: 1,
+          fromBelow: true,
+          child: _BottomBar(
+            currentLocation: location,
+            navigationShell: widget.navigationShell,
+          ),
         ),
       ),
     );

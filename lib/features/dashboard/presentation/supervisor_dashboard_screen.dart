@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:warehouse_app/core/motion/arrival.dart';
 import 'package:warehouse_app/core/providers/auth_provider.dart';
 import 'package:warehouse_app/core/router/app_routes.dart';
 import 'package:warehouse_app/core/theme/app_colors.dart';
@@ -22,15 +23,20 @@ class SupervisorDashboardScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          DashboardGreeting(session: session),
+          StaggeredEntrance(order: 0, child: DashboardGreeting(session: session)),
           const SizedBox(height: 20),
-          Text('Quick Actions',
-              style: AppTextStyles.micro.copyWith(
-                color: AppColors.textSecondary(brightness),
-                letterSpacing: 0.5,
-              )),
+          StaggeredEntrance(
+            order: 1,
+            child: Text('Quick Actions',
+                style: AppTextStyles.micro.copyWith(
+                  color: AppColors.textSecondary(brightness),
+                  letterSpacing: 0.5,
+                )),
+          ),
           const SizedBox(height: 10),
-          GridView.count(
+          StaggeredEntrance(
+            order: 1,
+            child: GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -77,14 +83,20 @@ class SupervisorDashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
+          ),
           const SizedBox(height: 20),
-          Text('Pending Review',
-              style: AppTextStyles.micro.copyWith(
-                color: AppColors.textSecondary(brightness),
-                letterSpacing: 0.5,
-              )),
+          StaggeredEntrance(
+            order: 2,
+            child: Text('Pending Review',
+                style: AppTextStyles.micro.copyWith(
+                  color: AppColors.textSecondary(brightness),
+                  letterSpacing: 0.5,
+                )),
+          ),
           const SizedBox(height: 10),
-          Card(
+          StaggeredEntrance(
+            order: 2,
+            child: Card(
             child: Column(
               children: [
                 _ReviewTile(
@@ -100,6 +112,7 @@ class SupervisorDashboardScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),

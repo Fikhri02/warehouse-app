@@ -27,6 +27,9 @@ final authBootstrapStateProvider = Provider<AuthBootstrapState>(
 /// A stored session waiting for a fingerprint (biometric login on). main.dart sets it at launch.
 final lockedSessionProvider = StateProvider<UserSession?>((_) => null);
 
+/// True while the sign-in screen plays its check-in, so the router waits before leaving it.
+final entryHeldProvider = StateProvider<bool>((_) => false);
+
 class AuthNotifier extends AsyncNotifier<UserSession?> {
   @override
   FutureOr<UserSession?> build() {

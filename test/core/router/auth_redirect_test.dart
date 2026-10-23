@@ -52,4 +52,22 @@ void main() {
     expect(authRedirect(auth: const AsyncData(null), location: AppRoutes.welcome, locked: locked), AppRoutes.login);
     expect(authRedirect(auth: const AsyncData(null), location: AppRoutes.login, locked: locked), isNull);
   });
+
+  test('a held sign-in stays on Sign in until the check-in finishes', () {
+    final signedIn = AsyncData<UserSession?>(session(warehouseId: 'kp1', warehouses: [kp1]));
+    expect(authRedirect(auth: signedIn, location: AppRoutes.login, held: true), isNull);
+    expect(authRedirect(auth: signedIn, location: AppRoutes.login), AppRoutes.dashboard);
+  });
+
+  test('the hold also covers Sign in pushed over Welcome, where the router reports Welcome', () {
+    final signedIn = AsyncData<UserSession?>(session(warehouseId: 'kp1', warehouses: [kp1]));
+    expect(authRedirect(auth: signedIn, location: AppRoutes.welcome, held: true), isNull);
+    expect(authRedirect(auth: signedIn, location: AppRoutes.welcome), AppRoutes.dashboard);
+  });
+
+  test('the hold only applies on Sign in, and still leads to Choose warehouse after', () {
+    final waiting = AsyncData<UserSession?>(session(warehouses: [sa1, kp1]));
+    expect(authRedirect(auth: waiting, location: AppRoutes.dashboard, held: true), AppRoutes.chooseWarehouse);
+    expect(authRedirect(auth: waiting, location: AppRoutes.login), AppRoutes.chooseWarehouse);
+  });
 }
